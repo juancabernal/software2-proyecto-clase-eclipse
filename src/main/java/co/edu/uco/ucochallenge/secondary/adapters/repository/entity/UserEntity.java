@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "User")
+@Table(name = "Usuario")
 public class UserEntity {
 
 	@Id
@@ -110,6 +110,9 @@ public class UserEntity {
 		private boolean emailConfirmedIsDefaultValue = true;
 		private boolean mobileNumberConfirmedIsDefaultValue = true;
 
+		
+		
+		
 		public Builder id(final UUID id) {
 			this.id = id;
 			return this;
