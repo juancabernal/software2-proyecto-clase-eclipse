@@ -2,8 +2,7 @@ package co.edu.uco.ucochallenge.user.registeruser.application.interactor.mapper;
 
 import java.util.UUID;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
+import org.springframework.stereotype.Component;
 
 import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.CityEntity;
 import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.IdTypeEntity;
@@ -11,16 +10,18 @@ import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.UserEntity;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.dto.RegisterUserInputDTO;
 import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 
-@Mapper(componentModel = "spring")
-public interface RegisterUserMapper {
+@Component
+public class RegisterUserMapper {
 
-        @Mapping(target = ".", expression = "java(toDomainInternal(dto))")
-        RegisterUserDomain toDomain(RegisterUserInputDTO dto);
+        public RegisterUserDomain toDomain(final RegisterUserInputDTO dto) {
+                return toDomainInternal(dto);
+        }
 
-        @Mapping(target = ".", expression = "java(toEntityInternal(domain))")
-        UserEntity toEntity(RegisterUserDomain domain);
+        public UserEntity toEntity(final RegisterUserDomain domain) {
+                return toEntityInternal(domain);
+        }
 
-        default RegisterUserDomain toDomainInternal(final RegisterUserInputDTO dto) {
+        private RegisterUserDomain toDomainInternal(final RegisterUserInputDTO dto) {
                 if (dto == null) {
                         return null;
                 }
@@ -38,7 +39,7 @@ public interface RegisterUserMapper {
                                 .construir();
         }
 
-        default UserEntity toEntityInternal(final RegisterUserDomain domain) {
+        private UserEntity toEntityInternal(final RegisterUserDomain domain) {
                 if (domain == null) {
                         return null;
                 }
@@ -57,7 +58,7 @@ public interface RegisterUserMapper {
                                 .build();
         }
 
-        default IdTypeEntity toIdTypeEntity(final UUID id) {
+        private IdTypeEntity toIdTypeEntity(final UUID id) {
                 if (id == null) {
                         return null;
                 }
@@ -67,7 +68,7 @@ public interface RegisterUserMapper {
                                 .build();
         }
 
-        default CityEntity toCityEntity(final UUID id) {
+        private CityEntity toCityEntity(final UUID id) {
                 if (id == null) {
                         return null;
                 }
