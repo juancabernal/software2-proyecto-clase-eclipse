@@ -9,9 +9,9 @@ public class MessageCatalog {
 	);
 	
 	static {
-		messages.put("FechaDefectoMaxima", new Message("FechaDefectoMaxima","31/12/2500"));
-		messages.put("correoAdministrador", new Message("correoAdministrador","admin@uco.edu.co"));
-		messages.put("numeroMaximoReintentosEnvioCorrec", new Message("numeroMaximoReintentosEnvioCorrec","8"));
+		messages.put("AdvertenciaMismoCorreo", new Message("FechaDefectoMaxima","31/12/2500"));
+		messages.put("AdvertenciaMismoNumeroTelefono", new Message("AdvertenciaMismoNumeroTelefono","admin@uco.edu.co"));
+		messages.put("AdvertenciaMismoIdTypeYNumeroId", new Message("AdvertenciaMismoIdTypeYNumeroId","8"));
 	}
 	
 	public static Message getMessageValue(String key) {

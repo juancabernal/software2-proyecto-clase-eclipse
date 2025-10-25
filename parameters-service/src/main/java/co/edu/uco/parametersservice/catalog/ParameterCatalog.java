@@ -9,9 +9,9 @@ public class ParameterCatalog {
 	);
 	
 	static {
-		parameters.put("FechaDefectoMaxima", new Parameter("FechaDefectoMaxima","31/12/2500"));
+		parameters.put("MinutosExpiracionTokenValidacionUsuario", new Parameter("FechaDefectoMaxima","31/12/2500"));
 		parameters.put("correoAdministrador", new Parameter("correoAdministrador","admin@uco.edu.co"));
-		parameters.put("numeroMaximoReintentosEnvioCorrec", new Parameter("numeroMaximoReintentosEnvioCorrec","8"));
+		parameters.put("numeroMaximoReintentosEnvioCorreo", new Parameter("numeroMaximoReintentosEnvioCorrec","8"));
 	}
 	
 	public static Parameter getParameterValue(String key) {
