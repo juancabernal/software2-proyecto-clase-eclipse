@@ -22,7 +22,7 @@ public class ParameterController {
 		var value = ParameterCatalog.getParameterValue(key);
 		
 		
-		return new ResponseEntity<>(value, (value == null) ?  HttpStatus.NOT_FOUND : HttpStatus.ACCEPTED);
+		return new ResponseEntity<>(value, (value == null) ?  HttpStatus.NOT_FOUND : HttpStatus.OK);
 		
 	}
 	

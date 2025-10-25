@@ -2,9 +2,13 @@ package co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain;
 
 import java.util.UUID;
 
+import co.edu.uco.ucochallenge.crosscuting.exception.ExceptionLayer;
 import co.edu.uco.ucochallenge.crosscuting.exception.UcoChallengeException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
+import co.edu.uco.ucochallenge.crosscuting.exception.ExceptionLayer;
+import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
 
 public final class RegisterUserDomain {
 
@@ -18,38 +22,31 @@ public final class RegisterUserDomain {
 	private final String email;
 	private final String mobileNumber;
 
-
-	private RegisterUserDomain(
-			final UUID idType,
-			final String idNumber,
-			final String firstName,
-			final String secondName,
-			final String firstSurname,
-			final String secondSurname,
-			final UUID homeCity,
-			final String email,
-			final String mobileNumber) {
+	private RegisterUserDomain(final UUID idType, final String idNumber, final String firstName,
+			final String secondName, final String firstSurname, final String secondSurname, final UUID homeCity,
+			final String email, final String mobileNumber) {
 
 		this.idType = validarTipoIdentificacion(idType);
 		this.idNumber = validarNumeroIdentificacion(idNumber);
-		this.firstName = validarNombre(firstName, "primer nombre");
-		this.secondName = validarNombre(secondName, "segundo nombre");
-		this.firstSurname = validarNombre(firstSurname, "primer apellido");
-		this.secondSurname = validarNombre(secondSurname, "segundo apellido");
+		this.firstName = validarNombre(firstName);
+		this.secondName = validarNombre(secondName);
+		this.firstSurname = validarNombre(firstSurname);
+		this.secondSurname = validarNombre(secondSurname);
 		this.homeCity = validarCiudadResidencia(homeCity);
 		this.email = validarCorreo(email);
 		this.mobileNumber = validarNumeroCelular(mobileNumber);
 	}
 
-
 	private UUID validarTipoIdentificacion(final UUID idType) {
+
 		if (idType == null || idType.equals(UUIDHelper.getDefault())) {
-			throw UcoChallengeException.build("El tipo de identificación es obligatorio y debe ser válido.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.ID_TYPE_REQUIRED);
 		}
 
-		// Aquí asumimos que la existencia se valida desde el dominio:
 		if (!tipoIdentificacionExiste(idType)) {
-			throw UcoChallengeException.build("El tipo de identificación indicado no existe en el sistema.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.ID_TYPE_NOT_FOUND);
 		}
 
 		return idType;
@@ -57,37 +54,44 @@ public final class RegisterUserDomain {
 
 	private String validarNumeroIdentificacion(final String idNumber) {
 		if (TextHelper.isEmpty(idNumber)) {
-			throw UcoChallengeException.build("El número de identificación es obligatorio.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.ID_NUMBER_REQUIRED);
 		}
 		if (!idNumber.matches("^[0-9]+$")) {
-			throw UcoChallengeException.build("El número de identificación solo puede contener dígitos.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.ID_NUMBER_INVALID_FORMAT);
 		}
 		if (idNumber.length() < 5 || idNumber.length() > 20) {
-			throw UcoChallengeException.build("El número de identificación debe tener entre 5 y 20 dígitos.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.ID_NUMBER_LENGTH);
 		}
 		return idNumber.trim();
 	}
 
-	private String validarNombre(final String nombre, final String campo) {
+	private String validarNombre(final String nombre) {
 		if (TextHelper.isEmpty(nombre)) {
-			throw UcoChallengeException.build("El " + campo + " es obligatorio.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.NAME_REQUIRED);
 		}
 		if (!nombre.matches("^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$")) {
-			throw UcoChallengeException.build("El " + campo + " solo puede contener letras y espacios.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.NAME_INVALID_CHARACTERS);
 		}
 		if (nombre.trim().length() < 2 || nombre.trim().length() > 40) {
-			throw UcoChallengeException.build("El " + campo + " debe tener entre 2 y 40 caracteres.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN, MessageKey.RegisterUser.NAME_LENGTH);
 		}
 		return nombre.trim();
 	}
 
 	private UUID validarCiudadResidencia(final UUID homeCity) {
 		if (homeCity == null || homeCity.equals(UUIDHelper.getDefault())) {
-			throw UcoChallengeException.build("La ciudad de residencia es obligatoria y debe ser válida.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.HOME_CITY_REQUIRED);
 		}
 
 		if (!ciudadExiste(homeCity)) {
-			throw UcoChallengeException.build("La ciudad de residencia indicada no existe en el sistema.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.HOME_CITY_NOT_FOUND);
 		}
 
 		return homeCity;
@@ -95,31 +99,37 @@ public final class RegisterUserDomain {
 
 	private String validarCorreo(final String email) {
 		if (TextHelper.isEmpty(email)) {
-			throw UcoChallengeException.build("El correo electrónico es obligatorio.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.EMAIL_REQUIRED);
 		}
 		if (email.length() < 10 || email.length() > 100) {
-			throw UcoChallengeException.build("El correo electrónico debe tener entre 10 y 100 caracteres.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.EMAIL_LENGTH);
 		}
 		if (!email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-			throw UcoChallengeException.build("El formato del correo electrónico no es válido.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.EMAIL_INVALID_FORMAT);
 		}
 		return email.trim().toLowerCase();
 	}
 
 	private String validarNumeroCelular(final String mobileNumber) {
 		if (TextHelper.isEmpty(mobileNumber)) {
-			throw UcoChallengeException.build("El número de teléfono móvil es obligatorio.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.MOBILE_REQUIRED);
 		}
 		if (!mobileNumber.matches("^[0-9]{10}$")) {
-			throw UcoChallengeException.build("El número de teléfono móvil debe contener exactamente 10 dígitos.");
+			throw UcoChallengeException.createUserException(ExceptionLayer.DOMAIN,
+					MessageKey.RegisterUser.MOBILE_INVALID_FORMAT);
 		}
 		return mobileNumber.trim();
 	}
 
-
 	private boolean tipoIdentificacionExiste(final UUID idType) {
-		// En una implementación real, aquí se consultaría el repositorio de tipos de identificación.
-		// En el dominio puro, se asume que la existencia puede validarse a través de un servicio.
+		// En una implementación real, aquí se consultaría el repositorio de tipos de
+		// identificación.
+		// En el dominio puro, se asume que la existencia puede validarse a través de un
+		// servicio.
 		// Aquí devolvemos true para fines demostrativos.
 		return true;
 	}
@@ -128,7 +138,6 @@ public final class RegisterUserDomain {
 		// En una implementación real, aquí se consultaría el repositorio de ciudades.
 		return true;
 	}
-
 
 	public static Builder construir() {
 		return new Builder();
@@ -194,20 +203,10 @@ public final class RegisterUserDomain {
 		}
 
 		public RegisterUserDomain construir() {
-			return new RegisterUserDomain(
-					idType,
-					idNumber,
-					firstName,
-					secondName,
-					firstSurname,
-					secondSurname,
-					homeCity,
-					email,
-					mobileNumber
-			);
+			return new RegisterUserDomain(idType, idNumber, firstName, secondName, firstSurname, secondSurname,
+					homeCity, email, mobileNumber);
 		}
 	}
-
 
 	public UUID getIdType() {
 		return idType;
