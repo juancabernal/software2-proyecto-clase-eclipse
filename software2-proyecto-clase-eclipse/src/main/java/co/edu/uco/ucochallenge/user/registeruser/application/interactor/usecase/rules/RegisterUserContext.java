@@ -1,12 +1,8 @@
-
 package co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules;
 
-
 import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
-import lombok.Getter;
 import java.util.UUID;
 
-@Getter
 public class RegisterUserContext {
 
     private final UUID idType;
@@ -18,7 +14,8 @@ public class RegisterUserContext {
     private final UUID homeCity;
     private final String email;
     private final String mobileNumber;
-
+    
+    
     public RegisterUserContext(RegisterUserDomain domain) {
         this.idType = domain.getIdType();
         this.idNumber = domain.getIdNumber();
@@ -29,5 +26,41 @@ public class RegisterUserContext {
         this.homeCity = domain.getHomeCity();
         this.email = domain.getEmail();
         this.mobileNumber = domain.getMobileNumber();
+    }
+    
+    public UUID getIdType() {
+        return idType;
+    }
+
+    public String getIdNumber() {
+        return idNumber;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getSecondName() {
+        return secondName;
+    }
+
+    public String getFirstSurname() {
+        return firstSurname;
+    }
+
+    public String getSecondSurname() {
+        return secondSurname;
+    }
+
+    public UUID getHomeCity() {
+        return homeCity;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getMobileNumber() {
+        return mobileNumber;
     }
 }

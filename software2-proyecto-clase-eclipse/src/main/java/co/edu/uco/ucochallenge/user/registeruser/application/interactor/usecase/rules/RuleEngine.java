@@ -1,5 +1,7 @@
 package co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules;
-
+import co.edu.uco.ucochallenge.crosscuting.exception.ExceptionLayer;
+import co.edu.uco.ucochallenge.crosscuting.exception.UcoChallengeException;
+import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
 
 import co.edu.uco.ucochallenge.application.interactor.usecase.rules.Rule;
 import org.springframework.stereotype.Service;
@@ -13,9 +15,11 @@ public class RuleEngine {
     }
 
     public boolean applyRule(String ruleName, RegisterUserContext context) {
-        Rule rule = ruleRegistry.getRule(ruleName);
+        Rule<RegisterUserContext> rule = ruleRegistry.getRule(ruleName);
         if (rule == null) {
-            throw new IllegalArgumentException("Unknown rule: " + ruleName);
+            throw UcoChallengeException.createTechnicalException(
+                    ExceptionLayer.RULE,
+                    MessageKey.GENERAL_TECHNICAL_ERROR);
         }
         return rule.evaluate(context);
     }

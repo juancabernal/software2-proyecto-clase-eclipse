@@ -16,6 +16,7 @@ public class ParameterCatalog {
         register("notification.confirmation.email.strategy", "ENVIAR_LINK_CONFIRMACION");
         register("notification.confirmation.mobile.strategy", "ENVIAR_CODIGO_SMS");
         register("notification.email.maxRetries", "3");
+        register("validation.code.timeExpiration", "5"); // in minutes
     }
 
     public static Parameter getParameterValue(String key) {

@@ -7,5 +7,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
+	
+    boolean existsByIdTypeIdAndIdNumber(UUID idType, String idNumber);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByMobileNumber(String mobileNumber);
 
 }

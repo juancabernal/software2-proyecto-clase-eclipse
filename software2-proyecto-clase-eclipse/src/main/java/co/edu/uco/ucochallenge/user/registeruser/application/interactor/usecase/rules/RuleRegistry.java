@@ -9,14 +9,15 @@ import java.util.Map;
 
 @Component
 public class RuleRegistry {
-    private final Map<String, Rule> rulesMap = new HashMap<>();
-    public RuleRegistry(List<Rule> rules) {
-        for (Rule rule : rules) {
-            rulesMap.put(rule.getName(), rule);
-        }
-    }
+	private final Map<String, Rule<RegisterUserContext>> rulesMap = new HashMap<>();
 
-    public Rule getRule(String ruleName) {
-        return rulesMap.get(ruleName);
-    }
+	public RuleRegistry(List<Rule<RegisterUserContext>> rules) {
+		for (Rule<RegisterUserContext> rule : rules) {
+			rulesMap.put(rule.getName(), rule);
+		}
+	}
+
+    public Rule<RegisterUserContext> getRule(String ruleName) {
+		return rulesMap.get(ruleName);
+	}
 }
