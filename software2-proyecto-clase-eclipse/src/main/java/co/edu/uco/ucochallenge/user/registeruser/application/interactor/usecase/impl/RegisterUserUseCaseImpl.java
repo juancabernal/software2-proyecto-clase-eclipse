@@ -12,14 +12,10 @@ import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.Regi
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 	
 	private UserRepository repository;
-	
-	
-	
+
 	public RegisterUserUseCaseImpl(UserRepository repository) {
 		this.repository = repository;
 	}
-
-
 
 	@Override
 	public Void execute(final RegisterUserDomain domain) {
@@ -30,5 +26,4 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 		repository.save(userEntity); //Solo por el momento porque hay que convertir de domain a entity
 		return Void.returnVoid();
 	}
-
 }
