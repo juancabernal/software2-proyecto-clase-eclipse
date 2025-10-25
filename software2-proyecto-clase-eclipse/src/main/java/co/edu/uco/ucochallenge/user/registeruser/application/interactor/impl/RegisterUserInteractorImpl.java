@@ -8,23 +8,25 @@ import co.edu.uco.ucochallenge.user.registeruser.application.interactor.dto.Regi
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.RegisterUserUseCase;
 import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 import jakarta.transaction.Transactional;
+import co.edu.uco.ucochallenge.user.registeruser.application.interactor.mapper.RegisterUserMapper;
 
 @Service
 @Transactional
 public class RegisterUserInteractorImpl implements RegisterUserInteractor {
 
-	private RegisterUserUseCase useCase;
+    private final RegisterUserUseCase useCase;
+    private final RegisterUserMapper mapper;
 
-	public RegisterUserInteractorImpl(RegisterUserUseCase useCase) {
-		this.useCase = useCase;
-	}
 
-	@Override
-	public Void execute(final RegisterUserInputDTO dto) {
+    public RegisterUserInteractorImpl(final RegisterUserUseCase useCase, final RegisterUserMapper mapper) {
+        this.useCase = useCase;
+        this.mapper = mapper;
+    }
 
-		// DataMapper/MapStruct could be used here
-		RegisterUserDomain registerUserDomain = null;
-		return useCase.execute(registerUserDomain); // Mapping from DTO to Domain is needed
-	}
+    @Override
+    public Void execute(final RegisterUserInputDTO dto) {
+            RegisterUserDomain registerUserDomain = mapper.toDomain(dto);
+            return useCase.execute(registerUserDomain);
+    }
 
 }
