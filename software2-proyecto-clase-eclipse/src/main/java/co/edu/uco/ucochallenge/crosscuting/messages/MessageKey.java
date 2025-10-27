@@ -53,4 +53,12 @@ public final class MessageKey {
         private RegisterUser() {
         }
     }
+
+    public static final class ListUsers {
+        public static final String PAGE_NEGATIVE = "list.users.validation.page.negative";
+        public static final String SIZE_INVALID = "list.users.validation.size.invalid";
+
+        private ListUsers() {
+        }
+    }
 }
