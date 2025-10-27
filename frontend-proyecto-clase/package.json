@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.8.0",
     "@hookform/resolvers": "^5.2.2",
-    "@auth0/auth0-react": "^2.0.0",
     "axios": "^1.12.2",
     "firebase": "^12.4.0",
     "framer-motion": "^12.23.24",

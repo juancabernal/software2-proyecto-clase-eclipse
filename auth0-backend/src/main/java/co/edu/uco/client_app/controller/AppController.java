@@ -7,21 +7,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-<<<<<<< HEAD
 
-@CrossOrigin(
-	    origins = {"http://localhost:5173", "http://localhost:5174"},
-	    allowedHeaders = "*",
-	    allowCredentials = "true"
-	)
-
-=======
 @CrossOrigin(
     origins = {"http://localhost:5173", "http://localhost:5174"},
     allowedHeaders = "*",
     allowCredentials = "true"
 )
->>>>>>> 2b4728000c0f3e29403d60f7167e804b095367b1
+
 @RestController
 public class AppController {
 
