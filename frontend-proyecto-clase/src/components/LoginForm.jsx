@@ -56,12 +56,22 @@ export default function LoginForm() {
   const handleOAuth = async (provider) => {
     setSubmitting(true);
     try {
+      console.log('Starting OAuth login for provider:', provider);
       // Usar Auth0 para iniciar el flujo de login con la conexión adecuada
       const connection = provider === 'google' ? 'google-oauth2' : 'github';
-      await loginWithRedirect({ connection });
+      console.log('Calling loginWithRedirect with connection:', connection);
+      await loginWithRedirect({
+        authorizationParams: {
+          connection,
+          redirect_uri: window.location.origin,
+          scope: 'openid profile email',
+          prompt: 'login'
+        }
+      });
       // La redirección manejará el resto; Auth0Provider en main.jsx sincroniza el estado
     } catch (err) {
       console.error('Error iniciando login con Auth0:', err);
+      console.error('Error details:', err.message, err.stack);
     } finally {
       setSubmitting(false);
     }

@@ -3,7 +3,7 @@
  * Más adelante se reemplazará por peticiones reales a un backend (Node, Spring, etc.)
  */
 
-const API_BASE_URL = "https://api.example.com"; // Placeholder temporal
+const API_BASE_URL = "http://localhost:8085"; // Backend Spring Boot
 
 // --------------------- FUNCIONES DE AUTENTICACIÓN --------------------- //
 

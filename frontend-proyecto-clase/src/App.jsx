@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth0 } from '@auth0/auth0-react';
+import { setupInterceptors } from './services/axios-interceptor';
 
 /* Pages (existentes en tu estructura) */
 import LoginPage from './pages/LoginPage';
@@ -41,7 +42,20 @@ function PrivateRoute({ children }) {
 export default function App() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const { user: auth0User, isAuthenticated, logout: auth0Logout } = useAuth0();
+  const { 
+    user: auth0User, 
+    isAuthenticated, 
+    logout: auth0Logout,
+    getAccessTokenSilently,
+    error: auth0Error
+  } = useAuth0();
+
+  // Log cualquier error de autenticación
+  useEffect(() => {
+    if (auth0Error) {
+      console.error('Auth0 error:', auth0Error);
+    }
+  }, [auth0Error]);
   const location = useLocation();
   const ADMIN_CLAIM = import.meta.env.VITE_AUTH0_ADMIN_CLAIM || '';
 
@@ -91,8 +105,60 @@ export default function App() {
 
   // Sincroniza el usuario de Auth0 con el AuthContext local para no cambiar el resto de la app
   useEffect(() => {
-    // Debug: imprimir claims del usuario Auth0 para ayudar a identificar dónde están los roles
-    if (auth0User) console.debug('Auth0 user (claims):', auth0User);
+    const checkUserAndRoles = async () => {
+      if (isAuthenticated && auth0User) {
+        try {
+          console.log('=== Debug Auth0 ===');
+          console.log('User profile:', auth0User);
+          
+          // Obtener token con scope para roles
+          const token = await getAccessTokenSilently({
+            authorizationParams: {
+              audience: `https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/`,
+              scope: 'read:roles'
+            }
+          });
+
+          // Llamar a la API de gestión de Auth0 para obtener roles
+          const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${auth0User.sub}/roles`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            const roles = await response.json();
+            console.log('Roles del usuario:', roles);
+            
+            // Si el usuario tiene rol admin, sincronizar en el estado local
+            if (roles.some(role => role.name === 'admin')) {
+              const adminUser = {
+                id: auth0User.sub,
+                name: auth0User.name || auth0User.nickname || 'Usuario',
+                email: auth0User.email,
+                role: 'admin',
+                provider: auth0User.sub.split('|')[0]
+              };
+              setUser(adminUser);
+              
+              // Si venimos de login, redirigir al dashboard
+              if (location.pathname === '/login') {
+                navigate('/dashboard', { replace: true });
+              }
+            } else {
+              console.log('Usuario no tiene rol admin - forzando logout');
+              await auth0Logout();
+            }
+          }
+        } catch (e) {
+          console.error('Error al verificar roles:', e);
+        }
+      }
+      console.log('Auth0 isAuthenticated=', isAuthenticated);
+    };
+    
+    checkUserAndRoles();
+
     // Cuando Auth0 indica autenticación, decidir si es admin
     if (isAuthenticated && auth0User) {
       const admin = isAdminAuth0(auth0User);
@@ -127,6 +193,11 @@ export default function App() {
       }
     } else if (!isAuthenticated) {
       setUser(null);
+    }
+
+    // Configurar interceptor de Axios cuando el usuario está autenticado
+    if (isAuthenticated) {
+      setupInterceptors();
     }
   }, [isAuthenticated, auth0User]);
 
