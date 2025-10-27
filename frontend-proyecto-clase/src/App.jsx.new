@@ -1,0 +1,146 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
+import { setupInterceptors } from './services/axios-interceptor';
+
+/* Pages */
+import LoginPage from './pages/LoginPage';
+import DashboardPage from './pages/DashboardPage';
+import RegisterUserPage from './pages/RegisterUserPage';
+import UserSearchPage from './pages/UserSearchPage';
+
+const AuthContext = createContext({
+  user: null,
+  logout: () => {},
+  isAdmin: false
+});
+
+export const useAuth = () => useContext(AuthContext);
+
+function PrivateRoute({ children }) {
+  const { isAuthenticated, isLoading } = useAuth0();
+  const { user } = useAuth();
+
+  if (isLoading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!isAuthenticated || !user?.isAdmin) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  const {
+    user: auth0User,
+    isAuthenticated,
+    isLoading,
+    logout: auth0Logout,
+    getAccessTokenSilently,
+    error: auth0Error
+  } = useAuth0();
+
+  // Manejar errores de Auth0
+  useEffect(() => {
+    if (auth0Error) {
+      console.error('Error de Auth0:', auth0Error);
+      navigate('/login');
+    }
+  }, [auth0Error, navigate]);
+
+  // Sincronizar usuario de Auth0
+  useEffect(() => {
+    if (isLoading) return;
+
+    const syncUser = async () => {
+      try {
+        if (isAuthenticated && auth0User) {
+          const token = await getAccessTokenSilently();
+          
+          // Obtener roles del usuario desde Auth0
+          const roles = auth0User['https://dev-x2nlunlga02cbz17.us.auth0.com/roles'] || [];
+          const isAdmin = roles.includes('admin');
+
+          if (!isAdmin) {
+            await auth0Logout();
+            setUser(null);
+            navigate('/login');
+            return;
+          }
+
+          const userData = {
+            id: auth0User.sub,
+            email: auth0User.email,
+            name: auth0User.name || auth0User.email,
+            picture: auth0User.picture,
+            isAdmin,
+            roles
+          };
+
+          setUser(userData);
+          localStorage.setItem('auth0_token', token);
+
+          // Redirigir al dashboard si estamos en login
+          if (location.pathname === '/login' || location.pathname === '/') {
+            navigate('/dashboard');
+          }
+        } else {
+          setUser(null);
+          localStorage.removeItem('auth0_token');
+        }
+      } catch (error) {
+        console.error('Error sincronizando usuario:', error);
+        setUser(null);
+      }
+    };
+
+    syncUser();
+  }, [isAuthenticated, isLoading, auth0User, getAccessTokenSilently, auth0Logout, navigate, location.pathname]);
+
+  const authContextValue = {
+    user,
+    logout: () => {
+      auth0Logout({ returnTo: window.location.origin });
+    },
+    isAdmin: user?.isAdmin || false
+  };
+
+  return (
+    <AuthContext.Provider value={authContextValue}>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/dashboard"
+          element={
+            <PrivateRoute>
+              <DashboardPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PrivateRoute>
+              <RegisterUserPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/search"
+          element={
+            <PrivateRoute>
+              <UserSearchPage />
+            </PrivateRoute>
+          }
+        />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </AuthContext.Provider>
+  );
+}

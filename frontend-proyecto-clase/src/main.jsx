@@ -16,8 +16,8 @@ import './App.css';
 const container = document.getElementById('root');
 const root = createRoot(container);
 
-const domain = import.meta.env.VITE_AUTH0_DOMAIN;
-const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+const domain = "dev-x2nlunlga02cbz17.us.auth0.com";
+const clientId = "h5qDo7ps7iaJSXXmD87GtUIodCzMjaaf";
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
 const extraScope = import.meta.env.VITE_AUTH0_SCOPE || import.meta.env.VITE_AUTH0_API_SCOPE;
 const defaultScopes = ['openid', 'profile', 'email'];
@@ -41,11 +41,12 @@ root.render(
       clientId={clientId}
       authorizationParams={{
         redirect_uri: window.location.origin,
-        ...(audience ? { audience } : {}),
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
         scope: scopes
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"
+      useRefreshTokensFallback={true}
     >
       <BrowserRouter>
         <App />

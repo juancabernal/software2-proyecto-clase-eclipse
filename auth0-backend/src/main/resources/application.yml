@@ -8,8 +8,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # Importante: sin corchetes y con "/" final
           issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
+          audience: https://client-app.api
       client:
         registration:
           auth0:

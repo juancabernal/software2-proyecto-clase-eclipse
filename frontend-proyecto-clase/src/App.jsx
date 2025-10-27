@@ -21,18 +21,25 @@ import UserSearchPage from './pages/UserSearchPage';
  */
 const AuthContext = createContext({
   user: null,
-  loginWithCredentials: async () => {},
-  logout: () => {}
+  logout: () => {},
+  isAdmin: false
 });
 
 export const useAuth = () => useContext(AuthContext);
 
 /* Componente que protege rutas para administradores */
 function PrivateRoute({ children }) {
+  const { isAuthenticated, isLoading } = useAuth0();
   const { user } = useAuth();
-  if (!user) {
+
+  if (isLoading) {
+    return <div>Cargando...</div>;
+  }
+
+  if (!isAuthenticated || !user?.isAdmin) {
     return <Navigate to="/login" replace />;
   }
+
   return children;
 }
 
@@ -44,8 +51,8 @@ export default function App() {
     user: auth0User,
     isAuthenticated,
     isLoading,
-    logout: auth0Logout,
     loginWithRedirect,
+    logout: auth0Logout,
     getAccessTokenSilently,
     getIdTokenClaims,
     error: auth0Error
@@ -70,46 +77,18 @@ export default function App() {
   const API_SCOPE = import.meta.env.VITE_AUTH0_API_SCOPE || import.meta.env.VITE_AUTH0_SCOPE;
 
   // Helpers relacionados con roles provenientes de Auth0
-  const extractRoles = (claims, profile) => {
-    const roles = new Set();
-    const possibleKeys = [
-      ADMIN_CLAIM,
-      'roles',
-      'role',
-      'permissions',
-      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
-      `${domainNamespace}roles`,
-      `${domainNamespace}permissions`
-    ].filter(Boolean);
+const extractRoles = (claims) => {
+  const namespace = import.meta.env.VITE_AUTH0_DOMAIN
+    ? `https://${import.meta.env.VITE_AUTH0_DOMAIN}/`
+    : '';
+  return (
+    claims?.[`${namespace}roles`] ||
+    claims?.roles ||
+    claims?.permissions ||
+    []
+  );
+};
 
-    const readFromSource = (source) => {
-      if (!source) return;
-
-      possibleKeys.forEach((key) => {
-        const value = source[key];
-        if (Array.isArray(value)) {
-          value.filter(Boolean).forEach((r) => roles.add(r));
-        } else if (typeof value === 'string') {
-          roles.add(value);
-        }
-      });
-
-      Object.values(source).forEach((value) => {
-        if (Array.isArray(value)) {
-          value.filter(Boolean).forEach((r) => roles.add(r));
-        }
-      });
-    };
-
-    readFromSource(claims);
-    readFromSource(profile);
-
-    if (profile?.app_metadata?.roles) {
-      profile.app_metadata.roles.filter(Boolean).forEach((r) => roles.add(r));
-    }
-
-    return Array.from(roles);
-  };
 
   const isAdminAuth0 = (claims, profile) => {
     if (!profile) return false;
@@ -119,14 +98,19 @@ export default function App() {
 
   // Sincroniza el usuario de Auth0 con el AuthContext local para no cambiar el resto de la app
   useEffect(() => {
+    if (isLoading) return; // Esperar a que Auth0 termine de cargar
+
     const syncSession = async () => {
       if (isAuthenticated && auth0User) {
         try {
-          console.log('=== Debug Auth0 ===');
-          console.log('User profile:', auth0User);
-          const claims = await getIdTokenClaims();
-          const roles = extractRoles(claims, auth0User);
-
+          const accessToken = await getAccessTokenSilently({
+  authorizationParams: {
+    audience: API_AUDIENCE,
+    scope: API_SCOPE
+  }
+});
+const decoded = JSON.parse(atob(accessToken.split('.')[1]));
+const roles = extractRoles(decoded, auth0User);
           if (!roles.includes(ADMIN_ROLE)) {
             console.log('Usuario no tiene rol admin - forzando logout');
             await auth0Logout({ returnTo: window.location.origin });
@@ -165,26 +149,33 @@ export default function App() {
         } catch (e) {
           console.error('Error al verificar roles:', e);
         }
-      } else if (!isLoading) {
+      } else {
+        // No autenticado o error
         setUser(null);
+        if (location.pathname !== '/login' && location.pathname !== '/') {
+          navigate('/login', { replace: true });
+        }
       }
 
-      console.log('Auth0 isAuthenticated=', isAuthenticated);
+      // Solo loguear en desarrollo
+      if (import.meta.env.DEV) {
+        console.log('Auth0 state:', { 
+          isAuthenticated, 
+          isLoading, 
+          hasUser: !!auth0User 
+        });
+      }
     };
 
     syncSession();
   }, [
-    API_AUDIENCE,
-    API_SCOPE,
-    ADMIN_ROLE,
-    auth0Logout,
     auth0User,
-    getAccessTokenSilently,
-    getIdTokenClaims,
     isAuthenticated,
     isLoading,
+    getAccessTokenSilently,
     location.pathname,
-    navigate
+    navigate,
+    auth0Logout
   ]);
 
   /**

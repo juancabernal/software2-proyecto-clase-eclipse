@@ -56,25 +56,16 @@ export default function LoginForm() {
   const handleOAuth = async (provider) => {
     setSubmitting(true);
     try {
-      console.log('Starting OAuth login for provider:', provider);
-      // Usar Auth0 para iniciar el flujo de login con la conexión adecuada
       const connection = provider === 'google' ? 'google-oauth2' : 'github';
-      console.log('Calling loginWithRedirect with connection:', connection);
       await loginWithRedirect({
+        appState: { returnTo: window.location.pathname },
         authorizationParams: {
           connection,
-          redirect_uri: window.location.origin,
-          ...(import.meta.env.VITE_AUTH0_AUDIENCE
-            ? { audience: import.meta.env.VITE_AUTH0_AUDIENCE }
-            : {}),
-          scope:
-            [
-              'openid profile email',
-              import.meta.env.VITE_AUTH0_API_SCOPE || import.meta.env.VITE_AUTH0_SCOPE || ''
-            ]
-              .filter(Boolean)
-              .join(' '),
-          prompt: 'login'
+          prompt: 'login',
+          connection: provider === 'google' ? 'google-oauth2' : 'github',
+          redirect_uri: "http://localhost:5173",
+          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          scope: "openid profile email"
         }
       });
       // La redirección manejará el resto; Auth0Provider en main.jsx sincroniza el estado
