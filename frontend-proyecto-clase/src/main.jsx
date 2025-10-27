@@ -16,19 +16,33 @@ import './App.css';
 const container = document.getElementById('root');
 const root = createRoot(container);
 
+const domain = import.meta.env.VITE_AUTH0_DOMAIN;
+const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
+const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
+const extraScope = import.meta.env.VITE_AUTH0_SCOPE || import.meta.env.VITE_AUTH0_API_SCOPE;
+const defaultScopes = ['openid', 'profile', 'email'];
+const scopes = [...defaultScopes, ...(extraScope ? extraScope.split(' ') : [])]
+  .filter(Boolean)
+  .join(' ');
+
+if (!domain || !clientId) {
+  console.warn('Auth0 configuration is missing domain and/or client id.');
+}
+
 // Debug: mostrar variables de entorno (sin exponer secrets)
-console.log('VITE_AUTH0_DOMAIN=', import.meta.env.VITE_AUTH0_DOMAIN);
-console.log('VITE_AUTH0_CLIENT_ID=', import.meta.env.VITE_AUTH0_CLIENT_ID);
+console.log('VITE_AUTH0_DOMAIN=', domain);
+console.log('VITE_AUTH0_CLIENT_ID=', clientId);
+console.log('VITE_AUTH0_AUDIENCE=', audience);
 
 root.render(
   <React.StrictMode>
     <Auth0Provider
-      domain={import.meta.env.VITE_AUTH0_DOMAIN}
-      clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
+      domain={domain}
+      clientId={clientId}
       authorizationParams={{
         redirect_uri: window.location.origin,
-        audience: `https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/`,
-        scope: 'openid profile email read write'
+        ...(audience ? { audience } : {}),
+        scope: scopes
       }}
       useRefreshTokens={true}
       cacheLocation="localstorage"
