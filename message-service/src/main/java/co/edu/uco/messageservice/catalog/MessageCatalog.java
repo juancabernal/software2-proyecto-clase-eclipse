@@ -58,6 +58,9 @@ public class MessageCatalog {
 				"Se enviará la estrategia de confirmación del número móvil.");
 		register("register.user.rule.mobile.confirmation.pending",
 				"El número móvil debe ser confirmado para finalizar el registro.");
+		register("list.users.validation.page.negative", "La página solicitada no puede ser negativa.");
+		register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
+	}
 	}
 
 	public static Message getMessageValue(String key) {

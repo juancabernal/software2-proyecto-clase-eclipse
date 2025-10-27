@@ -5,9 +5,6 @@ spring:
   application:
     name: api-gateway
   cloud:
-    loadbalancer:
-      ribbon:
-        enabled: false
     gateway:
       globalcors:
         add-to-simple-url-handler-mapping: true
@@ -34,28 +31,6 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
-      routes:
-<<<<<<< HEAD
-        - id: auth-service
-          uri: lb://CLIENT-APP
-          predicates:
-            - Path=/auth/**
-          filters:
-            - StripPrefix=1
-=======
-        - id: parameters-microservice
-          uri: lb://PARAMETERS-SERVICE
-          predicates:
-            - Path=/parameters/api/v1/parameters/**
-        - id: uco-challenge
-          uri: lb://UCOCHALLENGE
-          predicates:
-            - Path=/uco-challenge/api/v1/users/**
-        - id: message-service
-          uri: lb://MESSAGE-SERVICE
-          predicates:
-            - Path=/messages/api/v1/messages/**
->>>>>>> 9a3cea5567b6387ddb4cb794f64168d34849003f
 
 eureka:
   client:
@@ -65,7 +40,6 @@ eureka:
     fetch-registry: true
   instance:
     prefer-ip-address: true
-    instance-id: ${spring.application.name}:${random.uuid}
 
 management:
   endpoints:
@@ -77,7 +51,6 @@ management:
       access: read-only
     health:
       show-details: always
-
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
