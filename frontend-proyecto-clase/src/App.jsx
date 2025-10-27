@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth0 } from '@auth0/auth0-react';
@@ -11,7 +11,6 @@ import RegisterUserPage from './pages/RegisterUserPage';
 import UserSearchPage from './pages/UserSearchPage';
 
 /* Components (se asume que existan) */
-import Navbar from './components/Navbar';
 
 /**
  * AuthContext (frontend-only, simulado)
@@ -23,7 +22,6 @@ import Navbar from './components/Navbar';
 const AuthContext = createContext({
   user: null,
   loginWithCredentials: async () => {},
-  loginWithOAuth: async () => {},
   logout: () => {}
 });
 
@@ -42,11 +40,14 @@ function PrivateRoute({ children }) {
 export default function App() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
-  const { 
-    user: auth0User, 
-    isAuthenticated, 
+  const {
+    user: auth0User,
+    isAuthenticated,
+    isLoading,
     logout: auth0Logout,
+    loginWithRedirect,
     getAccessTokenSilently,
+    getIdTokenClaims,
     error: auth0Error
   } = useAuth0();
 
@@ -57,185 +58,153 @@ export default function App() {
     }
   }, [auth0Error]);
   const location = useLocation();
-  const ADMIN_CLAIM = import.meta.env.VITE_AUTH0_ADMIN_CLAIM || '';
+  const interceptorsConfiguredRef = useRef(false);
+  const ADMIN_ROLE = import.meta.env.VITE_AUTH0_ADMIN_ROLE || 'admin';
+  const domainNamespace = import.meta.env.VITE_AUTH0_DOMAIN
+    ? `https://${import.meta.env.VITE_AUTH0_DOMAIN}/`
+    : '';
+  const ADMIN_CLAIM =
+    import.meta.env.VITE_AUTH0_ADMIN_CLAIM ||
+    (domainNamespace ? `${domainNamespace}roles` : 'roles');
+  const API_AUDIENCE = import.meta.env.VITE_AUTH0_AUDIENCE;
+  const API_SCOPE = import.meta.env.VITE_AUTH0_API_SCOPE || import.meta.env.VITE_AUTH0_SCOPE;
 
-  // Helper: intenta determinar si el usuario de Auth0 tiene el rol 'admin'.
-  const isAdminAuth0 = (au) => {
-    if (!au) return false;
-
-    // Propiedades comunes donde se pueden encontrar roles/permissions
-    const possible = [
+  // Helpers relacionados con roles provenientes de Auth0
+  const extractRoles = (claims, profile) => {
+    const roles = new Set();
+    const possibleKeys = [
+      ADMIN_CLAIM,
       'roles',
       'role',
       'permissions',
       'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
-    ];
+      `${domainNamespace}roles`,
+      `${domainNamespace}permissions`
+    ].filter(Boolean);
 
-    for (const k of possible) {
-      if (Array.isArray(au[k]) && au[k].includes('admin')) return true;
-      if (typeof au[k] === 'string' && au[k] === 'admin') return true;
-    }
+    const readFromSource = (source) => {
+      if (!source) return;
 
-    // Si el proyecto definió una claim específica en .env, usarla (soporta rutas con puntos)
-    if (ADMIN_CLAIM) {
-      const getByPath = (obj, path) => {
-        if (!obj) return undefined;
-        if (path.includes('.')) {
-          return path.split('.').reduce((acc, key) => (acc ? acc[key] : undefined), obj);
+      possibleKeys.forEach((key) => {
+        const value = source[key];
+        if (Array.isArray(value)) {
+          value.filter(Boolean).forEach((r) => roles.add(r));
+        } else if (typeof value === 'string') {
+          roles.add(value);
         }
-        return obj[path];
-      };
+      });
 
-      const claimVal = getByPath(au, ADMIN_CLAIM) || au[ADMIN_CLAIM];
-      if (Array.isArray(claimVal) && claimVal.includes('admin')) return true;
-      if (typeof claimVal === 'string' && claimVal === 'admin') return true;
+      Object.values(source).forEach((value) => {
+        if (Array.isArray(value)) {
+          value.filter(Boolean).forEach((r) => roles.add(r));
+        }
+      });
+    };
+
+    readFromSource(claims);
+    readFromSource(profile);
+
+    if (profile?.app_metadata?.roles) {
+      profile.app_metadata.roles.filter(Boolean).forEach((r) => roles.add(r));
     }
 
-    // Buscar en claims personalizados: cualquier claim que sea array y contenga 'admin'
-    for (const k of Object.keys(au)) {
-      const val = au[k];
-      if (Array.isArray(val) && val.includes('admin')) return true;
-    }
+    return Array.from(roles);
+  };
 
-    // app_metadata.roles es otra ubicación común
-    if (au.app_metadata && Array.isArray(au.app_metadata.roles) && au.app_metadata.roles.includes('admin')) return true;
-
-    return false;
+  const isAdminAuth0 = (claims, profile) => {
+    if (!profile) return false;
+    const roles = extractRoles(claims, profile);
+    return roles.includes(ADMIN_ROLE);
   };
 
   // Sincroniza el usuario de Auth0 con el AuthContext local para no cambiar el resto de la app
   useEffect(() => {
-    const checkUserAndRoles = async () => {
+    const syncSession = async () => {
       if (isAuthenticated && auth0User) {
         try {
           console.log('=== Debug Auth0 ===');
           console.log('User profile:', auth0User);
-          
-          // Obtener token con scope para roles
-          const token = await getAccessTokenSilently({
-            authorizationParams: {
-              audience: `https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/`,
-              scope: 'read:roles'
-            }
-          });
+          const claims = await getIdTokenClaims();
+          const roles = extractRoles(claims, auth0User);
 
-          // Llamar a la API de gestión de Auth0 para obtener roles
-          const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${auth0User.sub}/roles`, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
+          if (!roles.includes(ADMIN_ROLE)) {
+            console.log('Usuario no tiene rol admin - forzando logout');
+            await auth0Logout({ returnTo: window.location.origin });
+            setUser(null);
+            if (location.pathname !== '/login') navigate('/login', { replace: true });
+            setTimeout(() => alert('Acceso denegado: tu cuenta no tiene el rol de administrador.'), 300);
+            return;
+          }
 
-          if (response.ok) {
-            const roles = await response.json();
-            console.log('Roles del usuario:', roles);
-            
-            // Si el usuario tiene rol admin, sincronizar en el estado local
-            if (roles.some(role => role.name === 'admin')) {
-              const adminUser = {
-                id: auth0User.sub,
-                name: auth0User.name || auth0User.nickname || 'Usuario',
-                email: auth0User.email,
-                role: 'admin',
-                provider: auth0User.sub.split('|')[0]
-              };
-              setUser(adminUser);
-              
-              // Si venimos de login, redirigir al dashboard
-              if (location.pathname === '/login') {
-                navigate('/dashboard', { replace: true });
-              }
-            } else {
-              console.log('Usuario no tiene rol admin - forzando logout');
-              await auth0Logout();
-            }
+          const adminUser = {
+            id: auth0User.sub,
+            name: auth0User.name || auth0User.nickname || 'Usuario',
+            email: auth0User.email,
+            role: ADMIN_ROLE,
+            roles,
+            provider: auth0User.sub.split('|')[0]
+          };
+
+          setUser(adminUser);
+
+          if (location.pathname === '/login' || location.pathname === '/') {
+            navigate('/dashboard', { replace: true });
+          }
+
+          if (!interceptorsConfiguredRef.current) {
+            setupInterceptors(() =>
+              getAccessTokenSilently({
+                authorizationParams: {
+                  ...(API_AUDIENCE ? { audience: API_AUDIENCE } : {}),
+                  ...(API_SCOPE ? { scope: API_SCOPE } : {}),
+                }
+              })
+            );
+            interceptorsConfiguredRef.current = true;
           }
         } catch (e) {
           console.error('Error al verificar roles:', e);
         }
+      } else if (!isLoading) {
+        setUser(null);
       }
+
       console.log('Auth0 isAuthenticated=', isAuthenticated);
     };
-    
-    checkUserAndRoles();
 
-    // Cuando Auth0 indica autenticación, decidir si es admin
-    if (isAuthenticated && auth0User) {
-      const admin = isAdminAuth0(auth0User);
-
-      if (!admin) {
-        // Si no es admin, forzamos logout en Auth0 y no permitimos el acceso
-        try {
-          if (auth0Logout) auth0Logout({ returnTo: window.location.origin });
-        } catch (e) {
-          console.warn('Error al ejecutar auth0Logout para usuario no admin:', e);
-        }
-        setUser(null);
-        // Mantener al usuario en /login (o redirigir ahí)
-        if (location.pathname !== '/login') navigate('/login', { replace: true });
-        // Feedback mínimo sin tocar diseño
-        setTimeout(() => alert('Acceso denegado: tu cuenta no tiene el rol de administrador.'), 300);
-        return;
-      }
-
-      const synced = {
-        id: auth0User.sub,
-        name: auth0User.name || auth0User.nickname || 'Usuario',
-        email: auth0User.email,
-        role: 'admin',
-        provider: auth0User.sub && auth0User.sub.split('|')[0],
-      };
-      setUser(synced);
-
-      // Si venimos del flujo de login (o estamos en /login), redirigimos al dashboard
-      if (location.pathname === '/login' || location.pathname === '/') {
-        navigate('/dashboard', { replace: true });
-      }
-    } else if (!isAuthenticated) {
-      setUser(null);
-    }
-
-    // Configurar interceptor de Axios cuando el usuario está autenticado
-    if (isAuthenticated) {
-      setupInterceptors();
-    }
-  }, [isAuthenticated, auth0User]);
+    syncSession();
+  }, [
+    API_AUDIENCE,
+    API_SCOPE,
+    ADMIN_ROLE,
+    auth0Logout,
+    auth0User,
+    getAccessTokenSilently,
+    getIdTokenClaims,
+    isAuthenticated,
+    isLoading,
+    location.pathname,
+    navigate
+  ]);
 
   /**
    * Simula login con usuario/password (frontend-only).
    * Recibe un objeto { email, name } del LoginForm y setea el usuario.
    * Después de "loguear", navega al dashboard.
    */
-  const loginWithCredentials = async ({ email, name }) => {
-    // Validaciones / checks pueden hacerse en el LoginForm; aquí solo simulamos éxito.
-    const adminUser = {
-      id: 'admin-1',
-      name: name || 'Administrador',
-      email,
-      role: 'admin',
-    };
-    setUser(adminUser);
-    navigate('/dashboard', { replace: true });
-  };
-
-  /**
-   * Simula login vía OAuth (Google / GitHub).
-   * `provider` es 'google' | 'github' (mapeo visual en OAuthButtons).
-   */
-  const loginWithOAuth = async (provider) => {
-    // placeholder: aquí llamarías a tu flujo OAuth real
-    const oauthUser = {
-      id: `oauth-${provider}-1`,
-      name: provider === 'google' ? 'Admin Google' : 'Admin GitHub',
-      email: provider === 'google' ? 'admin@google.com' : 'admin@github.com',
-      provider,
-      role: 'admin',
-    };
-
-    // simulación suave de animación/retardo
-    await new Promise((res) => setTimeout(res, 350));
-    setUser(oauthUser);
-    navigate('/dashboard', { replace: true });
+  const loginWithCredentials = async ({ email }) => {
+    try {
+      await loginWithRedirect({
+        authorizationParams: {
+          login_hint: email,
+          ...(API_AUDIENCE ? { audience: API_AUDIENCE } : {}),
+          scope: ['openid profile email', API_SCOPE].filter(Boolean).join(' ').trim() || 'openid profile email',
+          redirect_uri: window.location.origin,
+        },
+      });
+    } catch (error) {
+      console.error('Error iniciando sesión con Auth0:', error);
+    }
   };
 
   const logout = () => {
@@ -256,7 +225,6 @@ export default function App() {
   const authValue = {
     user,
     loginWithCredentials,
-    loginWithOAuth,
     logout,
   };
 

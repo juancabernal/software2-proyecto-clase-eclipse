@@ -46,6 +46,6 @@ logging:
 
 services:
   parameters:
-    base-url: http://localhost:8082
+    base-url: http://localhost:8085/parameters-service/parameters/api/v1/parameters
   message:
-    base-url: http://localhost:8083
+    base-url: http://localhost:8085/message-service/messages/api/v1/messages
