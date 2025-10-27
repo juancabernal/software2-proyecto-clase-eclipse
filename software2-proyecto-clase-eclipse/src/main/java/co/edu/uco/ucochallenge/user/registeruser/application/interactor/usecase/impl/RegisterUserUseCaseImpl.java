@@ -3,25 +3,24 @@ package co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase
 import org.springframework.stereotype.Service;
 
 import co.edu.uco.ucochallenge.application.Void;
-import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.UserEntity;
-import co.edu.uco.ucochallenge.secondary.ports.repository.UserRepository;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.mapper.RegisterUserMapper;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.RegisterUserUseCase;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules.RegisterUserContext;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules.RegisterUserRuleNames;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules.RuleEngine;
 import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
+import co.edu.uco.ucochallenge.user.shared.application.port.out.UserPersistencePort;
 
 @Service
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
-	private final UserRepository repository;
+    private final UserPersistencePort userPersistencePort;
     private final RuleEngine ruleEngine;
     private final RegisterUserMapper mapper;
 
-    public RegisterUserUseCaseImpl(final UserRepository repository, final RuleEngine ruleEngine,
+    public RegisterUserUseCaseImpl(final UserPersistencePort userPersistencePort, final RuleEngine ruleEngine,
             final RegisterUserMapper mapper) {
-    this.repository = repository;
+        this.userPersistencePort = userPersistencePort;
     this.ruleEngine = ruleEngine;
     this.mapper = mapper;
 }
@@ -34,9 +33,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 		applyFormatRules(context);
 		applyUniquenessRules(context);
 
-        UserEntity userEntity = mapper.toEntity(domain);
-
-        repository.save(userEntity);
+        userPersistencePort.save(domain);
         return Void.returnVoid();
 }
 

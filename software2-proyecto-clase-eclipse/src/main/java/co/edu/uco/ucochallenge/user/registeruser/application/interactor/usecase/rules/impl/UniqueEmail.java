@@ -6,8 +6,8 @@ import co.edu.uco.ucochallenge.crosscuting.exception.ExceptionLayer;
 import co.edu.uco.ucochallenge.crosscuting.exception.UcoChallengeException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
-import co.edu.uco.ucochallenge.secondary.ports.repository.UserRepository;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules.RegisterUserRuleNames;
+import co.edu.uco.ucochallenge.user.shared.application.port.out.UserPersistencePort;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
@@ -15,10 +15,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class UniqueEmail implements Rule<RegisterUserContext> {
 	
-    private final UserRepository userRepository;
+    private final UserPersistencePort userPersistencePort;
 
-    public UniqueEmail(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UniqueEmail(UserPersistencePort userPersistencePort) {
+        this.userPersistencePort = userPersistencePort;
     }
 
 	
@@ -37,7 +37,7 @@ public class UniqueEmail implements Rule<RegisterUserContext> {
         }
 
         try {
-            if (userRepository.existsByEmailIgnoreCase(email)) {
+            if (userPersistencePort.existsByEmailIgnoreCase(email)) {
                 throw UcoChallengeException.createUserException(
                         ExceptionLayer.RULE,
                         MessageKey.RegisterUser.RULE_EMAIL_DUPLICATED_OWNER);

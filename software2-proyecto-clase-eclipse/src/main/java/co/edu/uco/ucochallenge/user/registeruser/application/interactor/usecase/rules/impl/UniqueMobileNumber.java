@@ -6,19 +6,19 @@ import co.edu.uco.ucochallenge.crosscuting.exception.ExceptionLayer;
 import co.edu.uco.ucochallenge.crosscuting.exception.UcoChallengeException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
-import co.edu.uco.ucochallenge.secondary.ports.repository.UserRepository;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.rules.RegisterUserRuleNames;
+import co.edu.uco.ucochallenge.user.shared.application.port.out.UserPersistencePort;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UniqueMobileNumber implements Rule<RegisterUserContext> {
 
-	private final UserRepository userRepository;
+        private final UserPersistencePort userPersistencePort;
 
-	public UniqueMobileNumber(UserRepository userRepository) {
-		this.userRepository = userRepository;
-	}
+        public UniqueMobileNumber(UserPersistencePort userPersistencePort) {
+                this.userPersistencePort = userPersistencePort;
+        }
 
 	@Override
 	public String getName() {
@@ -34,7 +34,7 @@ public class UniqueMobileNumber implements Rule<RegisterUserContext> {
 		}
 
 		try {
-			if (userRepository.existsByMobileNumber(mobileNumber)) {
+                        if (userPersistencePort.existsByMobileNumber(mobileNumber)) {
 				throw UcoChallengeException.createUserException(ExceptionLayer.RULE,
 						MessageKey.RegisterUser.RULE_MOBILE_DUPLICATED_OWNER);
 			}
