@@ -12,7 +12,7 @@ import OAuthButtons from './OAuthButtons';
  * - Botones de OAuth (Google / GitHub)
  */
 export default function LoginForm() {
-  const { loginWithCredentials, loginWithOAuth } = useAuth();
+  const { loginWithCredentials } = useAuth();
   const { loginWithRedirect } = useAuth0();
 
   // estado del formulario
@@ -64,7 +64,16 @@ export default function LoginForm() {
         authorizationParams: {
           connection,
           redirect_uri: window.location.origin,
-          scope: 'openid profile email',
+          ...(import.meta.env.VITE_AUTH0_AUDIENCE
+            ? { audience: import.meta.env.VITE_AUTH0_AUDIENCE }
+            : {}),
+          scope:
+            [
+              'openid profile email',
+              import.meta.env.VITE_AUTH0_API_SCOPE || import.meta.env.VITE_AUTH0_SCOPE || ''
+            ]
+              .filter(Boolean)
+              .join(' '),
           prompt: 'login'
         }
       });
