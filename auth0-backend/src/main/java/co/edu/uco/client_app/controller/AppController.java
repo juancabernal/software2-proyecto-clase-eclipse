@@ -7,6 +7,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+
+@CrossOrigin(
+	    origins = {"http://localhost:5173", "http://localhost:5174"},
+	    allowedHeaders = "*",
+	    allowCredentials = "true"
+	)
+
 @RestController
 public class AppController {
 
