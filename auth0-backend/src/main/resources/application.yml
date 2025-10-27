@@ -1,0 +1,27 @@
+spring:
+  security:
+    oauth2:
+      # 1. Para que tu app valide tokens (si es una API)
+      resourceserver:
+        jwt:
+          # Usa el "Domain" de Auth0. ¡Asegúrate de incluir "https://" y la barra "/" al final!
+          issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
+
+      # 2. Para que tu app permita iniciar sesión (si es una web)
+      client:
+        registration:
+          # "auth0" es el ID de registro. Debe coincidir con la URL de callback
+          auth0:
+            client-id: h5qDo7ps7iaJSXXmD87GtUIodCzMjaaf
+            client-secret: 8cg0xj7CaF5LNU9n2eiU2TLhEUZlDRC0LtAP6pp1O_aEYpP_kAINjEDNKwlAqsz_
+            # Spring Boot infiere los endpoints del 'issuer-uri' del proveedor
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          # El nombre aquí ("auth0") debe coincidir con el de arriba
+          auth0:
+            # Usa el "Domain" de Auth0 de nuevo.
+            issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
