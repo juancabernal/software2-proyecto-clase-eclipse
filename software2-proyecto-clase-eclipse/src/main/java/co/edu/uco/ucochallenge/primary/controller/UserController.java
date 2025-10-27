@@ -2,10 +2,7 @@ package co.edu.uco.ucochallenge.primary.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
 import co.edu.uco.ucochallenge.secondary.ports.service.MessageServicePort;
@@ -33,4 +30,5 @@ public class UserController {
             registerUserInteractor.execute(normalizedDTO);
             return new ResponseEntity<String>(message, HttpStatus.CREATED);
     }
+
 }
