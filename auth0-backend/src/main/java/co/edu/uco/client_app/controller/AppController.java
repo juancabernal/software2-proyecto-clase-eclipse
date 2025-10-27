@@ -7,10 +7,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 527b0cb03d8429091b574e2a6d0a385d0bbe5054
 @CrossOrigin(
     origins = {"http://localhost:5173", "http://localhost:5174"},
     allowedHeaders = "*",
