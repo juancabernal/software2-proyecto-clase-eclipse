@@ -8,6 +8,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          # Importante: sin corchetes y con "/" final
           issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
       client:
         registration:
@@ -21,7 +22,7 @@ spring:
               - email
         provider:
           auth0:
-<<<<<<< HEAD
+            # Misma URL del issuer; sin [] y con "/" final
             issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
 
 eureka:
@@ -42,7 +43,3 @@ management:
   endpoint:
     health:
       show-details: always
-=======
-            # Usa el "Domain" de Auth0 de nuevo.
-            issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
->>>>>>> 51446c1e351479da4b9dd1828b7b003183ce86c1
