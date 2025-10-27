@@ -26,6 +26,8 @@ management:
       exposure:
         include: health,info,gateway
   endpoint:
+    gateway:
+      access: read-only
     health:
       show-details: always
 
