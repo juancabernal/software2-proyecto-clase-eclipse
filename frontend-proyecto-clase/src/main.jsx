@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { Auth0Provider } from '@auth0/auth0-react';
 
 import App from './App';
 
@@ -15,10 +16,26 @@ import './App.css';
 const container = document.getElementById('root');
 const root = createRoot(container);
 
+// Debug: mostrar variables de entorno (sin exponer secrets)
+console.log('VITE_AUTH0_DOMAIN=', import.meta.env.VITE_AUTH0_DOMAIN);
+console.log('VITE_AUTH0_CLIENT_ID=', import.meta.env.VITE_AUTH0_CLIENT_ID);
+
 root.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <Auth0Provider
+      domain={import.meta.env.VITE_AUTH0_DOMAIN}
+      clientId={import.meta.env.VITE_AUTH0_CLIENT_ID}
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        audience: `https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/`,
+        scope: 'openid profile email read write'
+      }}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
+    >
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </Auth0Provider>
   </React.StrictMode>
 );

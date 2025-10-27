@@ -2,8 +2,14 @@ import React from "react";
 import googleLogo from "../assets/google.svg";
 import githubLogo from "../assets/github.svg";
 
-export default function OAuthButtons() {
-  const handleClick = (provider) => alert(`${provider} login simulado`);
+export default function OAuthButtons({ onGoogle, onGithub, disabled }) {
+  const handleClick = (provider) => {
+    if (disabled) return;
+    if (provider === 'google' && typeof onGoogle === 'function') return onGoogle();
+    if (provider === 'github' && typeof onGithub === 'function') return onGithub();
+    // fallback: no-op
+    return null;
+  };
 
   const buttonStyle = {
     width: "48%",
@@ -27,7 +33,8 @@ export default function OAuthButtons() {
     <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
       <button
         style={buttonStyle}
-        onClick={() => handleClick("Google")}
+        onClick={() => handleClick("google")}
+        disabled={disabled}
         onMouseOver={(e) => (e.currentTarget.style.borderColor = "#fefefeff")}
         onMouseOut={(e) => (e.currentTarget.style.borderColor = "#050505ff")}
       >
@@ -37,7 +44,8 @@ export default function OAuthButtons() {
 
       <button
         style={buttonStyle}
-        onClick={() => handleClick("GitHub")}
+        onClick={() => handleClick("github")}
+        disabled={disabled}
         onMouseOver={(e) => (e.currentTarget.style.borderColor = "#fefefeff")}
         onMouseOut={(e) => (e.currentTarget.style.borderColor = "#050505ff")}
       >
