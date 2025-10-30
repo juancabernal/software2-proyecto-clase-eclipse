@@ -5,7 +5,11 @@
     <file url="file://$PROJECT_DIR$/auth0-backend/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/eureka-server/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/message-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/observability-confi/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/observability-confi/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/parameters-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/prueba/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/prueba/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/software2-proyecto-clase-eclipse/src/main/java" charset="UTF-8" />
   </component>
 </project>

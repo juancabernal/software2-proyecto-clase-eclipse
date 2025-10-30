@@ -8,6 +8,7 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway" />
+        <module name="observability-confi" />
         <module name="client-app" />
         <module name="eureka-server" />
         <module name="message-service" />
@@ -24,6 +25,9 @@
         <module name="uco-challenge" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="prueba" target="21" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
@@ -31,6 +35,7 @@
       <module name="client-app" options="-parameters" />
       <module name="eureka-server" options="-parameters" />
       <module name="message-service" options="-parameters" />
+      <module name="observability-confi" options="-parameters" />
       <module name="parameters-service" options="-parameters" />
       <module name="uco-challenge" options="-parameters" />
     </option>

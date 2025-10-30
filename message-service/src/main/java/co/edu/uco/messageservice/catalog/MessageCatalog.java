@@ -3,9 +3,9 @@ package co.edu.uco.messageservice.catalog;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class MessageCatalog {
+public final class MessageCatalog {
 
-	private static final Map<String, Message> messages = new ConcurrentHashMap<>();
+	private static final Map<String, Message> MESSAGES = new ConcurrentHashMap<>();
 
 	static {
 		register("exception.general.unexpected",
@@ -61,10 +61,13 @@ public class MessageCatalog {
 		register("list.users.validation.page.negative", "La página solicitada no puede ser negativa.");
 		register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
 	}
+
+	private MessageCatalog() {
+		// Evitar instanciación
 	}
 
 	public static Message getMessageValue(String key) {
-		return messages.get(key);
+		return MESSAGES.get(key);
 	}
 
 	public static void synchronizeMessageValue(Message message) {
@@ -72,15 +75,14 @@ public class MessageCatalog {
 	}
 
 	public static Message removeMessage(String key) {
-		return messages.remove(key);
+		return MESSAGES.remove(key);
 	}
 
 	public static Map<String, Message> getAllMessages() {
-		return messages;
+		return MESSAGES;
 	}
 
 	private static void register(final String key, final String value) {
-		messages.put(key, new Message(key, value));
+		MESSAGES.put(key, new Message(key, value));
 	}
-
 }

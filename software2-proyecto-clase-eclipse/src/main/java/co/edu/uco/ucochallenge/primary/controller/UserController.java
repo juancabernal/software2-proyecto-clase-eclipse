@@ -2,16 +2,16 @@ package co.edu.uco.ucochallenge.primary.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-<<<<<<< HEAD
+
 import org.springframework.web.bind.annotation.*;
-=======
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
->>>>>>> 7acc2a237779a5f2233b9770e98d187dd723b1c9
+
 
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageKey;
 import co.edu.uco.ucochallenge.secondary.ports.service.MessageServicePort;
@@ -44,9 +44,7 @@ public class UserController {
             registerUserInteractor.execute(normalizedDTO);
             return new ResponseEntity<String>(message, HttpStatus.CREATED);
     }
-<<<<<<< HEAD
 
-=======
     
     @GetMapping
     public ResponseEntity<ListUsersOutputDTO> listUsers(
@@ -57,5 +55,5 @@ public class UserController {
             return ResponseEntity.ok(result);
     }
     
->>>>>>> 7acc2a237779a5f2233b9770e98d187dd723b1c9
+
 }
