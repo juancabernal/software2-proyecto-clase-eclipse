@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 server:
   port: 8081
 
@@ -58,3 +59,43 @@ services:
     base-url: http://localhost:8085/parameters-service/parameters/api/v1/parameters
   message:
     base-url: http://localhost:8085/message-service/messages/api/v1/messages
+=======
+spring:
+  application:
+    name: UcoChallenge
+
+  datasource:
+    # Si Key Vault no entrega db-url, usará esta por defecto.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:ucochallenge}}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
+    hikari:
+      pool-name: ${SPRING_DATASOURCE_POOL_NAME:UcoHikariPool}
+      maximum-pool-size: ${SPRING_DATASOURCE_MAX_POOL_SIZE:10}
+      minimum-idle: ${SPRING_DATASOURCE_MIN_IDLE:1}
+      connection-timeout: ${SPRING_DATASOURCE_CONNECTION_TIMEOUT:30000}
+
+server:
+  port: 8081
+
+services:
+  message:
+    base-url: http://localhost:8082/api/v1/messages
+  parameters:
+    base-url: http://localhost:8083/api/v1/parameters
+
+# 🔹 Azure Key Vault Config
+azure:
+  keyvault:
+    url: https://uco-vault-secrets.vault.azure.net/
+
+# 🔹 Fallbacks locales (solo si Key Vault falla)
+secrets:
+  db-username: ${DB_USERNAME:postgres}
+  db-password: ${DB_PASSWORD:postgres}
+
+logging:
+  level:
+    root: INFO
+    com.azure.identity: INFO
+    co.edu.uco.ucochallenge.infrastructure.secondary.secret: DEBUG
+>>>>>>> 1ca6b77 (Subiendo backend funcional con cumplimiento de pruebas, key vault conectado con Azure y conexión a catálogos de mensajes y parámetros. Se crea tambien el servicio de catalogo de notificaciones pero aún no se implementa... A la espera de fusión con la lógica de notification api)

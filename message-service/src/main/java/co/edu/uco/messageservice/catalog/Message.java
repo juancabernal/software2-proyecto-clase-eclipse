@@ -5,10 +5,13 @@ public class Message {
 	private String key;
 	private String value;
 	
-	public Message(String key, String value) {
-		setKey(key);
-		setValue(value);
-	}
+        public Message() {
+        }
+
+        public Message(String key, String value) {
+                setKey(key);
+                setValue(value);
+        }
 	
 	
 	public String getKey() {

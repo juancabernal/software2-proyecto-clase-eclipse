@@ -5,10 +5,13 @@ public class Parameter {
 	private String key;
 	private String value;
 	
-	public Parameter(String key, String value) {
-		setKey(key);
-		setValue(value);
-	}
+        public Parameter() {
+        }
+
+        public Parameter(String key, String value) {
+                setKey(key);
+                setValue(value);
+        }
 	
 	
 	

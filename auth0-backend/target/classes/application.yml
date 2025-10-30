@@ -1,0 +1,45 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: CLIENT-APP
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
+          audience: https://client-app.api
+      client:
+        registration:
+          auth0:
+            client-id: h5qDo7ps7iaJSXXmD87GtUIodCzMjaaf
+            client-secret: 8cg0xj7CaF5LNU9n2eiU2TLhEUZlDRC0LtAP6pp1O_aEYpP_kAINjEDNKwlAqsz_
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - email
+        provider:
+          auth0:
+            # Misma URL del issuer; sin [] y con "/" final
+            issuer-uri: https://dev-x2nlunlga02cbz17.us.auth0.com/
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+    instance-id: "${spring.application.name}:${spring.cloud.client.ip-address}:${server.port}"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
