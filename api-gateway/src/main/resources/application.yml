@@ -25,7 +25,7 @@ spring:
         - id: parameters-microservice
           uri: lb://PARAMETERS-SERVICE
           predicates:
-            - Path=/parameters/api/v1/parameters/**
+            - Path=/api/v1/parameters/**
 
         - id: uco-challenge
           uri: lb://UCOCHALLENGE
@@ -35,7 +35,7 @@ spring:
         - id: message-service
           uri: lb://MESSAGE-SERVICE
           predicates:
-            - Path=/messages/api/v1/messages/**
+            - Path=/api/v1/messages/**
 
 eureka:
   client:

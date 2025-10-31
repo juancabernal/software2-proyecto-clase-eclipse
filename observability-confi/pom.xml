@@ -40,7 +40,7 @@
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
 
-        <!-- Exportador OTLP (hacia Jaeger/Grafana) -->
+        <!-- Exportador OTLP (hacia Jaeger) -->
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
