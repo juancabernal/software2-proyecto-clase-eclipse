@@ -9,14 +9,14 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH0_ISSUER_URI}
+          issuer-uri: "https://dev-bwqfca2whog4a2tx.us.auth0.com/"
 
 auth0:
-  audience: ${AUTH0_AUDIENCE}
+  audience: "https://uco-challenge-api"
 
 web:
   cors:
-    allowed-origins: ${CORS_ALLOWED_ORIGINS}
+    allowed-origins: "http://localhost:5173"
 
 eureka:
   client:
