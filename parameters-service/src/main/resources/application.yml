@@ -46,8 +46,3 @@ azure:
       endpoint: ${AZURE_KEYVAULT_SECRET_ENDPOINT:${AZURE_KEYVAULT_URL:}}
     credential:
       managed-identity-enabled: ${AZURE_KEYVAULT_MANAGED_IDENTITY:true}
-
-secrets:
-  db-url: ${DB_URL:}
-  db-username: ${DB_USERNAME:}
-  db-password: ${DB_PASSWORD:}

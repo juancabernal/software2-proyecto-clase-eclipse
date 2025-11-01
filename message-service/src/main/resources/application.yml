@@ -47,7 +47,3 @@ azure:
     credential:
       managed-identity-enabled: ${AZURE_KEYVAULT_MANAGED_IDENTITY:true}
 
-secrets:
-  db-url: ${DB_URL:}
-  db-username: ${DB_USERNAME:}
-  db-password: ${DB_PASSWORD:}
