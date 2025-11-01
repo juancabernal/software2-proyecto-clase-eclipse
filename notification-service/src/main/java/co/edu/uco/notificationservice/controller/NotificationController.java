@@ -51,10 +51,9 @@ public class NotificationController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<Notification>> createNotification(@RequestBody Mono<Notification> body) {
-        return body.map(notification -> new Notification(notification.getKey(), notification.getChannel(),
-                notification.getSubject(), notification.getBody()))
-                .flatMap(service::upsert)
+    public Mono<ResponseEntity<Notification>> createNotification(@RequestBody Notification body) {
+        Notification sanitized = new Notification(body.getKey(), body.getChannel(), body.getSubject(), body.getBody());
+        return service.upsert(sanitized)
                 .map(saved -> ResponseEntity.status(HttpStatus.CREATED)
                         .cacheControl(NO_CACHE)
                         .header("Pragma", "no-cache")
@@ -64,9 +63,9 @@ public class NotificationController {
 
     @PutMapping("/{key}")
     public Mono<ResponseEntity<Notification>> modifyNotification(@PathVariable String key,
-            @RequestBody Mono<Notification> body) {
-        return body.map(value -> new Notification(key, value.getChannel(), value.getSubject(), value.getBody()))
-                .flatMap(service::upsert)
+            @RequestBody Notification body) {
+        Notification sanitized = new Notification(key, body.getChannel(), body.getSubject(), body.getBody());
+        return service.upsert(sanitized)
                 .map(saved -> ResponseEntity.ok()
                         .cacheControl(NO_CACHE)
                         .header("Pragma", "no-cache")

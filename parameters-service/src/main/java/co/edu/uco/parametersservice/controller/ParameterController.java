@@ -52,9 +52,9 @@ public class ParameterController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<Parameter>> createParameter(@RequestBody Mono<Parameter> body) {
-        return body.map(parameter -> new Parameter(parameter.getKey(), parameter.getValue()))
-                .flatMap(service::upsert)
+    public Mono<ResponseEntity<Parameter>> createParameter(@RequestBody Parameter body) {
+        Parameter sanitized = new Parameter(body.getKey(), body.getValue());
+        return service.upsert(sanitized)
                 .map(saved -> ResponseEntity.status(HttpStatus.CREATED)
                         .cacheControl(NO_CACHE)
                         .header("Pragma", "no-cache")
@@ -63,9 +63,9 @@ public class ParameterController {
     }
 
     @PutMapping("/{key}")
-    public Mono<ResponseEntity<Parameter>> modifyParameter(@PathVariable String key, @RequestBody Mono<Parameter> body) {
-        return body.map(value -> new Parameter(key, value.getValue()))
-                .flatMap(service::upsert)
+    public Mono<ResponseEntity<Parameter>> modifyParameter(@PathVariable String key, @RequestBody Parameter body) {
+        Parameter sanitized = new Parameter(key, body.getValue());
+        return service.upsert(sanitized)
                 .map(saved -> ResponseEntity.ok()
                         .cacheControl(NO_CACHE)
                         .header("Pragma", "no-cache")
