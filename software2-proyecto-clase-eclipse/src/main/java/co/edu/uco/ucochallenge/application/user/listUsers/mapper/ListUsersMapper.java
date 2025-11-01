@@ -28,6 +28,6 @@ public interface ListUsersMapper {
                             user.secondName(),
                             user.firstSurname(),
                             user.secondSurname());
-    }	
+    }
 	
 }
