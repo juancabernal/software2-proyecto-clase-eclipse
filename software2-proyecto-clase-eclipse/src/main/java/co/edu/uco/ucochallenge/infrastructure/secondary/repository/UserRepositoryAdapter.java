@@ -1,13 +1,17 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
+import co.edu.uco.ucochallenge.domain.pagination.PageCriteria;
+import co.edu.uco.ucochallenge.domain.pagination.PaginatedResult;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.model.UserFilter;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
@@ -81,8 +85,10 @@ public class UserRepositoryAdapter implements UserRepository {
         }
 
         @Override
-        public List<User> findAll() {
-                return mapper.toDomainList(jpaRepository.findAll());
+        public PaginatedResult<User> findAll(final PageCriteria pagination) {
+                final Pageable pageable = buildPageable(pagination);
+                final Page<UserEntity> page = jpaRepository.findAll(pageable);
+                return toPaginatedResult(page);
         }
 
         @Override
@@ -100,7 +106,7 @@ public class UserRepositoryAdapter implements UserRepository {
         }
 
         @Override
-        public List<User> findByFilter(final UserFilter filter) {
+        public PaginatedResult<User> findByFilter(final UserFilter filter, final PageCriteria pagination) {
                 final UUID idType = filter.hasIdType() ? filter.idType() : null;
                 final UUID homeCity = filter.hasHomeCity() ? filter.homeCity() : null;
                 final String idNumber = filter.hasIdNumber() ? filter.idNumber() : null;
@@ -109,15 +115,31 @@ public class UserRepositoryAdapter implements UserRepository {
                 final String email = filter.hasEmail() ? filter.email() : null;
                 final String mobileNumber = filter.hasMobileNumber() ? filter.mobileNumber() : null;
 
-                final List<UserEntity> entities = jpaRepository.search(
+                final Pageable pageable = buildPageable(pagination);
+                final Page<UserEntity> page = jpaRepository.search(
                                 idType,
                                 homeCity,
                                 idNumber,
                                 firstName,
                                 firstSurname,
                                 email,
-                                mobileNumber);
+                                mobileNumber,
+                                pageable);
 
-                return mapper.toDomainList(entities);
+                return toPaginatedResult(page);
+        }
+
+        private Pageable buildPageable(final PageCriteria pagination) {
+                return PageRequest.of(pagination.page(), pagination.size());
+        }
+
+        private PaginatedResult<User> toPaginatedResult(final Page<UserEntity> page) {
+                final Page<User> users = page.map(mapper::toDomain);
+                return PaginatedResult.of(
+                                users.getContent(),
+                                page.getTotalElements(),
+                                page.getTotalPages(),
+                                page.getNumber(),
+                                page.getSize());
         }
 }

@@ -1,10 +1,9 @@
 package co.edu.uco.ucochallenge.application.user.listUsers.usecase.impl;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
-import co.edu.uco.ucochallenge.application.Void;
+import co.edu.uco.ucochallenge.domain.pagination.PageCriteria;
+import co.edu.uco.ucochallenge.domain.pagination.PaginatedResult;
 import co.edu.uco.ucochallenge.application.user.listUsers.usecase.ListUsersUseCase;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
@@ -19,7 +18,7 @@ public class ListUsersUseCaseImpl implements ListUsersUseCase {
         }
 
         @Override
-        public List<User> execute(final Void domain) {
-                return repository.findAll();
+        public PaginatedResult<User> execute(final PageCriteria domain) {
+                return repository.findAll(domain);
         }
 }

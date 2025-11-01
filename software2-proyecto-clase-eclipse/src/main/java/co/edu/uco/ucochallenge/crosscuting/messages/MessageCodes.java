@@ -48,6 +48,16 @@ public final class MessageCodes {
         private Domain() {
         }
 
+        public static final class Pagination {
+            public static final String INVALID_PAGE_TECHNICAL = "domain.pagination.page.invalid.technical";
+            public static final String INVALID_PAGE_USER = "domain.pagination.page.invalid.user";
+            public static final String INVALID_SIZE_TECHNICAL = "domain.pagination.size.invalid.technical";
+            public static final String INVALID_SIZE_USER = "domain.pagination.size.invalid.user";
+
+            private Pagination() {
+            }
+        }
+
         public static final class User {
             public static final String ID_TYPE_MANDATORY_TECHNICAL = "domain.user.idType.mandatory.technical";
             public static final String ID_TYPE_MANDATORY_USER = "domain.user.idType.mandatory.user";

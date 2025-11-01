@@ -1,6 +1,7 @@
 package co.edu.uco.ucochallenge.application.user.listUsers.interactor.impl;
 
-import co.edu.uco.ucochallenge.application.Void;
+import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
+import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersRequestDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersResponseDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.interactor.ListUsersInteractor;
 import co.edu.uco.ucochallenge.application.user.listUsers.mapper.ListUsersMapper;
@@ -21,7 +22,10 @@ public class ListUsersInteractorImpl implements ListUsersInteractor {
         }
 
         @Override
-        public ListUsersResponseDTO execute(final Void dto) {
-                return mapper.toResponse(useCase.execute(dto));
+        public ListUsersResponseDTO execute(final ListUsersRequestDTO dto) {
+                final PaginationRequestDTO pagination = dto == null || dto.pagination() == null
+                                ? PaginationRequestDTO.normalize(null, null)
+                                : dto.pagination();
+                return mapper.toResponse(useCase.execute(pagination.toDomain()));
         }
 }

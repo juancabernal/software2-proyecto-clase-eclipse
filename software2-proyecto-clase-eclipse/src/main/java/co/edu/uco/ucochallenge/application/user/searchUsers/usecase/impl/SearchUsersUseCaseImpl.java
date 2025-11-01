@@ -1,12 +1,11 @@
 package co.edu.uco.ucochallenge.application.user.searchUsers.usecase.impl;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
 import co.edu.uco.ucochallenge.application.user.searchUsers.usecase.SearchUsersUseCase;
+import co.edu.uco.ucochallenge.domain.pagination.PaginatedResult;
 import co.edu.uco.ucochallenge.domain.user.model.User;
-import co.edu.uco.ucochallenge.domain.user.model.UserFilter;
+import co.edu.uco.ucochallenge.domain.user.model.UserSearchQuery;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 
 @Service
@@ -19,7 +18,7 @@ public class SearchUsersUseCaseImpl implements SearchUsersUseCase {
         }
 
         @Override
-        public List<User> execute(final UserFilter domain) {
-                return repository.findByFilter(domain);
+        public PaginatedResult<User> execute(final UserSearchQuery domain) {
+                return repository.findByFilter(domain.filter(), domain.pagination());
         }
 }

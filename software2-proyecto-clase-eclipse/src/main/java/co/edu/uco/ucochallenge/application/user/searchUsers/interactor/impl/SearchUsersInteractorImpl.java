@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersResponseDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.mapper.ListUsersMapper;
-import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersFilterDTO;
+import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQueryDTO;
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
 import co.edu.uco.ucochallenge.application.user.searchUsers.usecase.SearchUsersUseCase;
 
@@ -22,8 +22,8 @@ public class SearchUsersInteractorImpl implements SearchUsersInteractor {
         }
 
         @Override
-        public ListUsersResponseDTO execute(final SearchUsersFilterDTO dto) {
-                final SearchUsersFilterDTO normalized = SearchUsersFilterDTO.normalize(dto);
+        public ListUsersResponseDTO execute(final SearchUsersQueryDTO dto) {
+                final SearchUsersQueryDTO normalized = SearchUsersQueryDTO.normalize(dto);
                 return mapper.toResponse(useCase.execute(normalized.toDomain()));
         }
 }

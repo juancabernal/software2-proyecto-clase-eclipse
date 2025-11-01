@@ -1,11 +1,12 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.repository;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.UserEntity;
@@ -35,12 +36,13 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, UUID> {
                         AND (:email IS NULL OR LOWER(u.email) LIKE LOWER(CONCAT('%', :email, '%')))
                         AND (:mobileNumber IS NULL OR u.mobileNumber LIKE CONCAT('%', :mobileNumber, '%'))
                         """)
-        List<UserEntity> search(
+        Page<UserEntity> search(
                         @Param("idType") UUID idType,
                         @Param("homeCity") UUID homeCity,
                         @Param("idNumber") String idNumber,
                         @Param("firstName") String firstName,
                         @Param("firstSurname") String firstSurname,
                         @Param("email") String email,
-                        @Param("mobileNumber") String mobileNumber);
+                        @Param("mobileNumber") String mobileNumber,
+                        Pageable pageable);
 }

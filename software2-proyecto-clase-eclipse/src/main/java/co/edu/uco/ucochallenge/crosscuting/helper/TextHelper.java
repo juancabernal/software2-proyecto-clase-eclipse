@@ -1,5 +1,7 @@
 package co.edu.uco.ucochallenge.crosscuting.helper;
 
+import co.edu.uco.ucochallenge.crosscuting.security.SanitizationHelper;
+
 public final class TextHelper {
 
 	public static final String EMPTY = "";
@@ -21,9 +23,9 @@ public final class TextHelper {
                return safeValue.isEmpty() ? safeDefault : safeValue;
        }
 
-	public static String getDefaultWithTrim(final String value) {
-		return getDefault(value).trim();
-	}
+        public static String getDefaultWithTrim(final String value) {
+                return SanitizationHelper.sanitize(getDefault(value));
+        }
 
 	public static boolean isEmpty(final String value) {
 		return getDefaultWithTrim(value).isEmpty();

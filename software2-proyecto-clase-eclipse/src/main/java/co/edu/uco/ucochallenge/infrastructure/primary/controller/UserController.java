@@ -13,16 +13,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
 import co.edu.uco.ucochallenge.application.Void;
 import co.edu.uco.ucochallenge.application.user.deleteUser.interactor.DeleteUserInteractor;
 import co.edu.uco.ucochallenge.application.user.getUser.dto.GetUserOutputDTO;
 import co.edu.uco.ucochallenge.application.user.getUser.interactor.GetUserInteractor;
+import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersRequestDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersResponseDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.interactor.ListUsersInteractor;
 import co.edu.uco.ucochallenge.application.user.registerUser.dto.RegisterUserInputDTO;
 import co.edu.uco.ucochallenge.application.user.registerUser.dto.RegisterUserOutputDTO;
 import co.edu.uco.ucochallenge.application.user.registerUser.interactor.RegisterUserInteractor;
-import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersFilterDTO;
+import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQueryDTO;
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 
@@ -62,8 +64,12 @@ public class UserController {
         }
 
         @GetMapping
-        public ResponseEntity<ApiSuccessResponse<ListUsersResponseDTO>> listUsers() {
-                final ListUsersResponseDTO response = listUsersInteractor.execute(Void.returnVoid());
+        public ResponseEntity<ApiSuccessResponse<ListUsersResponseDTO>> listUsers(
+                        @RequestParam(name = "page", required = false) final Integer page,
+                        @RequestParam(name = "size", required = false) final Integer size) {
+                final PaginationRequestDTO pagination = PaginationRequestDTO.normalize(page, size);
+                final ListUsersResponseDTO response = listUsersInteractor
+                                .execute(ListUsersRequestDTO.of(pagination));
                 return ResponseEntity.ok(ApiSuccessResponse.of("Usuarios obtenidos exitosamente.", response));
         }
 
@@ -81,15 +87,19 @@ public class UserController {
                         @RequestParam(name = "firstSurname", required = false) final String firstSurname,
                         @RequestParam(name = "homeCity", required = false) final UUID homeCity,
                         @RequestParam(name = "email", required = false) final String email,
-                        @RequestParam(name = "mobileNumber", required = false) final String mobileNumber) {
-                final SearchUsersFilterDTO filter = SearchUsersFilterDTO.normalize(
+                        @RequestParam(name = "mobileNumber", required = false) final String mobileNumber,
+                        @RequestParam(name = "page", required = false) final Integer page,
+                        @RequestParam(name = "size", required = false) final Integer size) {
+                final SearchUsersQueryDTO filter = SearchUsersQueryDTO.normalize(
                                 idType,
                                 idNumber,
                                 firstName,
                                 firstSurname,
                                 homeCity,
                                 email,
-                                mobileNumber);
+                                mobileNumber,
+                                page,
+                                size);
                 final ListUsersResponseDTO response = searchUsersInteractor.execute(filter);
                 return ResponseEntity.ok(ApiSuccessResponse.of("Usuarios filtrados exitosamente.", response));
         }
