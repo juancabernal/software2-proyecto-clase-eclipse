@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.infrastructure.secondary.secret;
+package co.edu.uco.messageservice.secret;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,10 +14,10 @@ import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
 import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
 
-import co.edu.uco.ucochallenge.domain.secret.port.SecretProviderPort;
-
 /**
- * Secondary adapter that retrieves secrets from Azure Key Vault.
+ * {@link SecretProviderPort} backed by Azure Key Vault. When the vault URL is
+ * present the bean becomes {@link Primary} so it is transparently preferred
+ * over the {@link PropertySecretAdapter}.
  */
 @Component
 @Primary
@@ -57,7 +57,7 @@ public class AzureKeyVaultSecretAdapter implements SecretProviderPort {
                 return value;
             }
             log.warn("Secret '{}' retrieved from Azure Key Vault is empty. Falling back to application properties.", name);
-        } catch (Exception exception) {
+        } catch (final Exception exception) {
             log.warn("Unable to retrieve secret '{}' from Azure Key Vault. Using local configuration. Cause: {}", name,
                     exception.getMessage());
             log.debug("Azure Key Vault exception", exception);

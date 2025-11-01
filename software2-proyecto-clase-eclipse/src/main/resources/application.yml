@@ -3,7 +3,7 @@ spring:
     name: UcoChallenge
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:ucochallenge}}
+    url: ${secrets.db-url:${SPRING_DATASOURCE_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:ucochallenge}}}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
     hikari:
       pool-name: ${SPRING_DATASOURCE_POOL_NAME:UcoHikariPool}
@@ -31,11 +31,17 @@ eureka:
 # =========================
 azure:
   keyvault:
-    url: https://uco-vault-secrets.vault.azure.net/
+    enabled: ${AZURE_KEYVAULT_ENABLED:true}
+    url: ${AZURE_KEYVAULT_URL:https://uco-vault-secrets.vault.azure.net/}
+    secret:
+      endpoint: ${AZURE_KEYVAULT_SECRET_ENDPOINT:${AZURE_KEYVAULT_URL:https://uco-vault-secrets.vault.azure.net/}}
+    credential:
+      managed-identity-enabled: ${AZURE_KEYVAULT_MANAGED_IDENTITY:true}
 
 
 # ✅ Fallbacks si Key Vault falla
 secrets:
+  db-url: ${DB_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:ucochallenge}}
   db-username: ${DB_USERNAME:postgres}
   db-password: ${DB_PASSWORD:postgres}
 

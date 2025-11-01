@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.infrastructure.secondary.secret;
+package co.edu.uco.parametersservice.secret;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,16 +6,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import co.edu.uco.ucochallenge.domain.secret.port.SecretProviderPort;
-
-/**
- * Simple {@link SecretProviderPort} implementation that resolves secrets
- * directly from the Spring environment. The bean is always available so the
- * application can bootstrap even when Azure Key Vault is disabled or
- * temporarily unreachable. When the {@link AzureKeyVaultSecretAdapter} is
- * active it is marked as {@code @Primary}, so this adapter transparently acts
- * as a fallback.
- */
 @Component
 public class PropertySecretAdapter implements SecretProviderPort {
 
@@ -33,7 +23,7 @@ public class PropertySecretAdapter implements SecretProviderPort {
     public String getSecret(final String name) {
         final String value = environment.getProperty(SECRET_PREFIX + name, "");
         if (!StringUtils.hasText(value)) {
-            log.warn("Secret '{}' is not configured. Set property '{}{}' or provide it through Azure Key Vault.", name,
+            log.warn("Secret '{}' is not configured. Define property '{}{}' or provide it through Azure Key Vault.", name,
                     SECRET_PREFIX, name);
         }
         return value;
