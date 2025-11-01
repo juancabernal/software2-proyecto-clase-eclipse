@@ -21,7 +21,7 @@ public class PropertySecretAdapter implements SecretProviderPort {
 
     public PropertySecretAdapter(final Environment environment) {
         this.environment = environment;
-        log.info("Using property-based secret provider. Set 'azure.keyvault.url' to enable Azure Key Vault integration.");
+        log.info("Using property-based secret provider. Set 'azure.keyvault.url' (or legacy 'azure.keyvault.secret.endpoint') to enable Azure Key Vault integration.");
     }
 
     @Override

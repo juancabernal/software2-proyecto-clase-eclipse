@@ -21,7 +21,7 @@ import com.azure.security.keyvault.secrets.models.KeyVaultSecret;
  */
 @Component
 @Primary
-@ConditionalOnExpression("T(org.springframework.util.StringUtils).hasText('${azure.keyvault.url:}')")
+@ConditionalOnExpression("T(org.springframework.util.StringUtils).hasText('${azure.keyvault.url:}') || T(org.springframework.util.StringUtils).hasText('${azure.keyvault.secret.endpoint:}')")
 public class AzureKeyVaultSecretAdapter implements SecretProviderPort {
 
     private static final Logger log = LoggerFactory.getLogger(AzureKeyVaultSecretAdapter.class);
@@ -30,9 +30,16 @@ public class AzureKeyVaultSecretAdapter implements SecretProviderPort {
     private final SecretClient client;
     private final Environment environment;
 
-    public AzureKeyVaultSecretAdapter(@Value("${azure.keyvault.url}") final String vaultUrl,
+    public AzureKeyVaultSecretAdapter(@Value("${azure.keyvault.url:}") final String configuredVaultUrl,
+            @Value("${azure.keyvault.secret.endpoint:}") final String legacyVaultUrl,
             final Environment environment) {
         this.environment = environment;
+        final String vaultUrl = StringUtils.hasText(configuredVaultUrl) ? configuredVaultUrl : legacyVaultUrl;
+
+        if (!StringUtils.hasText(vaultUrl)) {
+            throw new IllegalArgumentException("Azure Key Vault URL must be provided through 'azure.keyvault.url' or 'azure.keyvault.secret.endpoint'.");
+        }
+
         this.client = new SecretClientBuilder()
                 .vaultUrl(vaultUrl)
                 .credential(new DefaultAzureCredentialBuilder().build())
