@@ -52,9 +52,9 @@ public class MessageController {
     }
 
     @PostMapping
-    public Mono<ResponseEntity<Message>> createMessage(@RequestBody Mono<Message> body) {
-        return body.map(message -> new Message(message.getKey(), message.getValue()))
-                .flatMap(service::upsert)
+    public Mono<ResponseEntity<Message>> createMessage(@RequestBody Message body) {
+        Message sanitized = new Message(body.getKey(), body.getValue());
+        return service.upsert(sanitized)
                 .map(saved -> ResponseEntity.status(HttpStatus.CREATED)
                         .cacheControl(NO_CACHE)
                         .header("Pragma", "no-cache")
@@ -63,9 +63,9 @@ public class MessageController {
     }
 
     @PutMapping("/{key}")
-    public Mono<ResponseEntity<Message>> modifyMessage(@PathVariable String key, @RequestBody Mono<Message> body) {
-        return body.map(value -> new Message(key, value.getValue()))
-                .flatMap(service::upsert)
+    public Mono<ResponseEntity<Message>> modifyMessage(@PathVariable String key, @RequestBody Message body) {
+        Message sanitized = new Message(key, body.getValue());
+        return service.upsert(sanitized)
                 .map(saved -> ResponseEntity.ok()
                         .cacheControl(NO_CACHE)
                         .header("Pragma", "no-cache")
