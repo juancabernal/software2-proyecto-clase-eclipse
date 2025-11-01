@@ -10,10 +10,11 @@
 services:
   backend:
     build:
-      context: ./software2-proyecto-clase-eclipse/software2-proyecto-clase-eclipse  # carpeta del backend
+      context: .                    # ya lo corregiste
       dockerfile: Dockerfile
       additional_contexts:
-        obs: ../observability-confi  # <-- carpeta de la lib, SIN dockerfile
+        obs: ../observability-confi
+        msg: ../message-service     # 👈 NUEVO: carpeta con el pom del módulo
     ports:
       - "8081:8081"
 
