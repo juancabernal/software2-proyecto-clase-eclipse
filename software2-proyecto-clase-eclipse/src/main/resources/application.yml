@@ -33,6 +33,7 @@ azure:
   keyvault:
     url: https://uco-vault-secrets.vault.azure.net/
 
+
 # ✅ Fallbacks si Key Vault falla
 secrets:
   db-username: ${DB_USERNAME:postgres}
