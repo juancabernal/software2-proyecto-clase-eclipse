@@ -41,6 +41,12 @@ spring:
           uri: lb://UCOCHALLENGE
           predicates:
             - Path=/uco-challenge/api/v1/users/**
+        - id: admin-users
+          uri: lb://UCOCHALLENGE
+          predicates:
+            - Path=/api/admin/users/**
+          filters:
+            - StripPrefix=2
         - id: message-service
           uri: lb://MESSAGE-SERVICE
           predicates:
