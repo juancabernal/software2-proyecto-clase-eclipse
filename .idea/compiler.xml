@@ -7,6 +7,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="observability-config" />
         <module name="api-gateway" />
         <module name="observability-confi" />
         <module name="client-app" />
@@ -37,6 +38,7 @@
       <module name="eureka-server" options="-parameters" />
       <module name="message-service" options="-parameters" />
       <module name="observability-confi" options="-parameters" />
+      <module name="observability-config" options="-parameters" />
       <module name="parameters-service" options="-parameters" />
       <module name="uco-challenge" options="-parameters" />
     </option>

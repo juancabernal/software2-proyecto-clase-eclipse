@@ -4,38 +4,19 @@ server:
 spring:
   application:
     name: api-gateway
-  cloud:
-    loadbalancer:
-      ribbon:
-        enabled: false
-    gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      routes:
 
-        - id: auth-service
-          uri: lb://CLIENT-APP
-          predicates:
-            - Path=/auth/**
-          filters:
-            - StripPrefix=1
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${AUTH0_ISSUER_URI}
 
-        - id: parameters-microservice
-          uri: lb://PARAMETERS-SERVICE
-          predicates:
-            - Path=/api/v1/parameters/**
+auth0:
+  audience: ${AUTH0_AUDIENCE}
 
-        - id: uco-challenge
-          uri: lb://UCOCHALLENGE
-          predicates:
-            - Path=/uco-challenge/api/v1/users/**
-
-        - id: message-service
-          uri: lb://MESSAGE-SERVICE
-          predicates:
-            - Path=/api/v1/messages/**
+web:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
 eureka:
   client:
