@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { makeApi, Page, UserCreateInput } from "../api/client";
 import { User } from "./users";
@@ -49,7 +49,7 @@ export default function UsersAdmin() {
   // Modal “Nuevo usuario”
   const [openNew, setOpenNew] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState<UserCreateInput>({
+  const emptyForm = (): UserCreateInput => ({
     primerNombre: "",
     segundoNombre: "",
     primerApellido: "",
@@ -60,31 +60,37 @@ export default function UsersAdmin() {
     estado: "",
     pais: "",
   });
+
+  const [form, setForm] = useState<UserCreateInput>(emptyForm);
   const [formErr, setFormErr] = useState<string | null>(null);
 
+  const resetForm = () => setForm(emptyForm());
+
   // Fetch usuarios
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setErr(null);
+      const data = await api.listUsers({
+        page: filters.page,
+        size: filters.size,
+        search: filters.search || undefined,
+        country: filters.pais || undefined,
+        state: filters.estado || undefined,
+        city: filters.ciudad || undefined,
+        sort: filters.sort || undefined,
+      });
+      setPageData(data);
+    } catch (e: any) {
+      setErr(e?.message || "No se pudo cargar usuarios.");
+    } finally {
+      setLoading(false);
+    }
+  }, [api, filters]);
+
   useEffect(() => {
-    (async () => {
-      try {
-        setLoading(true);
-        setErr(null);
-        const data = await api.listUsers({
-          page: filters.page,
-          size: filters.size,
-          search: filters.search || undefined,
-          country: filters.pais || undefined,
-          state: filters.estado || undefined,
-          city: filters.ciudad || undefined,
-          sort: filters.sort || undefined,
-        });
-        setPageData(data);
-      } catch (e: any) {
-        setErr(e?.message || "No se pudo cargar usuarios.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [filters.page, filters.size, filters.search, filters.pais, filters.estado, filters.ciudad, filters.sort, api]);
+    fetchUsers();
+  }, [fetchUsers]);
 
   // Helpers
   const fullName = (u: User) =>
@@ -133,18 +139,7 @@ export default function UsersAdmin() {
       setCreating(true);
       await api.createUser(form);
       setOpenNew(false);
-      // reset form
-      setForm({
-        primerNombre: "",
-        segundoNombre: "",
-        primerApellido: "",
-        segundoApellido: "",
-        correo: "",
-        telefono: "",
-        ciudad: "",
-        estado: "",
-        pais: "",
-      });
+      resetForm();
       // recarga página 1 para ver el nuevo
       setFilters((f) => ({ ...f, page: 1 }));
     } catch (e: any) {
@@ -317,7 +312,11 @@ export default function UsersAdmin() {
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-white">Registrar nuevo usuario</h3>
               <button
-                onClick={() => setOpenNew(false)}
+                onClick={() => {
+                  setOpenNew(false);
+                  resetForm();
+                  setFormErr(null);
+                }}
                 className="rounded-lg border border-gray-700 px-2 py-1 text-sm text-gray-200 hover:text-white hover:border-gray-500"
               >
                 Cerrar
