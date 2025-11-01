@@ -7,6 +7,7 @@ import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
 import co.edu.uco.ucochallenge.application.user.registerUser.usecase.RegisterUserUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
+import co.edu.uco.ucochallenge.domain.ai.port.out.UserIntelligencePort;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 
@@ -14,6 +15,7 @@ import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
         private final UserRepository repository;
+<<<<<<< HEAD
         private final DuplicateRegistrationNotificationService notificationService;
 
 
@@ -21,12 +23,21 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 final DuplicateRegistrationNotificationService notificationService) {
             this.repository = repository;
             this.notificationService = notificationService;
+=======
+        private final UserIntelligencePort intelligencePort;
+
+        public RegisterUserUseCaseImpl(final UserRepository repository, final UserIntelligencePort intelligencePort) {
+                this.repository = repository;
+                this.intelligencePort = intelligencePort;
+>>>>>>> dd5027612f51f73c7433826de4cea8cd0a24f76f
         }
 
         @Override
         public User execute(final User domain) {
                 validateUniqueness(domain);
-                return repository.save(domain);
+                final User savedUser = repository.save(domain);
+                intelligencePort.publishUserRegistrationInsight(savedUser);
+                return savedUser;
         }
 
         private void validateUniqueness(final User domain) {

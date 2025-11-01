@@ -1,41 +1,44 @@
-# Frontend proyecto clase
+# Frontend Auth0 - UCO Challenge
 
-Este frontend usa React + Vite y se conecta contra Auth0 para autenticar administradores y consumir el backend `auth0-backend`.
+Este proyecto es una SPA creada con React + Vite que usa Auth0 como proveedor de identidad. El objetivo es consumir el API Gateway protegido sin mantener formularios propios de usuario y contraseña.
 
-## Configuración de entorno
+## Configuración
 
-1. Copia el archivo `.env.example` a `.env` dentro de `frontend-proyecto-clase/` y ajusta los valores según tu tenant de Auth0:
+Crea un archivo `.env` con los datos de tu tenant de Auth0:
 
-   ```bash
-   cd frontend-proyecto-clase
-   cp .env.example .env
-   ```
+```env
+VITE_AUTH0_DOMAIN=dev-x2nlunlga02cbz17.us.auth0.com
+VITE_AUTH0_CLIENT_ID=en1kMIo9YDqKfSPcEbOap6bOHnQkpk5u
+VITE_AUTH0_REDIRECT_URI=http://localhost:5173/callback
+VITE_AUTH0_AUDIENCE=https://spring-boot-auth0-integration
+VITE_API_BASE_URL=http://localhost:8080
+```
 
-2. Variables relevantes:
-   - `VITE_AUTH0_DOMAIN` y `VITE_AUTH0_CLIENT_ID`: credenciales de tu aplicación SPA en Auth0.
-   - `VITE_AUTH0_AUDIENCE`: identificador (API Identifier) de la API protegida que expone scopes `read` y/o `write`.
-   - `VITE_AUTH0_API_SCOPE`: scopes a solicitar en los tokens de acceso (por ejemplo `read write`).
-   - `VITE_AUTH0_ADMIN_CLAIM`: claim personalizada donde Auth0 expone los roles (por defecto `https://<tu-dominio>/roles`).
-   - `VITE_API_BASE_URL`: URL del backend que recibe las peticiones autenticadas.
+> `VITE_API_BASE_URL` es opcional. Si lo defines, el botón “Llamar al gateway” hará una petición a `${VITE_API_BASE_URL}/debug/whoami` usando el token emitido por Auth0.
 
-3. Los `Allowed Callback URLs`, `Allowed Logout URLs` y `Allowed Web Origins` del tenant deben incluir `http://localhost:5173` (frontend) y `http://localhost:8085/login/oauth2/code/auth0` (backend Spring).
-
-## Puesta en marcha
+Instala dependencias y levanta el entorno de desarrollo:
 
 ```bash
-cd frontend-proyecto-clase
 npm install
 npm run dev
 ```
 
-El backend `auth0-backend` se levanta con Maven:
+## Características principales
+
+- Redirección al Universal Login de Auth0 (sin formularios personalizados).
+- Sesión persistente mediante `cacheLocation="localstorage"` y refresh tokens rotativos.
+- Página de perfil que muestra los claims del usuario conectado.
+- Botón de prueba para invocar el gateway protegido con el access token vigente.
+
+## Estructura
+
+- `src/auth` → Inicialización del `Auth0Provider` con React Router.
+- `src/components` → Layout, controles reutilizables y componentes de UI.
+- `src/pages` → Vistas principales (home, callback, perfil).
+- `src/styles` → Estilos globales (diseño original sin el formulario legacy).
+
+## Linting
 
 ```bash
-cd auth0-backend
-./mvnw spring-boot:run
+npm run lint
 ```
-
-## Notas
-
-- El frontend fuerza la redirección de usuarios que no tengan el rol `admin` definido en la metadata de Auth0.
-- Los tokens se almacenan en `localstorage` y se revalidan con `getAccessTokenSilently` para adjuntar el `Bearer` en las peticiones al backend.
