@@ -45,14 +45,7 @@ secrets:
   db-username: ${DB_USERNAME:postgres}
   db-password: ${DB_PASSWORD:postgres}
 
-# =========================
-# ✅ Servicios REST internos (del 1er YAML)
-# =========================
-services:
-  message:
-    base-url: http://localhost:8082/api/v1/messages
-  parameters:
-    base-url: http://localhost:8083/api/v1/parameters
+
 
 
 # =========================
@@ -78,6 +71,13 @@ management:
   endpoint:
     health:
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
+
+
+services:
+  message:
+    base-url: "http://localhost:8082/api/v1/messages"
+  parameters:
+    base-url: "http://localhost:8083/api/v1/parameters"
 
 
 

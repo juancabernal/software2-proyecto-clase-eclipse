@@ -2,8 +2,6 @@ package co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service;
 
 import java.util.Collections;
 
-import jakarta.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,6 +14,7 @@ import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.crosscuting.parameter.ParameterServicePortHolder;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service.orchestration.CatalogService;
 import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.ParameterServicePort;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class ParameterServiceAdapter implements ParameterServicePort {

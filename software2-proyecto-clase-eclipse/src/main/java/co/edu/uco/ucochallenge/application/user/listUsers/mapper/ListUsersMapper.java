@@ -1,9 +1,9 @@
 package co.edu.uco.ucochallenge.application.user.listUsers.mapper;
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-
-import java.util.List;
 
 import co.edu.uco.ucochallenge.application.pagination.dto.PaginationMetadataDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersOutputDTO;

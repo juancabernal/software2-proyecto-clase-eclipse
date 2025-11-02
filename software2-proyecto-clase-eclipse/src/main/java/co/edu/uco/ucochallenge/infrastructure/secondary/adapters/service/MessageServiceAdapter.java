@@ -3,8 +3,6 @@ package co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service;
 import java.util.Collections;
 import java.util.Map;
 
-import jakarta.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
@@ -19,6 +17,7 @@ import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageServicePortHolder;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service.orchestration.CatalogService;
 import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.MessageServicePort;
+import jakarta.annotation.PostConstruct;
 
 @Primary
 @Component("catalogMessageServiceAdapter")

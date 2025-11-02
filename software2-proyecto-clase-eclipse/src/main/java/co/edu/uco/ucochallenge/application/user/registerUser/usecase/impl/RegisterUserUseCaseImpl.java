@@ -13,9 +13,9 @@ import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 @Service
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
-
     private final UserRepository repository;
     private final DuplicateRegistrationNotificationService notificationService;
+
     public RegisterUserUseCaseImpl(final UserRepository repository,
                                    final DuplicateRegistrationNotificationService notificationService) {
         this.repository = repository;
@@ -30,6 +30,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
     }
 
     private void validateUniqueness(final User domain) {
+        // 🔹 1. Correo duplicado
         if (repository.existsByEmail(domain.email())) {
             notificationService.notifyEmailConflict(RegistrationAttempt.fromUser(domain));
             throw DomainException.buildFromCatalog(
@@ -38,6 +39,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
             );
         }
 
+        // 🔹 2. Documento duplicado
         if (repository.existsByIdTypeAndIdNumber(domain.idType(), domain.idNumber())) {
             throw DomainException.buildFromCatalog(
                 MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_TECHNICAL,
@@ -45,6 +47,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
             );
         }
 
+        // 🔹 3. Teléfono duplicado
         if (repository.existsByMobileNumber(domain.mobileNumber())) {
             notificationService.notifyMobileConflict(RegistrationAttempt.fromUser(domain));
             throw DomainException.buildFromCatalog(
