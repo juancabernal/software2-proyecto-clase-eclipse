@@ -2,19 +2,21 @@ package co.edu.uco.ucochallenge.application.user.registerUser.dto;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 
 public record RegisterUserInputDTO(
-                UUID idType,
-                String idNumber,
-                String firstName,
-                String secondName,
-                String firstSurname,
-                String secondSurname,
-                UUID homeCity,
-                String email,
-                String mobileNumber) {
+                @JsonAlias({ "idType", "tipoIdentificacion" }) UUID idType,
+                @JsonAlias({ "idNumber", "numeroIdentificacion" }) String idNumber,
+                @JsonAlias({ "firstName", "primerNombre" }) String firstName,
+                @JsonAlias({ "secondName", "segundoNombre" }) String secondName,
+                @JsonAlias({ "firstSurname", "primerApellido" }) String firstSurname,
+                @JsonAlias({ "secondSurname", "segundoApellido" }) String secondSurname,
+                @JsonAlias({ "homeCity", "ciudad" }) UUID homeCity,
+                @JsonAlias({ "email", "correo" }) String email,
+                @JsonAlias({ "mobileNumber", "telefono" }) String mobileNumber) {
 
         public static RegisterUserInputDTO normalize(
                         final UUID idType,

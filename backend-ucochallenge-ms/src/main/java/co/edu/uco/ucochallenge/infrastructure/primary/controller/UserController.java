@@ -27,6 +27,9 @@ import co.edu.uco.ucochallenge.application.user.registerUser.interactor.Register
 import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQueryDTO;
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
+import co.edu.uco.ucochallenge.infrastructure.secondary.repository.CityJpaRepository;
+import co.edu.uco.ucochallenge.infrastructure.secondary.repository.DepartmentJpaRepository;
+import co.edu.uco.ucochallenge.infrastructure.secondary.repository.IdTypeJpaRepository;
 
 @RestController
 @RequestMapping("/uco-challenge/api/v1/users")
@@ -37,6 +40,9 @@ public class UserController {
         private final GetUserInteractor getUserInteractor;
         private final SearchUsersInteractor searchUsersInteractor;
         private final DeleteUserInteractor deleteUserInteractor;
+        private final DepartmentJpaRepository departmentJpaRepository;
+        private final CityJpaRepository cityJpaRepository;
+        private final IdTypeJpaRepository idTypeJpaRepository;
 		/* private final UpdateUserInteractor updateUserInteractor; */
 
         public UserController(
@@ -44,7 +50,10 @@ public class UserController {
                         final ListUsersInteractor listUsersInteractor,
                         final GetUserInteractor getUserInteractor,
                         final SearchUsersInteractor searchUsersInteractor,
-				final DeleteUserInteractor deleteUserInteractor/*
+                        final DeleteUserInteractor deleteUserInteractor,
+                        final DepartmentJpaRepository departmentJpaRepository,
+                        final CityJpaRepository cityJpaRepository,
+                        final IdTypeJpaRepository idTypeJpaRepository/*
 																 * , final UpdateUserInteractor updateUserInteractor
 																 */) {
                 this.registerUserInteractor = registerUserInteractor;
@@ -52,7 +61,10 @@ public class UserController {
                 this.getUserInteractor = getUserInteractor;
                 this.searchUsersInteractor = searchUsersInteractor;
                 this.deleteUserInteractor = deleteUserInteractor;
-				/* this.updateUserInteractor = updateUserInteractor; */
+                this.departmentJpaRepository = departmentJpaRepository;
+                this.cityJpaRepository = cityJpaRepository;
+                this.idTypeJpaRepository = idTypeJpaRepository;
+                                /* this.updateUserInteractor = updateUserInteractor; */
         }
 
         @PostMapping
@@ -108,6 +120,21 @@ public class UserController {
         public ResponseEntity<ApiSuccessResponse<Void>> deleteUser(@PathVariable("id") final UUID id) {
                 deleteUserInteractor.execute(id);
                 return ResponseEntity.ok(ApiSuccessResponse.of("Usuario eliminado exitosamente.", Void.returnVoid()));
+        }
+
+        @GetMapping("/departments")
+        public ResponseEntity<?> listDepartments() {
+                return ResponseEntity.ok(departmentJpaRepository.findAll());
+        }
+
+        @GetMapping("/cities")
+        public ResponseEntity<?> listCities() {
+                return ResponseEntity.ok(cityJpaRepository.findAll());
+        }
+
+        @GetMapping("/id-types")
+        public ResponseEntity<?> listIdTypes() {
+                return ResponseEntity.ok(idTypeJpaRepository.findAll());
         }
 
 		/*
