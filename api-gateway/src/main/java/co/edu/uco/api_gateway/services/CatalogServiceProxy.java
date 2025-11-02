@@ -18,36 +18,34 @@ import co.edu.uco.api_gateway.dto.CatalogItemDto;
 public class CatalogServiceProxy {
 
         private static final ParameterizedTypeReference<ApiSuccessResponse<List<CatalogItemDto>>> CATALOG_RESPONSE =
-                        new ParameterizedTypeReference<>() {
-                        };
+                new ParameterizedTypeReference<>() {};
 
         private final WebClient webClient;
 
         public CatalogServiceProxy(final WebClient.Builder webClientBuilder) {
                 this.webClient = webClientBuilder
-                                .baseUrl("lb://UCOCHALLENGE/uco-challenge/api/v1/catalogs")
-                                .build();
+                        .baseUrl("lb://UCOCHALLENGE") // solo el servicio de Eureka
+                        .build();
         }
 
         public ApiSuccessResponse<List<CatalogItemDto>> listIdTypes(final String authorizationHeader) {
-                return getCatalog("/id-types", authorizationHeader);
+                return getCatalog("/uco-challenge/api/v1/catalogs/id-types", authorizationHeader);
         }
 
         public ApiSuccessResponse<List<CatalogItemDto>> listCities(final String authorizationHeader) {
-                System.out.println("AuthorizationHeader: "+authorizationHeader);
-                return getCatalog("/cities", authorizationHeader);
+                return getCatalog("/uco-challenge/api/v1/catalogs/cities", authorizationHeader);
         }
 
         private ApiSuccessResponse<List<CatalogItemDto>> getCatalog(final String path, final String authorizationHeader) {
                 final ApiSuccessResponse<List<CatalogItemDto>> response = webClient.get()
-                                .uri(path)
-                                .headers(headers -> {
-                                        setAuthorization(headers, authorizationHeader);
-                                        headers.setContentType(MediaType.APPLICATION_JSON);
-                                })
-                                .retrieve()
-                                .bodyToMono(CATALOG_RESPONSE)
-                                .block();
+                        .uri(path)
+                        .headers(headers -> {
+                                setAuthorization(headers, authorizationHeader);
+                                headers.setContentType(MediaType.APPLICATION_JSON);
+                        })
+                        .retrieve()
+                        .bodyToMono(CATALOG_RESPONSE)
+                        .block();
 
                 return Objects.requireNonNull(response, "La respuesta del catálogo no puede ser nula");
         }

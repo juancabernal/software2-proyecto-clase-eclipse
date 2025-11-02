@@ -1,8 +1,9 @@
+package co.edu.uco.ucochallenge.infrastructure.primary.controller;
 
 import java.util.List;
 
 import co.edu.uco.ucochallenge.application.catalog.CatalogDTO;
-import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service.orchestration.CatalogService;
+import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service.client.CatalogServiceClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +14,9 @@ import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuc
 @RequestMapping("/uco-challenge/api/v1/catalogs")
 public class CatalogsController {
 
-    private final CatalogService service;
+    private final CatalogServiceClient service;
 
-    public CatalogsController(CatalogService service) {
+    public CatalogsController(CatalogServiceClient service) {
         this.service = service;
     }
 

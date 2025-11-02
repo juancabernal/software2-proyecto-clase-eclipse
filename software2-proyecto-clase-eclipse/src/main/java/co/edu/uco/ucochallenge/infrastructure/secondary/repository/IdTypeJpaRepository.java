@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.repository;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,4 +10,5 @@ import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.IdType
 
 @Repository
 public interface IdTypeJpaRepository extends JpaRepository<IdTypeEntity, UUID> {
+    List<IdTypeEntity> findAllByOrderByNameAsc();
 }
