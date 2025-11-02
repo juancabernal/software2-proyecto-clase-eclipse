@@ -22,17 +22,24 @@
 	</properties>
 
 	<dependencies>
-		<!-- Spring Cloud Gateway (reactivo / WebFlux) -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-gateway</artifactId>
-		</dependency>
-
-		<!-- Eureka Client -->
-		<dependency>
-			<groupId>org.springframework.cloud</groupId>
-			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
-		</dependency>
+                <!-- Spring Cloud Gateway (reactivo / WebFlux) -->
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-web</artifactId>
+                </dependency>
+                <dependency>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-webflux</artifactId>
+                </dependency>
+                <!-- Eureka Client -->
+                <dependency>
+                        <groupId>org.springframework.cloud</groupId>
+                        <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+                </dependency>
+                <dependency>
+                        <groupId>org.springframework.cloud</groupId>
+                        <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+                </dependency>
 
 		<!-- Actuator -->
 		<dependency>
@@ -40,14 +47,23 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
-		<!-- Seguridad (tu config actual) -->
+		<!-- Seguridad (Auth0 / Resource Server JWT con WebFlux) -->
+		<!-- Starter de seguridad (incluye config + web reactivo) -->
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-config</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+
+		<!-- Resource Server para validar tokens JWT con issuer / jwk-set-uri -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+
+		<!-- JOSE (firma/verificación JWT) -->
 		<dependency>
 			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-web</artifactId>
+			<artifactId>spring-security-oauth2-jose</artifactId>
 		</dependency>
 
 		<!-- 🔶 OpenTelemetry / Micrometer Tracing -->
@@ -67,10 +83,28 @@
 			<version>1.0.0</version>
 		</dependency>
 
+		<!-- Opcionales útiles en dev -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- Test -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
