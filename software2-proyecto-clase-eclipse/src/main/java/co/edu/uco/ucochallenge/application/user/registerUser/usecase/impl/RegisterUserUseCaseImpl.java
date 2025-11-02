@@ -15,22 +15,18 @@ import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
         private final UserRepository repository;
-<<<<<<< HEAD
+
+        private final UserIntelligencePort intelligencePort;
         private final DuplicateRegistrationNotificationService notificationService;
 
-
         public RegisterUserUseCaseImpl(final UserRepository repository,
-                final DuplicateRegistrationNotificationService notificationService) {
-            this.repository = repository;
-            this.notificationService = notificationService;
-=======
-        private final UserIntelligencePort intelligencePort;
-
-        public RegisterUserUseCaseImpl(final UserRepository repository, final UserIntelligencePort intelligencePort) {
+                                       final UserIntelligencePort intelligencePort,
+                                       final DuplicateRegistrationNotificationService notificationService) {
                 this.repository = repository;
                 this.intelligencePort = intelligencePort;
->>>>>>> dd5027612f51f73c7433826de4cea8cd0a24f76f
+                this.notificationService = notificationService;
         }
+
 
         @Override
         public User execute(final User domain) {
