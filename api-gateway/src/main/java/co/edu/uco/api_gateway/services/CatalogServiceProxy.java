@@ -34,6 +34,7 @@ public class CatalogServiceProxy {
         }
 
         public ApiSuccessResponse<List<CatalogItemDto>> listCities(final String authorizationHeader) {
+                System.out.println("AuthorizationHeader: "+authorizationHeader);
                 return getCatalog("/cities", authorizationHeader);
         }
 

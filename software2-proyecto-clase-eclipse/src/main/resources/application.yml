@@ -45,14 +45,15 @@ secrets:
   db-username: ${DB_USERNAME:postgres}
   db-password: ${DB_PASSWORD:postgres}
 
-
-<<<<<<< HEAD
+# =========================
+# ✅ Servicios REST internos (del 1er YAML)
+# =========================
 services:
   message:
-    base-url: "http://localhost:8082/api/v1/messages"
+    base-url: http://localhost:8082/api/v1/messages
   parameters:
-    base-url: "http://localhost:8083/api/v1/parameters"
-=======
+    base-url: http://localhost:8083/api/v1/parameters
+
 
 # =========================
 # ✅ Logging con TraceId y SpanId (del 1er YAML)
@@ -77,7 +78,6 @@ management:
   endpoint:
     health:
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
->>>>>>> b6084d06856b1674a4c90c5738801956f0d1d281
 
 
 
@@ -116,7 +116,3 @@ uco-challenge:
       api-key: ${AI_OPENAI_API_KEY:}
       model: ${AI_OPENAI_MODEL:gpt-4o-mini}
       temperature: ${AI_OPENAI_TEMPERATURE:0.2}
-<<<<<<< HEAD
-
-=======
->>>>>>> b6084d06856b1674a4c90c5738801956f0d1d281

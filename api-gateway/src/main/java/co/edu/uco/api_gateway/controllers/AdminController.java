@@ -40,6 +40,7 @@ public class AdminController {
     @GetMapping(value = "/verify")
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<HttpStatus> verifyAccess() {
+        System.out.println("Estoy muestra tin");
         return ResponseEntity.status(HttpStatus.OK).body(HttpStatus.OK);
     }
 

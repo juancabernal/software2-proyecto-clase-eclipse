@@ -14,28 +14,7 @@ import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 @Service
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
-<<<<<<< HEAD
-        private final UserRepository repository;
 
-        private final UserIntelligencePort intelligencePort;
-        private final DuplicateRegistrationNotificationService notificationService;
-
-        public RegisterUserUseCaseImpl(final UserRepository repository,
-                                       final UserIntelligencePort intelligencePort,
-                                       final DuplicateRegistrationNotificationService notificationService) {
-                this.repository = repository;
-                this.intelligencePort = intelligencePort;
-                this.notificationService = notificationService;
-        }
-
-
-        @Override
-        public User execute(final User domain) {
-                validateUniqueness(domain);
-                final User savedUser = repository.save(domain);
-                intelligencePort.publishUserRegistrationInsight(savedUser);
-                return savedUser;
-=======
     private final UserRepository repository;
     private final DuplicateRegistrationNotificationService notificationService;
     private final UserIntelligencePort intelligencePort;
@@ -70,7 +49,6 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_TECHNICAL,
                 MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_USER
             );
->>>>>>> b6084d06856b1674a4c90c5738801956f0d1d281
         }
 
         if (repository.existsByMobileNumber(domain.mobileNumber())) {
