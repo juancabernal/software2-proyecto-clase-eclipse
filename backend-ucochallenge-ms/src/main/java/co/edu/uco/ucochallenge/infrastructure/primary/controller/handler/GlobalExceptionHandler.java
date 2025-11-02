@@ -1,9 +1,13 @@
 package co.edu.uco.ucochallenge.infrastructure.primary.controller.handler;
 
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -14,6 +18,8 @@ import co.edu.uco.ucochallenge.crosscuting.exception.UcoChallengeException;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageProvider;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiErrorResponse;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -62,5 +68,29 @@ public class GlobalExceptionHandler {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(ApiErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR.value(), userMessage,
                                                 exception.getMessage()));
+        }
+
+        @ExceptionHandler(HttpMessageNotReadableException.class)
+        public ResponseEntity<ApiErrorResponse> handleInvalidPayload(final HttpMessageNotReadableException exception) {
+                LOGGER.warn("Invalid request payload", exception);
+
+                String userMessage = "El cuerpo de la solicitud tiene datos con formato inválido.";
+                final Throwable cause = exception.getMostSpecificCause();
+                if (cause instanceof InvalidFormatException invalidFormat) {
+                        final String fields = invalidFormat.getPath().stream()
+                                        .map(reference -> reference.getFieldName())
+                                        .filter(Objects::nonNull)
+                                        .distinct()
+                                        .collect(Collectors.joining(", "));
+                        if (!fields.isBlank()) {
+                                userMessage = String.format("Los campos %s deben tener un formato válido (UUID si aplica).", fields);
+                        }
+                }
+
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                                .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST.value(), userMessage,
+                                                exception.getMostSpecificCause() != null
+                                                                ? exception.getMostSpecificCause().getMessage()
+                                                                : exception.getMessage()));
         }
 }

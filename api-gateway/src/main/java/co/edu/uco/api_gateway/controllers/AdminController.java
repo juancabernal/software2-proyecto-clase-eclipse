@@ -1,9 +1,8 @@
 package co.edu.uco.api_gateway.controllers;
 
-import co.edu.uco.api_gateway.dto.PageResponse;
-import co.edu.uco.api_gateway.dto.UserCreateRequest;
-import co.edu.uco.api_gateway.dto.UserDto;
-import co.edu.uco.api_gateway.services.UserServiceProxy;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,7 +16,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
+import co.edu.uco.api_gateway.dto.PageResponse;
+import co.edu.uco.api_gateway.dto.RegisterUserResponse;
+import co.edu.uco.api_gateway.dto.UserCreateRequest;
+import co.edu.uco.api_gateway.dto.UserDto;
+import co.edu.uco.api_gateway.services.UserServiceProxy;
 
 @RestController
 @RequestMapping(path = "/api/admin", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -37,19 +41,61 @@ public class AdminController {
 
     @GetMapping("/users")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<PageResponse<UserDto>> getUsers(
+    public ResponseEntity<ApiSuccessResponse<PageResponse<UserDto>>> getUsers(
             @RequestParam Map<String, String> queryParams,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        PageResponse<UserDto> users = userServiceProxy.getAllUsers(queryParams, authorizationHeader);
+        ApiSuccessResponse<PageResponse<UserDto>> users = userServiceProxy.getAllUsers(queryParams, authorizationHeader);
         return ResponseEntity.ok(users);
     }
 
     @PostMapping("/users")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<UserDto> createUser(
+    public ResponseEntity<ApiSuccessResponse<RegisterUserResponse>> createUser(
             @RequestBody UserCreateRequest user,
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        UserDto createdUser = userServiceProxy.createUser(user, authorizationHeader);
+        ApiSuccessResponse<RegisterUserResponse> createdUser = userServiceProxy.createUser(user, authorizationHeader);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    @GetMapping("/users/departments")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<List<Map<String, Object>>> listDepartments(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(userServiceProxy.listDepartments(authorizationHeader));
+    }
+
+    @GetMapping({"/users/cities"})
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<List<Map<String, Object>>> listCities(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(userServiceProxy.listCities(authorizationHeader));
+    }
+
+    @GetMapping({"/users/id-types"})
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<List<Map<String, Object>>> listIdTypes(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(userServiceProxy.listIdTypes(authorizationHeader));
+    }
+
+    @GetMapping("/catalogs/departments")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<List<Map<String, Object>>> listDepartmentsCatalog(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(userServiceProxy.listDepartments(authorizationHeader));
+    }
+
+    @GetMapping("/catalogs/cities")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<List<Map<String, Object>>> listCitiesCatalog(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(userServiceProxy.listCities(authorizationHeader));
+    }
+
+    @GetMapping("/catalogs/id-types")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<List<Map<String, Object>>> listIdTypesCatalog(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(userServiceProxy.listIdTypes(authorizationHeader));
     }
 }
