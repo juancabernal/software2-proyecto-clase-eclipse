@@ -1,13 +1,10 @@
 export type User = {
-  id: string;
-  primerNombre: string;
-  segundoNombre?: string;
-  primerApellido: string;
-  segundoApellido?: string;
-  correo: string;
-  telefono?: string;
-  ciudad?: string;
-  estado?: string;
-  pais?: string;
-  // agrega lo que necesites (fechaAlta, activo, etc.)
+  userId: string;
+  idType: string;
+  idNumber: string;
+  fullName: string;
+  email: string;
+  mobileNumber?: string;
+  emailConfirmed: boolean;
+  mobileNumberConfirmed: boolean;
 };
