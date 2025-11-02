@@ -69,21 +69,21 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
     },
 
     async listIdTypes(): Promise<CatalogItem[]> {
-      const res = await api.get("/api/admin/users/id-types", { validateStatus: () => true });
+      const res = await api.get("/api/admin/catalogs/id-types", { validateStatus: () => true });
       if (res.status !== 200) {
         throw new Error(`Catálogo idType HTTP ${res.status}`);
       }
-      const items = res.data as RawCatalogItem[];
-      return items.map((item) => ({ id: item.id, name: item.name }));
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
     },
 
     async listCities(): Promise<CatalogItem[]> {
-      const res = await api.get("/api/admin/users/cities", { validateStatus: () => true });
+      const res = await api.get("/api/admin/catalogs/cities", { validateStatus: () => true });
       if (res.status !== 200) {
         throw new Error(`Catálogo ciudades HTTP ${res.status}`);
       }
-      const items = res.data as RawCatalogItem[];
-      return items.map((item) => ({ id: item.id, name: item.name }));
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
     },
   };
 };
@@ -99,10 +99,4 @@ export type UserCreateInput = {
   homeCity: string;      // UUID
   email: string;
   mobileNumber?: string;
-};
-
-type RawCatalogItem = {
-  id: string;
-  name: string;
-  [key: string]: unknown;
 };

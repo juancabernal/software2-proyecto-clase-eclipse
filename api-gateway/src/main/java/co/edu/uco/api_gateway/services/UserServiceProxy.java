@@ -27,9 +27,6 @@ public class UserServiceProxy {
     private static final ParameterizedTypeReference<ApiSuccessResponse<RegisterUserResponse>> REGISTER_USER_RESPONSE =
             new ParameterizedTypeReference<>() {};
 
-    private static final ParameterizedTypeReference<List<Map<String, Object>>> RAW_COLLECTION_RESPONSE =
-            new ParameterizedTypeReference<>() {};
-
     private final WebClient webClient;
 
     public UserServiceProxy(WebClient.Builder webClientBuilder) {
@@ -85,29 +82,6 @@ public class UserServiceProxy {
 
         Objects.requireNonNull(response, "La respuesta de creación de usuario no puede ser nula");
         return response;
-    }
-
-    public List<Map<String, Object>> listDepartments(String authorizationHeader) {
-        return fetchCollection("/users/departments", authorizationHeader);
-    }
-
-    public List<Map<String, Object>> listCities(String authorizationHeader) {
-        return fetchCollection("/users/cities", authorizationHeader);
-    }
-
-    public List<Map<String, Object>> listIdTypes(String authorizationHeader) {
-        return fetchCollection("/users/id-types", authorizationHeader);
-    }
-
-    private List<Map<String, Object>> fetchCollection(String path, String authorizationHeader) {
-        final List<Map<String, Object>> response = webClient.get()
-                .uri(path)
-                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
-                .retrieve()
-                .bodyToMono(RAW_COLLECTION_RESPONSE)
-                .block();
-
-        return Objects.requireNonNull(response, "La respuesta del catálogo no puede ser nula");
     }
 
     private void setAuthorization(HttpHeaders headers, String authorizationHeader) {
