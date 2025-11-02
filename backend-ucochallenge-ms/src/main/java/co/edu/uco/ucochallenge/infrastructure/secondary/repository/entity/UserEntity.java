@@ -20,9 +20,9 @@ public class UserEntity {
 	@Column(name = "id")
 	private UUID id;
 
-	@ManyToOne
-	@JoinColumn(name = "tipoIdentificacion")
-	private IdTypeEntity idType;
+        @ManyToOne
+        @JoinColumn(name = "tipoIdentificacion")
+        private TipoIdentificacionEntity idType;
 
 	@Column(name = "numeroIdentificacion")
 	private String idNumber;
@@ -39,9 +39,9 @@ public class UserEntity {
 	@Column(name = "segundoApellido")
 	private String secondSurname;
 
-	@ManyToOne
-	@JoinColumn(name = "ciudadResidencia")
-	private CityEntity homeCity;
+        @ManyToOne
+        @JoinColumn(name = "ciudadResidencia")
+        private CiudadEntity homeCity;
 
 	@Column(name = "email")
 	private String email;
@@ -65,13 +65,13 @@ public class UserEntity {
 
         protected UserEntity() {
 		setId(UUIDHelper.getDefault());
-		setIdType(new IdTypeEntity());
+                setIdType(new TipoIdentificacionEntity());
 		setIdNumber(TextHelper.getDefault());
 		setFirstName(TextHelper.getDefault());
 		setSecondName(TextHelper.getDefault());
 		setFirstSurname(TextHelper.getDefault());
 		setSecondSurname(TextHelper.getDefault());
-		setHomeCity(new CityEntity());
+                setHomeCity(new CiudadEntity());
 		setEmail(TextHelper.getDefault());
 		setMobileNumber(TextHelper.getDefault());
 		setEmailConfirmed(false);
@@ -100,13 +100,13 @@ public class UserEntity {
 	public static final class Builder {
 
 		private UUID id;
-		private IdTypeEntity idType;
+                private TipoIdentificacionEntity idType;
 		private String idNumber;
 		private String firstName;
 		private String secondName;
 		private String firstSurname;
 		private String secondSurname;
-		private CityEntity homeCity;
+                private CiudadEntity homeCity;
 		private String email;
 		private String mobileNumber;
 		private boolean emailConfirmed;
@@ -122,10 +122,10 @@ public class UserEntity {
 			return this;
 		}
 
-		public Builder idType(final IdTypeEntity idType) {
-			this.idType = idType;
-			return this;
-		}
+                public Builder idType(final TipoIdentificacionEntity idType) {
+                        this.idType = idType;
+                        return this;
+                }
 
 		public Builder idNumber(final String idNumber) {
 			this.idNumber = idNumber;
@@ -152,10 +152,10 @@ public class UserEntity {
 			return this;
 		}
 
-		public Builder homeCity(final CityEntity homeCity) {
-			this.homeCity = homeCity;
-			return this;
-		}
+                public Builder homeCity(final CiudadEntity homeCity) {
+                        this.homeCity = homeCity;
+                        return this;
+                }
 
 		public Builder email(final String email) {
 			this.email = email;
@@ -198,9 +198,9 @@ public class UserEntity {
 		return id;
 	}
 
-	public IdTypeEntity getIdType() {
-		return idType;
-	}
+        public TipoIdentificacionEntity getIdType() {
+                return idType;
+        }
 
 	public String getIdNumber() {
 		return idNumber;
@@ -222,9 +222,9 @@ public class UserEntity {
 		return secondSurname;
 	}
 
-	public CityEntity getHomeCity() {
-		return homeCity;
-	}
+        public CiudadEntity getHomeCity() {
+                return homeCity;
+        }
 
 	public String getEmail() {
 		return email;
@@ -254,9 +254,9 @@ public class UserEntity {
 		this.id = UUIDHelper.getDefault(id);
 	}
 
-	private void setIdType(final IdTypeEntity idType) {
-		this.idType = ObjectHelper.getDefault(idType, new IdTypeEntity());
-	}
+        private void setIdType(final TipoIdentificacionEntity idType) {
+                this.idType = ObjectHelper.getDefault(idType, new TipoIdentificacionEntity());
+        }
 
 	private void setIdNumber(final String idNumber) {
 		this.idNumber = TextHelper.getDefaultWithTrim(idNumber);
@@ -278,9 +278,9 @@ public class UserEntity {
 		this.secondSurname = TextHelper.getDefaultWithTrim(secondSurname);
 	}
 
-	private void setHomeCity(final CityEntity homeCity) {
-		this.homeCity = ObjectHelper.getDefault(homeCity, new CityEntity());
-	}
+        private void setHomeCity(final CiudadEntity homeCity) {
+                this.homeCity = ObjectHelper.getDefault(homeCity, new CiudadEntity());
+        }
 
 	private void setEmail(final String email) {
 		this.email = TextHelper.getDefaultWithTrim(email);

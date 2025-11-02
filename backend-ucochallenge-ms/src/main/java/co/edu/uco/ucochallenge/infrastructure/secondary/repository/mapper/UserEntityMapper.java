@@ -11,8 +11,8 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import co.edu.uco.ucochallenge.domain.user.model.User;
-import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.CityEntity;
-import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.IdTypeEntity;
+import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.CiudadEntity;
+import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.TipoIdentificacionEntity;
 import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.UserEntity;
 
 @Mapper(componentModel = "spring")
@@ -33,12 +33,12 @@ public interface UserEntityMapper {
         UserEntity toEntity(User user);
 
         @Named("mapIdType")
-        default IdTypeEntity mapIdType(final UUID idType) {
-                return new IdTypeEntity.Builder().id(idType).build();
+        default TipoIdentificacionEntity mapIdType(final UUID idType) {
+                return new TipoIdentificacionEntity.Builder().id(idType).build();
         }
 
         @Named("mapCity")
-        default CityEntity mapCity(final UUID cityId) {
-                return new CityEntity.Builder().id(cityId).build();
+        default CiudadEntity mapCity(final UUID cityId) {
+                return new CiudadEntity.Builder().id(cityId).build();
         }
 }
