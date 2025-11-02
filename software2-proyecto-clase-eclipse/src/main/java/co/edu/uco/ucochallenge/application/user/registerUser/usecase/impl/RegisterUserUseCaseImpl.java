@@ -14,6 +14,7 @@ import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 @Service
 public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
+<<<<<<< HEAD
         private final UserRepository repository;
 
         private final UserIntelligencePort intelligencePort;
@@ -34,32 +35,50 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 final User savedUser = repository.save(domain);
                 intelligencePort.publishUserRegistrationInsight(savedUser);
                 return savedUser;
+=======
+    private final UserRepository repository;
+    private final DuplicateRegistrationNotificationService notificationService;
+    private final UserIntelligencePort intelligencePort;
+
+    public RegisterUserUseCaseImpl(final UserRepository repository,
+                                   final DuplicateRegistrationNotificationService notificationService,
+                                   final UserIntelligencePort intelligencePort) {
+        this.repository = repository;
+        this.notificationService = notificationService;
+        this.intelligencePort = intelligencePort;
+    }
+
+    @Override
+    public User execute(final User domain) {
+        validateUniqueness(domain);
+        final User savedUser = repository.save(domain);
+        intelligencePort.publishUserRegistrationInsight(savedUser);
+        return savedUser;
+    }
+
+    private void validateUniqueness(final User domain) {
+        if (repository.existsByEmail(domain.email())) {
+            notificationService.notifyEmailConflict(RegistrationAttempt.fromUser(domain));
+            throw DomainException.buildFromCatalog(
+                MessageCodes.Domain.User.EMAIL_ALREADY_REGISTERED_TECHNICAL,
+                MessageCodes.Domain.User.EMAIL_ALREADY_REGISTERED_USER
+            );
         }
 
-        private void validateUniqueness(final User domain) {
-                if (repository.existsByEmail(domain.email())) {
-                    notificationService.notifyEmailConflict(RegistrationAttempt.fromUser(domain));
-
-                        throw DomainException.buildFromCatalog(MessageCodes.Domain.User.EMAIL_ALREADY_REGISTERED_TECHNICAL,
-                                        MessageCodes.Domain.User.EMAIL_ALREADY_REGISTERED_USER);
-
-                }
-
-                if (repository.existsByIdTypeAndIdNumber(domain.idType(), domain.idNumber())) {
-                        throw DomainException.buildFromCatalog(
-                                        MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_TECHNICAL,
-                                        MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_USER);
-                }
-
-                if (repository.existsByMobileNumber(domain.mobileNumber())) {
-                    notificationService.notifyMobileConflict(RegistrationAttempt.fromUser(domain));
-
-                        throw DomainException.buildFromCatalog(MessageCodes.Domain.User.MOBILE_ALREADY_REGISTERED_TECHNICAL,
-                                        MessageCodes.Domain.User.MOBILE_ALREADY_REGISTERED_USER);
-                }
+        if (repository.existsByIdTypeAndIdNumber(domain.idType(), domain.idNumber())) {
+            throw DomainException.buildFromCatalog(
+                MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_TECHNICAL,
+                MessageCodes.Domain.User.ID_NUMBER_ALREADY_REGISTERED_USER
+            );
+>>>>>>> b6084d06856b1674a4c90c5738801956f0d1d281
         }
-        
-        
-        
 
+        if (repository.existsByMobileNumber(domain.mobileNumber())) {
+            notificationService.notifyMobileConflict(RegistrationAttempt.fromUser(domain));
+            throw DomainException.buildFromCatalog(
+                MessageCodes.Domain.User.MOBILE_ALREADY_REGISTERED_TECHNICAL,
+                MessageCodes.Domain.User.MOBILE_ALREADY_REGISTERED_USER
+            );
+        }
+    }
 }
