@@ -7,7 +7,6 @@ import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
 import co.edu.uco.ucochallenge.application.user.registerUser.usecase.RegisterUserUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
-import co.edu.uco.ucochallenge.domain.ai.port.out.UserIntelligencePort;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 
@@ -17,21 +16,16 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
     private final UserRepository repository;
     private final DuplicateRegistrationNotificationService notificationService;
-    private final UserIntelligencePort intelligencePort;
-
     public RegisterUserUseCaseImpl(final UserRepository repository,
-                                   final DuplicateRegistrationNotificationService notificationService,
-                                   final UserIntelligencePort intelligencePort) {
+                                   final DuplicateRegistrationNotificationService notificationService) {
         this.repository = repository;
         this.notificationService = notificationService;
-        this.intelligencePort = intelligencePort;
     }
 
     @Override
     public User execute(final User domain) {
         validateUniqueness(domain);
         final User savedUser = repository.save(domain);
-        intelligencePort.publishUserRegistrationInsight(savedUser);
         return savedUser;
     }
 
