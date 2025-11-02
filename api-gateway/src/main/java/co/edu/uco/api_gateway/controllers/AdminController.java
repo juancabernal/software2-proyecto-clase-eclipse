@@ -17,20 +17,24 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
+import co.edu.uco.api_gateway.dto.CatalogItemDto;
 import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
 import co.edu.uco.api_gateway.services.UserServiceProxy;
+import co.edu.uco.api_gateway.services.CatalogServiceProxy;
 
 @RestController
 @RequestMapping(path = "/api/admin", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AdminController {
 
     private final UserServiceProxy userServiceProxy;
+    private final CatalogServiceProxy catalogServiceProxy;
 
-    public AdminController(UserServiceProxy userServiceProxy) {
+    public AdminController(UserServiceProxy userServiceProxy, CatalogServiceProxy catalogServiceProxy) {
         this.userServiceProxy = userServiceProxy;
+        this.catalogServiceProxy = catalogServiceProxy;
     }
 
     @GetMapping(value = "/verify")
@@ -57,45 +61,17 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
-    @GetMapping("/users/departments")
+    @GetMapping("/catalogs/id-types")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<List<Map<String, Object>>> listDepartments(
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listIdTypes(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        return ResponseEntity.ok(userServiceProxy.listDepartments(authorizationHeader));
-    }
-
-    @GetMapping({"/users/cities"})
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<List<Map<String, Object>>> listCities(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        return ResponseEntity.ok(userServiceProxy.listCities(authorizationHeader));
-    }
-
-    @GetMapping({"/users/id-types"})
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<List<Map<String, Object>>> listIdTypes(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        return ResponseEntity.ok(userServiceProxy.listIdTypes(authorizationHeader));
-    }
-
-    @GetMapping("/catalogs/departments")
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<List<Map<String, Object>>> listDepartmentsCatalog(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        return ResponseEntity.ok(userServiceProxy.listDepartments(authorizationHeader));
+        return ResponseEntity.ok(catalogServiceProxy.listIdTypes(authorizationHeader));
     }
 
     @GetMapping("/catalogs/cities")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<List<Map<String, Object>>> listCitiesCatalog(
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listCities(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        return ResponseEntity.ok(userServiceProxy.listCities(authorizationHeader));
-    }
-
-    @GetMapping("/catalogs/id-types")
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<List<Map<String, Object>>> listIdTypesCatalog(
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        return ResponseEntity.ok(userServiceProxy.listIdTypes(authorizationHeader));
+        return ResponseEntity.ok(catalogServiceProxy.listCities(authorizationHeader));
     }
 }

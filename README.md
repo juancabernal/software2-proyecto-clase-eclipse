@@ -100,13 +100,11 @@ React consume `GET /api/admin/users?page=<n>&size=<m>` y recibe:
 
 El frontend carga selectores para tipo de identificación y ciudades mediante:
 
-* `GET /api/admin/users/departments`
-* `GET /api/admin/users/cities`
-* `GET /api/admin/users/id-types`
+* `GET /api/admin/catalogs/id-types`
+* `GET /api/admin/catalogs/cities`
 
-Estos endpoints exponen directamente el contenido de las tablas (`Departamento`,
-`Ciudad`, `TipoIdentificacion`) sin envolver la respuesta. Cada objeto incluye al
-menos `id` y `name`, que el frontend utiliza para poblar los `<select>`.
+Ambos endpoints responden con `ApiSuccessResponse<List<CatalogItemDto>>`, donde cada
+`CatalogItemDto` contiene `id` y `name`.
 
 ## Pruebas manuales (cURL)
 
@@ -138,13 +136,10 @@ curl -X GET "http://localhost:8085/api/admin/users?page=1&size=10" \
   -H "Authorization: Bearer <JWT_ADMIN>"
 
 # Catálogos
-curl -X GET "http://localhost:8085/api/admin/users/departments" \
+curl -X GET "http://localhost:8085/api/admin/catalogs/id-types" \
   -H "Authorization: Bearer <JWT_ADMIN>"
 
-curl -X GET "http://localhost:8085/api/admin/users/cities" \
-  -H "Authorization: Bearer <JWT_ADMIN>"
-
-curl -X GET "http://localhost:8085/api/admin/users/id-types" \
+curl -X GET "http://localhost:8085/api/admin/catalogs/cities" \
   -H "Authorization: Bearer <JWT_ADMIN>"
 ```
 
