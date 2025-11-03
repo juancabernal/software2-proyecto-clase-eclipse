@@ -79,34 +79,60 @@ export const getUsers = async (page = 1, limit = 5) => {
   });
 };
 
-export const requestEmailConfirmation = async (userId) => {
-  if (!userId) {
+const sanitizeUserId = (userId) => {
+  if (userId === undefined || userId === null) {
+    return '';
+  }
+  return String(userId).trim();
+};
+
+const requestConfirmation = async ({ userId, type, failureMessage }) => {
+  const trimmedId = sanitizeUserId(userId);
+  if (!trimmedId) {
     throw new Error('Es necesario proporcionar el identificador del usuario.');
   }
 
-  try {
-    const response = await api.post(`/uco-challenge/api/v1/users/${userId}/confirmations/email`);
-    return response.data;
-  } catch (error) {
-    const message = error?.response?.data?.message || 'No fue posible solicitar la validación del correo electrónico.';
-    const enhancedError = new Error(message);
-    enhancedError.originalError = error;
-    throw enhancedError;
+  const encodedId = encodeURIComponent(trimmedId);
+  const endpoints = [
+    `/api/admin/users/${encodedId}/confirmations/${type}`,
+    `/uco-challenge/api/v1/users/${encodedId}/confirmations/${type}`,
+  ];
+
+  let lastError = null;
+
+  for (let index = 0; index < endpoints.length; index += 1) {
+    try {
+      const response = await api.post(endpoints[index]);
+      return response.data;
+    } catch (error) {
+      lastError = error;
+      const status = error?.response?.status;
+      const shouldFallback = index === 0 && status === 404;
+      if (!shouldFallback) {
+        break;
+      }
+    }
   }
+
+  const message =
+    lastError?.response?.data?.message ||
+    lastError?.response?.data?.error ||
+    failureMessage;
+  const enhancedError = new Error(message);
+  enhancedError.originalError = lastError;
+  throw enhancedError;
 };
 
-export const requestMobileConfirmation = async (userId) => {
-  if (!userId) {
-    throw new Error('Es necesario proporcionar el identificador del usuario.');
-  }
+export const requestEmailConfirmation = async (userId) =>
+  requestConfirmation({
+    userId,
+    type: 'email',
+    failureMessage: 'No fue posible solicitar la validación del correo electrónico.',
+  });
 
-  try {
-    const response = await api.post(`/uco-challenge/api/v1/users/${userId}/confirmations/mobile`);
-    return response.data;
-  } catch (error) {
-    const message = error?.response?.data?.message || 'No fue posible solicitar la validación del teléfono móvil.';
-    const enhancedError = new Error(message);
-    enhancedError.originalError = error;
-    throw enhancedError;
-  }
-};
+export const requestMobileConfirmation = async (userId) =>
+  requestConfirmation({
+    userId,
+    type: 'mobile',
+    failureMessage: 'No fue posible solicitar la validación del teléfono móvil.',
+  });
