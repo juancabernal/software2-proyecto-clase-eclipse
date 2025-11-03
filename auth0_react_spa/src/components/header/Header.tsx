@@ -1,5 +1,4 @@
 // src/components/layout/Header.tsx
-import React from "react";
 import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
 import ProfileButton from "./ProfileButton";
