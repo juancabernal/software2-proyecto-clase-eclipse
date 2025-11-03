@@ -86,7 +86,6 @@ management:
     gateway:
       access: read-only
     health:
-<<<<<<< HEAD
       show-details: always
   # =========================
   # ✅ Logging con TraceId y SpanId
@@ -97,11 +96,11 @@ management:
       reactor.netty: INFO
     pattern:
       level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
-=======
+
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
 
 
->>>>>>> 47bd00efeb4f10de29633b50e0c9718f9454ee04
+
 
 
 notification:
@@ -129,11 +128,3 @@ notification:
         endpoint: http://localhost:4318/v1/traces
         compression: gzip
 
-
-<<<<<<< HEAD
-
-=======
-# =========================
-# ✅ Configuración de IA (segunda versión)
-# =======
->>>>>>> 47bd00efeb4f10de29633b50e0c9718f9454ee04
