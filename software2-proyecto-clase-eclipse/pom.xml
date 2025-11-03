@@ -16,7 +16,7 @@
     <artifactId>uco-challenge</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>UcoChallenge</name>
-    <description>Aplicación reto que pretende que cada equipo de trabajo aplique prácticas y adopción de enfoques modernos en la construcción de aplicaciones distribuidas para la nube.</description>
+    <description>Aplicación reto UCO Challenge - prácticas modernas en aplicaciones distribuidas para la nube.</description>
 
     <properties>
         <java.version>21</java.version>
@@ -25,7 +25,9 @@
         <spring-cloud.version>2024.0.0</spring-cloud.version>
     </properties>
 
-    <!-- 🔧 Gestión centralizada de versiones de Spring Cloud y Azure -->
+    <!-- =========================
+         🔧 Gestión de versiones (BOMs)
+         ========================= -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -47,59 +49,67 @@
 
     <dependencies>
 
-        <!-- Spring core -->
+        <!-- 🌱 Core de Spring Boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Reactive stack -->
+        <!-- ⚡ WebFlux (si hay controladores reactivos) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
-        <!-- JPA -->
+        <!-- 💾 Persistencia con JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!-- PostgreSQL -->
+        <!-- 🐘 Driver PostgreSQL -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Eureka Client -->
+        <!-- 🧭 Eureka Client -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
-        <!-- Observability / Actuator / Tracing -->
+        <!-- 📊 Observabilidad / Actuator / OpenTelemetry -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
+
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-exporter-otlp</artifactId>
         </dependency>
 
-        <!-- Starter interno Observability Config -->
+        <!-- 📈 Prometheus -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- 🧩 Starter interno de observabilidad -->
         <dependency>
             <groupId>co.edu.uco</groupId>
             <artifactId>observability-config</artifactId>
             <version>1.0.0</version>
         </dependency>
 
-        <!-- Azure Key Vault -->
+        <!-- 🔐 Azure Key Vault -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
@@ -109,13 +119,13 @@
             <artifactId>azure-security-keyvault-secrets</artifactId>
         </dependency>
 
-        <!-- Connection pool -->
+        <!-- ⚙️ Pool de conexiones -->
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
         </dependency>
 
-        <!-- MapStruct -->
+        <!-- 🧭 MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
@@ -128,7 +138,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Lombok -->
+        <!-- 🧩 Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -136,14 +146,14 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Sanitización de entrada -->
+        <!-- 🧼 Sanitización de entrada -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>1.18.3</version>
         </dependency>
 
-        <!-- Testing -->
+        <!-- 🧪 Testing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -156,7 +166,7 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Message Service -->
+        <!-- 🔹 Módulo interno Message Service -->
         <dependency>
             <groupId>co.edu.uco.messageservice</groupId>
             <artifactId>message-service</artifactId>
@@ -172,6 +182,7 @@
         </repository>
     </repositories>
 
+    <!-- ⚙️ Build y compilador -->
     <build>
         <plugins>
             <plugin>
@@ -179,7 +190,6 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- Compilador (MapStruct + Lombok) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
