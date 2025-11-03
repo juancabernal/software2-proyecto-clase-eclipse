@@ -41,12 +41,6 @@
                         <artifactId>spring-boot-starter-web</artifactId>
                 </dependency>
 
-                <!-- Actuator -->
-                <dependency>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-actuator</artifactId>
-                </dependency>
-
                 <!-- Eureka Client -->
                 <dependency>
                         <groupId>org.springframework.cloud</groupId>
@@ -54,21 +48,19 @@
                 </dependency>
 
                 <!-- Tracing (Micrometer + OTLP) -->
+                <!-- 🔹 SPRING BOOT ACTUATOR PARA MÉTRICAS -->
                 <dependency>
-                        <groupId>io.micrometer</groupId>
-                        <artifactId>micrometer-tracing-bridge-otel</artifactId>
-                </dependency>
-                <dependency>
-                        <groupId>io.opentelemetry</groupId>
-                        <artifactId>opentelemetry-exporter-otlp</artifactId>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-actuator</artifactId>
                 </dependency>
 
-                <!-- Starter interno -->
+                <!-- 🔹 MICROMETER - REGISTRO DE MÉTRICAS PARA PROMETHEUS -->
                 <dependency>
-                        <groupId>co.edu.uco</groupId>
-                        <artifactId>observability-config</artifactId>
-                        <version>1.0.0</version>
+                        <groupId>io.micrometer</groupId>
+                        <artifactId>micrometer-registry-prometheus</artifactId>
                 </dependency>
+
+
 
                 <!-- Tests -->
                 <dependency>

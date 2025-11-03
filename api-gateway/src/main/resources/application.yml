@@ -23,6 +23,8 @@ spring:
       ribbon:
         enabled: false
     gateway:
+      metrics:
+        enabled: true
       discovery:
         locator:
           enabled: true
@@ -84,22 +86,20 @@ web:
   # ✅ Management + Tracing + Prometheus + OTLP
   # =========================
 management:
-  tracing:
-    sampling:
-       probability: 1.0   # 100% en dev
-  otlp:
-    tracing:
-       endpoint: http://localhost:4318/v1/traces
-       protocol: http/protobuf
   endpoints:
     web:
       exposure:
-        include: health,info,gateway,prometheus
-  endpoint:
-    gateway:
-      access: read-only
-    health:
-      show-details: always
+        include: health,info,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}   # <— CLAVE para el dropdown
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  # (opcional si quieres desactivar trazas para evitar 4318)
+  #  tracing:
+  #    enabled: false
+
   # =========================
   # ✅ Logging con TraceId y SpanId
   # =========================
