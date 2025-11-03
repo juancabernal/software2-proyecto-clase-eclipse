@@ -79,16 +79,7 @@ management:
     health:
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
 
-<<<<<<< HEAD
 
-services:
-  message:
-    base-url: "http://localhost:8082/api/v1/messages"
-  parameters:
-    base-url: "http://localhost:8083/api/v1/parameters"
-
-=======
->>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)
 
 
 notification:
@@ -119,17 +110,4 @@ notification:
 
 # =========================
 # ✅ Configuración de IA (segunda versión)
-# =========================
-uco-challenge:
-  ai:
-    openai:
-      enabled: ${AI_OPENAI_ENABLED:false}
-      endpoint: ${AI_OPENAI_ENDPOINT:https://api.openai.com/v1/responses}
-      api-key: ${AI_OPENAI_API_KEY:}
-      model: ${AI_OPENAI_MODEL:gpt-4o-mini}
-<<<<<<< HEAD
-      temperature: ${AI_OPENAI_TEMPERATURE:0.2}
-
-=======
-      temperature: ${AI_OPENAI_TEMPERATURE:0.2}
->>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)
+# =======
