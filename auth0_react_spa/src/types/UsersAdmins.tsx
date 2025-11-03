@@ -366,7 +366,9 @@ export default function UsersAdmin() {
                   <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.email}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.mobileNumber || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-300">{user.idType}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">
+                    {idTypes.find((t) => t.id === user.idType)?.name || "Desconocido"}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">
                     <div className="flex flex-col gap-3">
