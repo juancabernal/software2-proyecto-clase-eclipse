@@ -1,17 +1,24 @@
 package co.edu.uco.ucochallenge.application.notification;
 
 import java.net.URI;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.NotificationEvent;
 import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.Person;
 import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.Recipient;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
@@ -91,32 +98,43 @@ public class NotificationClient {
         return URI.create(endpoint);
     }
 
-
     private Map<String, Object> buildPayload(final DuplicateRegistrationNotificationRequest request) {
         final Map<String, Object> payload = new HashMap<>();
 
-        // Tipo de notificación configurado en NotificationAPI
-        payload.put("type", request.notificationType()); // Ej: "duplicate_email"
+        // 🔹 Identificador de la notificación (tal como se ve en tu panel)
+        payload.put("notificationId", request.notificationType()); // Ej: "duplicate_alert"
 
-        // Datos del destinatario
-        final Map<String, Object> to = new HashMap<>();
+        // 🔹 Construir objeto 'user' con email o número
+        final Map<String, Object> user = new HashMap<>();
 
-        // 🔹 Genera un UUID aleatorio (ya que Person no tiene id)
-        String userId = UUID.randomUUID().toString();
+        if (request.attemptedUser() != null) {
+            if (!TextHelper.isEmpty(request.attemptedUser().email())) {
+                user.put("email", request.attemptedUser().email());
+                user.put("id", request.attemptedUser().email());
+            }
+            if (!TextHelper.isEmpty(request.attemptedUser().mobileNumber())) {
+                String number = request.attemptedUser().mobileNumber();
+                if (!number.startsWith("+")) {
+                    number = "+57" + number;
+                }
+                user.put("number", number);
+                // Si no tiene id por email, usa el número como id
+                if (!user.containsKey("id")) {
+                    user.put("id", number);
+                }
+            }
+        }
 
-        to.put("id", userId);
-        to.put("email", request.attemptedUser() != null ? request.attemptedUser().email() : null);
-        payload.put("to", to);
+        payload.put("user", user);
 
-        // Parámetros dinámicos de la plantilla
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("subject", request.subject());
-        parameters.put("message", request.message());
-        payload.put("parameters", parameters);
+        // 🔹 Plantilla predeterminada
+        payload.put("templateId", "predeterminado");
+
+        // 🔹 Log para verificar el JSON enviado
+        LOGGER.info("📤 Payload SMS NotificationAPI: {}", payload);
 
         return payload;
     }
-
 
 
     private List<String> resolveChannels(final DuplicateRegistrationNotificationRequest request) {
