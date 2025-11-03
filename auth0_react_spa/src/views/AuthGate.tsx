@@ -47,7 +47,7 @@ export default function AuthGate() {
         });
 
         console.log("✅ Token (recortado):", token.substring(0, 30) + "...");
-        const url = "/api/admin/verify";
+        const url = "/api/admin/users";
         console.log("🌐 Llamando gateway:", baseURL + url);
 
         setStatusMsg("Validando autorización…");
