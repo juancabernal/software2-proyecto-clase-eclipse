@@ -218,6 +218,34 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de eliminación de usuario no puede ser nula");
     }
 
+    public ApiSuccessResponse<Void> requestEmailConfirmation(
+            final UUID id,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response = webClient.post()
+                .uri("/{id}/confirmations/email", id)
+                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VOID_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
+    }
+
+    public ApiSuccessResponse<Void> requestMobileConfirmation(
+            final UUID id,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response = webClient.post()
+                .uri("/{id}/confirmations/mobile", id)
+                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VOID_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
+    }
+
     private ApiSuccessResponse<PageResponse<UserDto>> buildPageResponse(
             final ApiSuccessResponse<ListUsersResponse> response) {
         final ApiSuccessResponse<ListUsersResponse> nonNullResponse = Objects.requireNonNull(
