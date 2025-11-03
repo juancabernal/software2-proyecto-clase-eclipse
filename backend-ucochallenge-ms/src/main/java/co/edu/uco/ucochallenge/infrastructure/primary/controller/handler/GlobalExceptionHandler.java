@@ -1,5 +1,7 @@
 package co.edu.uco.ucochallenge.infrastructure.primary.controller.handler;
 
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -15,6 +17,8 @@ import co.edu.uco.ucochallenge.crosscuting.exception.ApplicationException;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.exception.InfrastructureException;
 import co.edu.uco.ucochallenge.crosscuting.exception.UcoChallengeException;
+import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscuting.key.MessageKey;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageProvider;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiErrorResponse;
@@ -29,8 +33,9 @@ public class GlobalExceptionHandler {
         @ExceptionHandler(DomainException.class)
         public ResponseEntity<ApiErrorResponse> handleDomainException(final DomainException exception) {
                 LOGGER.warn(exception.getTechnicalMessage(), exception);
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                                .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST.value(), exception.getUserMessage(),
+                final HttpStatus status = resolveDomainStatus(exception);
+                return ResponseEntity.status(status)
+                                .body(ApiErrorResponse.of(status.value(), exception.getUserMessage(),
                                                 exception.getTechnicalMessage()));
         }
 
@@ -67,15 +72,14 @@ public class GlobalExceptionHandler {
                                 .getMessage(MessageCodes.Application.UNEXPECTED_ERROR_USER);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(ApiErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR.value(), userMessage,
-                                                exception.getMessage()));
+                                                technicalMessage));
         }
 
         @ExceptionHandler(HttpMessageNotReadableException.class)
         public ResponseEntity<ApiErrorResponse> handleInvalidPayload(final HttpMessageNotReadableException exception) {
-                LOGGER.warn("Invalid request payload", exception);
-
-                String userMessage = "El cuerpo de la solicitud tiene datos con formato inválido.";
+                final String technicalMessage = MessageProvider.getMessage(MessageKey.RequestPayload.TECHNICAL);
                 final Throwable cause = exception.getMostSpecificCause();
+                String userMessage = MessageProvider.getMessage(MessageKey.RequestPayload.INVALID);
                 if (cause instanceof InvalidFormatException invalidFormat) {
                         final String fields = invalidFormat.getPath().stream()
                                         .map(reference -> reference.getFieldName())
@@ -83,14 +87,27 @@ public class GlobalExceptionHandler {
                                         .distinct()
                                         .collect(Collectors.joining(", "));
                         if (!fields.isBlank()) {
-                                userMessage = String.format("Los campos %s deben tener un formato válido (UUID si aplica).", fields);
+                                userMessage = MessageProvider.getMessage(MessageKey.RequestPayload.INVALID_FIELDS,
+                                                Map.of("fields", fields));
                         }
                 }
 
+                LOGGER.warn("{}", technicalMessage, exception);
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                                 .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST.value(), userMessage,
-                                                exception.getMostSpecificCause() != null
-                                                                ? exception.getMostSpecificCause().getMessage()
-                                                                : exception.getMessage()));
+                                                technicalMessage));
+        }
+
+        private HttpStatus resolveDomainStatus(final DomainException exception) {
+                final String normalized = TextHelper.getDefault(exception.getTechnicalMessage())
+                                .toLowerCase(Locale.ROOT);
+                if (normalized.contains("not_found") || normalized.contains("not found")) {
+                        return HttpStatus.NOT_FOUND;
+                }
+                if (normalized.contains("duplicate") || normalized.contains("duplicated")
+                                || normalized.contains("already") || normalized.contains("conflict")) {
+                        return HttpStatus.CONFLICT;
+                }
+                return HttpStatus.BAD_REQUEST;
         }
 }

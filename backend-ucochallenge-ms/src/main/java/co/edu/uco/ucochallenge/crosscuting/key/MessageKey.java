@@ -56,10 +56,41 @@ public final class MessageKey {
     }
 
     public static final class ListUsers {
+        public static final String SUCCESS = "list.users.success";
         public static final String PAGE_NEGATIVE = "list.users.validation.page.negative";
         public static final String SIZE_INVALID = "list.users.validation.size.invalid";
 
         private ListUsers() {
+        }
+    }
+
+    public static final class GetUser {
+        public static final String SUCCESS = "get.user.success";
+
+        private GetUser() {
+        }
+    }
+
+    public static final class SearchUsers {
+        public static final String SUCCESS = "search.users.success";
+
+        private SearchUsers() {
+        }
+    }
+
+    public static final class DeleteUser {
+        public static final String SUCCESS = "delete.user.success";
+
+        private DeleteUser() {
+        }
+    }
+
+    public static final class RequestPayload {
+        public static final String INVALID = "request.payload.invalid";
+        public static final String INVALID_FIELDS = "request.payload.invalid.fields";
+        public static final String TECHNICAL = "request.payload.invalid.technical";
+
+        private RequestPayload() {
         }
     }
 }
