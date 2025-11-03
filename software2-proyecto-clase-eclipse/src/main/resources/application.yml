@@ -22,7 +22,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://localhost:8762/eureka/
   instance:
     prefer-ip-address: true
 
@@ -67,19 +67,41 @@ logging:
   pattern:
     level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
 
-# =========================
-# ✅ Management + Tracing + Prometheus + OTLP (Fusión de ambos)
-# =========================
+  # =========================
+  # ✅ Management + Tracing + Prometheus + OTLP
+  # =========================
 management:
+  tracing:
+    sampling:
+      probability: 1.0   # 100% en dev
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+      protocol: http/protobuf
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,gateway,prometheus
   endpoint:
+    gateway:
+      access: read-only
     health:
+<<<<<<< HEAD
+      show-details: always
+  # =========================
+  # ✅ Logging con TraceId y SpanId
+  # =========================
+  logging:
+    level:
+      org.springframework.cloud.gateway: DEBUG
+      reactor.netty: INFO
+    pattern:
+      level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
+=======
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
 
 
+>>>>>>> 47bd00efeb4f10de29633b50e0c9718f9454ee04
 
 
 notification:
@@ -108,6 +130,10 @@ notification:
         compression: gzip
 
 
+<<<<<<< HEAD
+
+=======
 # =========================
 # ✅ Configuración de IA (segunda versión)
 # =======
+>>>>>>> 47bd00efeb4f10de29633b50e0c9718f9454ee04
