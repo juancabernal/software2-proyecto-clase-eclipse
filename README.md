@@ -1,16 +1,119 @@
-# UCO Challenge – Flujo de usuarios
+# 🏛️ UCO Challenge – Arquitectura, Modelos y Flujo de Usuarios
 
-Este documento resume el flujo actualizado para registrar y listar usuarios a través del
-frontend (React), el API Gateway (Spring Cloud Gateway) y el backend UCOChallenge.
+## 📘 Presentación
 
-## Variables de entorno
+**UCO Challenge** es un proyecto académico y técnico diseñado como un **reto de arquitectura moderna en la nube**, enfocado en aplicar prácticas avanzadas de desarrollo distribuido con **Spring Boot 3**, **Spring Cloud**, **Azure Key Vault**, **Observabilidad nativa (Prometheus + OpenTelemetry)** y **PostgreSQL**.
 
-El frontend Auth0 SPA requiere las siguientes variables (archivo `.env`):
+El objetivo es demostrar la implementación de un entorno **escalable, seguro y observable**, compuesto por frontend (React), backend distribuido, y servicios auxiliares (catálogos, notificaciones, configuración y trazabilidad).
+
+El proyecto se estructura con un enfoque **Hexagonal / DDD (Domain-Driven Design)**, permitiendo una clara separación entre capas de dominio, aplicación e infraestructura.
+
+---
+
+## 🧩 Modelo de Clases
+
+📎 **Imagen:** [Ver modelo de clases](https://shorturl.at/xCS8q)
+
+Este modelo define las entidades principales del dominio (`Usuario`, `Ciudad`, `Departamento`, `País`, `TipoIdentificación`), junto con sus relaciones y atributos base.  
+Representa la estructura de objetos del sistema y cómo se modelan las reglas de negocio dentro de la aplicación.
+
+---
+
+## 🧮 Modelo MER (Modelo Entidad–Relación)
+
+📎 **Imagen incluida abajo**
+
+Este modelo representa la estructura de datos a nivel de base de datos relacional PostgreSQL.
+
+![Modelo MER](MER-UcoChallenge.jpg)
+
+### Entidades principales
+
+| Entidad | Descripción |
+|----------|-------------|
+| **País** | Contiene la lista de países disponibles. |
+| **Departamento** | Dependiente de país. |
+| **Ciudad** | Asociada a un departamento. |
+| **TipoIdentificación** | Catálogo de tipos de documento. |
+| **Usuario** | Entidad central que relaciona tipo de identificación y ciudad de residencia. |
+
+---
+
+## ☁️ Modelo de Despliegue
+
+### 🧭 Arquitectura de Referencia
+
+📎 **Imagen incluida abajo**
+
+Esta arquitectura representa cómo se despliegan los distintos componentes del ecosistema UCO Challenge en la nube, incluyendo seguridad perimetral, entrega de contenido y monitoreo.
+
+![Arquitectura de Referencia](Captura%20de%20pantalla%202025-11-03%20063715.png)
+
+### 🧱 Arquetipo de Referencia
+
+> _(Espacio reservado para imagen y descripción del arquetipo de referencia del despliegue)_
+
+---
+
+## 📦 Modelo de Paquetes
+
+> _(Espacio reservado para incluir el modelo de paquetes y su descripción correspondiente)_
+
+---
+
+## ⚙️ Modelo de Componentes
+
+📎 **Imagen:** [Ver modelo de componentes](https://shorturl.at/tvLYq)
+
+Este modelo detalla los principales módulos de software dentro del sistema UCO Challenge, incluyendo:
+- **Frontend UCOChallenge (React)** – SPA conectada al gateway mediante Auth0.
+- **API Gateway (Spring Cloud Gateway)** – Encargado del enrutamiento, seguridad y balanceo.
+- **Backend UCOChallenge (Spring Boot)** – Núcleo del dominio y lógica de negocio.
+- **Catálogos auxiliares (Message y Parameter Catalog)** – Servicios complementarios para configuración dinámica.
+- **Azure Key Vault** – Fuente segura de secretos y configuraciones sensibles.
+- **Plataforma de Monitoreo (Prometheus, Grafana, OTLP)** – Observabilidad unificada.
+- **Email Notification Gateway** – Servicio externo de notificaciones.
+
+### 📄 Documentación de Componentes
+
+> _(Espacio reservado para agregar la documentación detallada de cada componente: responsabilidades, interfaces y dependencias)_
+
+---
+
+## 🔁 Modelo de Secuencia
+
+📎 **Imagen:** [Ver diagrama de secuencia](https://shorturl.at/kDDke)
+
+Este diagrama describe el flujo completo del caso de uso **Registrar Usuario**, mostrando la interacción entre:
+- **Frontend React**
+- **API Gateway**
+- **Backend UCOChallenge**
+- **Repositorios de persistencia y servicios de validación**
+
+---
+
+## ⚙️ Modelo de Actividades
+
+📎 **Imagen:** [Ver diagrama de actividades](https://shorturl.at/BzzNT)
+
+Representa el flujo lógico y de decisión durante el proceso de registro de usuario, incluyendo:
+1. Validaciones de datos.
+2. Ejecución de reglas de dominio.
+3. Persistencia.
+4. Respuesta al cliente.
+
+---
+
+## 👥 Flujo de Usuarios
+
+### Variables de entorno
+
+El frontend (SPA Auth0) requiere las siguientes variables:
 
 ```bash
 VITE_API_SERVER_URL=http://localhost:8085
 VITE_AUTH0_AUDIENCE=https://uco-challenge-api
-```
+
 
 ## Registro de usuarios
 
