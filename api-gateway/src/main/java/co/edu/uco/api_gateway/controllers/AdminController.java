@@ -68,6 +68,7 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listIdTypes(authorizationHeader));
     }
+    
 
     @GetMapping("/catalogs/cities")
     @PreAuthorize("hasAuthority('administrador')")
