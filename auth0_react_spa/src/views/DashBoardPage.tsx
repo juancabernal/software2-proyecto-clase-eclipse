@@ -6,7 +6,7 @@ import Header from "../components/header/Header";
 import UsersAdmin from "../types/UsersAdmins";
 
 export default function DashboardPage() {
-  const { isAuthenticated, isLoading, user, logout } = useAuth0();
+  const { isAuthenticated, isLoading, user } = useAuth0();
 
   if (isLoading) {
     return (
@@ -24,11 +24,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header
-        subtitle="Dashboard"
-        isAuthenticated={isAuthenticated}
-        onLogout={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-      />
+      <Header subtitle="Dashboard" isAuthenticated={isAuthenticated} />
 
       <div className="min-h-screen bg-[#0f0f12] text-gray-100">
         <main className="mx-auto max-w-6xl px-4 pb-20 pt-10 space-y-8">

@@ -142,6 +142,7 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listIdTypes(authorizationHeader));
     }
+    
 
     /**
      * Proxy de {@code GET /uco-challenge/api/v1/catalogs/cities}.

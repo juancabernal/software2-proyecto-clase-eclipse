@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.uco.ucochallenge.application.Void;
 import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.deleteUser.interactor.DeleteUserInteractor;
 import co.edu.uco.ucochallenge.application.user.getUser.dto.GetUserOutputDTO;
 import co.edu.uco.ucochallenge.application.user.getUser.interactor.GetUserInteractor;
@@ -37,6 +39,9 @@ public class UserController {
         private final GetUserInteractor getUserInteractor;
         private final SearchUsersInteractor searchUsersInteractor;
         private final DeleteUserInteractor deleteUserInteractor;
+        private final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor;
+        private final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor;
+ 
 		/* private final UpdateUserInteractor updateUserInteractor; */
 
         public UserController(
@@ -44,7 +49,10 @@ public class UserController {
                         final ListUsersInteractor listUsersInteractor,
                         final GetUserInteractor getUserInteractor,
                         final SearchUsersInteractor searchUsersInteractor,
-				final DeleteUserInteractor deleteUserInteractor/*
+                        final DeleteUserInteractor deleteUserInteractor,
+                        final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor,
+                        final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor
+				/*
 																 * , final UpdateUserInteractor updateUserInteractor
 																 */) {
                 this.registerUserInteractor = registerUserInteractor;
@@ -52,6 +60,8 @@ public class UserController {
                 this.getUserInteractor = getUserInteractor;
                 this.searchUsersInteractor = searchUsersInteractor;
                 this.deleteUserInteractor = deleteUserInteractor;
+                this.requestEmailConfirmationInteractor = requestEmailConfirmationInteractor;
+                this.requestMobileConfirmationInteractor = requestMobileConfirmationInteractor;
 				/* this.updateUserInteractor = updateUserInteractor; */
         }
 
@@ -109,6 +119,23 @@ public class UserController {
                 deleteUserInteractor.execute(id);
                 return ResponseEntity.ok(ApiSuccessResponse.of("Usuario eliminado exitosamente.", Void.returnVoid()));
         }
+        
+        @PostMapping("/{id}/confirmations/email")
+        public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(@PathVariable("id") final UUID id) {
+                requestEmailConfirmationInteractor.execute(id);
+                return ResponseEntity.ok(ApiSuccessResponse.of(
+                                "Se envió la solicitud de validación del correo electrónico.",
+                                Void.returnVoid()));
+        }
+
+        @PostMapping("/{id}/confirmations/mobile")
+        public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(@PathVariable("id") final UUID id) {
+                requestMobileConfirmationInteractor.execute(id);
+                return ResponseEntity.ok(ApiSuccessResponse.of(
+                                "Se envió la solicitud de validación del teléfono móvil.",
+                                Void.returnVoid()));
+        }
+
 
 		/*
 		 * @PutMapping("/{id}") public

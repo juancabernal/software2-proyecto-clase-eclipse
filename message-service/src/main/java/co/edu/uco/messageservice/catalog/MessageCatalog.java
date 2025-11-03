@@ -63,6 +63,16 @@ public final class MessageCatalog {
 		register("register.user.rule.mobile.confirmation.pending",
 				"El número móvil debe ser confirmado para finalizar el registro.");
 		register("list.users.validation.page.negative", "La página solicitada no puede ser negativa.");
+		register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
+        register("domain.user.email.alreadyConfirmed.technical",
+                "El correo electrónico ya fue confirmado anteriormente.");
+		register("domain.user.email.alreadyConfirmed.user",
+		                "El correo electrónico del usuario ya está confirmado.");
+		register("domain.user.mobile.alreadyConfirmed.technical",
+		                "El número de teléfono móvil ya fue confirmado anteriormente.");
+		register("domain.user.mobile.alreadyConfirmed.user",
+		                "El número de teléfono móvil del usuario ya está confirmado.");
+		
                 register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
                 register("application.unexpectedError.user", "Se presentó un error inesperado. Intenta nuevamente.");
                 register("application.unexpectedError.technical", "UNEXPECTED_ERROR - Revisa trazas y causa raíz.");

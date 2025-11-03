@@ -101,6 +101,15 @@ public final class MessageCodes {
                     "domain.user.idNumber.alreadyRegistered.user";
             public static final String MOBILE_ALREADY_REGISTERED_TECHNICAL =
                     "domain.user.mobile.alreadyRegistered.technical";
+            
+            public static final String EMAIL_ALREADY_CONFIRMED_TECHNICAL =
+                    "domain.user.email.alreadyConfirmed.technical";
+            public static final String EMAIL_ALREADY_CONFIRMED_USER =
+                    "domain.user.email.alreadyConfirmed.user";
+            public static final String MOBILE_ALREADY_CONFIRMED_TECHNICAL =
+                    "domain.user.mobile.alreadyConfirmed.technical";
+            public static final String MOBILE_ALREADY_CONFIRMED_USER =
+                    "domain.user.mobile.alreadyConfirmed.user";
             public static final String MOBILE_ALREADY_REGISTERED_USER =
                     "domain.user.mobile.alreadyRegistered.user";
             public static final String ID_TYPE_NOT_FOUND_TECHNICAL = "domain.user.idType.notFound.technical";

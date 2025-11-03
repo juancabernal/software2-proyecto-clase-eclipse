@@ -71,6 +71,10 @@ export default function UsersAdmin() {
   const [form, setForm] = useState<UserFormState>(emptyForm);
   const [formErr, setFormErr] = useState<string | null>(null);
   const [creationResult, setCreationResult] = useState<RegisterUserResponse | null>(null);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [feedbackMessages, setFeedbackMessages] = useState<
+    Record<string, { variant: "success" | "error"; message: string }>
+  >({});
 
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
   const [cities, setCities] = useState<CatalogItem[]>([]);
@@ -176,6 +180,56 @@ export default function UsersAdmin() {
   const prevPage = () => {
     if (filters.page > 1) {
       setFilters((f) => ({ ...f, page: f.page - 1 }));
+    }
+  };
+
+  const updateFeedback = (userId: string, payload: { variant: "success" | "error"; message: string } | null) => {
+    setFeedbackMessages((prev) => {
+      if (!payload) {
+        const { [userId]: _removed, ...rest } = prev;
+        return rest;
+      }
+      return {
+        ...prev,
+        [userId]: payload,
+      };
+    });
+  };
+
+  const handleRequestConfirmation = async (userId: string, type: "email" | "mobile") => {
+    if (!userId) {
+      return;
+    }
+
+    const key = `${userId}-${type}`;
+    const successMessage =
+      type === "email"
+        ? "Se envió la solicitud de validación del correo electrónico."
+        : "Se envió la solicitud de validación del teléfono móvil.";
+    const errorFallback =
+      type === "email"
+        ? "No fue posible solicitar la validación del correo electrónico."
+        : "No fue posible solicitar la validación del teléfono móvil.";
+
+    setActionLoading((prev) => ({ ...prev, [key]: true }));
+    updateFeedback(userId, null);
+
+    try {
+      if (type === "email") {
+        await api.requestEmailConfirmation(userId);
+      } else {
+        await api.requestMobileConfirmation(userId);
+      }
+      updateFeedback(userId, { variant: "success", message: successMessage });
+    } catch (error: any) {
+      const message = error?.message || errorFallback;
+      updateFeedback(userId, { variant: "error", message });
+      console.error(`Error solicitando validación de ${type}:`, error);
+    } finally {
+      setActionLoading((prev) => {
+        const { [key]: _removed, ...rest } = prev;
+        return rest;
+      });
     }
   };
 
@@ -290,6 +344,7 @@ export default function UsersAdmin() {
                 </tr>
               )}
 
+<<<<<<< HEAD
               {!loading &&
                 !err &&
                 pageData?.items?.map((user) => (
@@ -320,6 +375,59 @@ export default function UsersAdmin() {
                     </td>
                   </tr>
                 ))}
+=======
+              {!loading && !err && pageData?.items?.map((user) => (
+                <tr key={user.userId} className="hover:bg-[#121217]">
+                  <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">{user.email}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">{user.mobileNumber || "—"}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">{user.idType}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={user.emailConfirmed ? "text-emerald-400" : "text-yellow-400"}>
+                          Correo {user.emailConfirmed ? "confirmado" : "pendiente"}
+                        </span>
+                        <span className="text-gray-500">·</span>
+                        <span className={user.mobileNumberConfirmed ? "text-emerald-400" : "text-yellow-400"}>
+                          Móvil {user.mobileNumberConfirmed ? "confirmado" : "pendiente"}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleRequestConfirmation(user.userId, "email")}
+                          disabled={Boolean(actionLoading[`${user.userId}-email`])}
+                          className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {actionLoading[`${user.userId}-email`] ? "Enviando…" : "Validar correo"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRequestConfirmation(user.userId, "mobile")}
+                          disabled={Boolean(actionLoading[`${user.userId}-mobile`])}
+                          className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {actionLoading[`${user.userId}-mobile`] ? "Enviando…" : "Validar teléfono"}
+                        </button>
+                      </div>
+
+                      {feedbackMessages[user.userId]?.message && (
+                        <p
+                          className={`text-xs ${
+                            feedbackMessages[user.userId]?.variant === "error" ? "text-rose-400" : "text-emerald-400"
+                          }`}
+                        >
+                          {feedbackMessages[user.userId]?.message}
+                        </p>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+>>>>>>> b30b73a8ebb5222ee53ccb664ba008d7975fafb2
             </tbody>
           </table>
         </div>
