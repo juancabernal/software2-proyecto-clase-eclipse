@@ -10,7 +10,7 @@ export type Page<T> = {
   items: T[];
   page: number;        // 1-based
   size: number;        // page size
-  totalItems: number;  // total rows
+  totalItems: number;  // total rowse
   totalPages: number;  // ceil(totalItems/size)
 };
 

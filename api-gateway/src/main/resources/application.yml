@@ -56,25 +56,15 @@ spring:
   # ✅ Configuración de Eureka
   # =========================
 eureka:
-<<<<<<< HEAD
-   client:
-     service-url:
-       defaultZone: http://localhost:8762/eureka/
-     register-with-eureka: true
-     fetch-registry: true
-   instance:
-     prefer-ip-address: true
-     instance-id: ${spring.application.name}:${random.uuid}
-=======
+
   client:
     service-url:
-      defaultZone: http://localhost:8762/eureka/
+      defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${random.uuid}
->>>>>>> 47bd00efeb4f10de29633b50e0c9718f9454ee04
 
   # =========================
   # ✅ Configuración de OAuth2 (Auth0)

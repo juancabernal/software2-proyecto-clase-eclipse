@@ -16,7 +16,6 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
     private final UserRepository repository;
     private final DuplicateRegistrationNotificationService notificationService;
 
-
     public RegisterUserUseCaseImpl(final UserRepository repository,
                                    final DuplicateRegistrationNotificationService notificationService) {
         this.repository = repository;
