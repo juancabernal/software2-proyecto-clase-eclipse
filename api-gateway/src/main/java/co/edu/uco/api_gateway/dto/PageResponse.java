@@ -7,5 +7,7 @@ public record PageResponse<T>(
         int page,
         int size,
         long totalItems,
-        int totalPages) {
+        int totalPages,
+        boolean hasNext,
+        boolean hasPrevious) {
 }
