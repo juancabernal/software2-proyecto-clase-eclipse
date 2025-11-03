@@ -22,7 +22,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://localhost:8762/eureka/
   instance:
     prefer-ip-address: true
 
@@ -67,28 +67,35 @@ logging:
   pattern:
     level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
 
-# =========================
-# ✅ Management + Tracing + Prometheus + OTLP (Fusión de ambos)
-# =========================
+  # =========================
+  # ✅ Management + Tracing + Prometheus + OTLP
+  # =========================
 management:
+  tracing:
+    sampling:
+      probability: 1.0   # 100% en dev
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+      protocol: http/protobuf
   endpoints:
     web:
       exposure:
-        include: health,info,prometheus
+        include: health,info,gateway,prometheus
   endpoint:
+    gateway:
+      access: read-only
     health:
-      show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
-
-<<<<<<< HEAD
-
-services:
-  message:
-    base-url: "http://localhost:8082/api/v1/messages"
-  parameters:
-    base-url: "http://localhost:8083/api/v1/parameters"
-
-=======
->>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)
+      show-details: always
+  # =========================
+  # ✅ Logging con TraceId y SpanId
+  # =========================
+  logging:
+    level:
+      org.springframework.cloud.gateway: DEBUG
+      reactor.netty: INFO
+    pattern:
+      level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
 
 
 notification:
@@ -117,19 +124,4 @@ notification:
         compression: gzip
 
 
-# =========================
-# ✅ Configuración de IA (segunda versión)
-# =========================
-uco-challenge:
-  ai:
-    openai:
-      enabled: ${AI_OPENAI_ENABLED:false}
-      endpoint: ${AI_OPENAI_ENDPOINT:https://api.openai.com/v1/responses}
-      api-key: ${AI_OPENAI_API_KEY:}
-      model: ${AI_OPENAI_MODEL:gpt-4o-mini}
-<<<<<<< HEAD
-      temperature: ${AI_OPENAI_TEMPERATURE:0.2}
 
-=======
-      temperature: ${AI_OPENAI_TEMPERATURE:0.2}
->>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)
