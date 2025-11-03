@@ -7,11 +7,14 @@ import java.util.UUID;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.ListUsersResponse;
@@ -20,6 +23,8 @@ import co.edu.uco.api_gateway.dto.PaginationMetadataDto;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
+import co.edu.uco.api_gateway.exception.DownstreamException;
+import reactor.core.publisher.Mono;
 
 @Service
 public class UserServiceProxy {
@@ -67,6 +72,7 @@ public class UserServiceProxy {
                 })
                 .bodyValue(user)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(REGISTER_USER_RESPONSE)
                 .block();
 
@@ -97,6 +103,7 @@ public class UserServiceProxy {
                 })
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(LIST_USERS_RESPONSE)
                 .block();
 
@@ -119,6 +126,7 @@ public class UserServiceProxy {
                 .uri("/{id}", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(GET_USER_RESPONSE)
                 .block();
 
@@ -150,6 +158,7 @@ public class UserServiceProxy {
                 })
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(LIST_USERS_RESPONSE)
                 .block();
 
@@ -172,6 +181,7 @@ public class UserServiceProxy {
                 .uri("/{id}", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(VOID_RESPONSE)
                 .block();
 
@@ -207,5 +217,14 @@ public class UserServiceProxy {
         if (StringUtils.hasText(authorizationHeader)) {
             headers.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
         }
+    }
+
+    private Mono<? extends Throwable> mapError(final ClientResponse response) {
+        return response.bodyToMono(ApiErrorResponse.class)
+                .defaultIfEmpty(ApiErrorResponse.of(
+                        response.statusCode().value(),
+                        response.statusCode().toString(),
+                        response.statusCode().toString()))
+                .flatMap(error -> Mono.error(new DownstreamException(response.statusCode(), error)));
     }
 }

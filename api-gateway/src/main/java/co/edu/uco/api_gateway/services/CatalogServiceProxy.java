@@ -5,13 +5,18 @@ import java.util.Objects;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.CatalogItemDto;
+import co.edu.uco.api_gateway.exception.DownstreamException;
+import reactor.core.publisher.Mono;
 
 @Service
 public class CatalogServiceProxy {
@@ -58,6 +63,7 @@ public class CatalogServiceProxy {
                     headers.setContentType(MediaType.APPLICATION_JSON);
                 })
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(CATALOG_RESPONSE)
                 .block();
 
@@ -68,5 +74,14 @@ public class CatalogServiceProxy {
         if (StringUtils.hasText(authorizationHeader)) {
             headers.set(HttpHeaders.AUTHORIZATION, authorizationHeader);
         }
+    }
+
+    private Mono<? extends Throwable> mapError(final ClientResponse response) {
+        return response.bodyToMono(ApiErrorResponse.class)
+                .defaultIfEmpty(ApiErrorResponse.of(
+                        response.statusCode().value(),
+                        response.statusCode().toString(),
+                        response.statusCode().toString()))
+                .flatMap(error -> Mono.error(new DownstreamException(response.statusCode(), error)));
     }
 }
