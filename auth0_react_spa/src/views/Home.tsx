@@ -54,7 +54,7 @@ export default function Home() {
                   Iniciar sesión
                 </button>
                 <p id="login-help" className="mt-2 text-sm text-gray-400">
-                  Accede con tu cuenta institucional para continuar.
+                  Accede con tu cuenta para continuar.
                 </p>
               </div>
             </div>
@@ -68,13 +68,13 @@ export default function Home() {
               />
               <div className="overflow-hidden rounded-2xl border border-gray-700 bg-[#1a1a1f] shadow-lg">
                 <img
-                  src="/hero.png"
+                  src="Logo-02-1.png"
                   alt="Ilustración decorativa"
                   className="h-full w-full object-cover opacity-90"
                 />
               </div>
               <p className="mt-4 text-center text-sm text-gray-400">
-                Imagen representativa del proyecto (personalizable).
+                ¡Acreditada en alta calidad!
               </p>
             </div>
           </section>

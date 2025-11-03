@@ -344,38 +344,6 @@ export default function UsersAdmin() {
                 </tr>
               )}
 
-<<<<<<< HEAD
-              {!loading &&
-                !err &&
-                pageData?.items?.map((user) => (
-                  <tr key={user.userId} className="hover:bg-[#121217]">
-                    <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{user.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">
-                      {user.mobileNumber || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{user.idType}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">
-                      <span
-                        className={
-                          user.emailConfirmed ? "text-emerald-400" : "text-yellow-400"
-                        }
-                      >
-                        Correo {user.emailConfirmed ? "confirmado" : "pendiente"}
-                      </span>
-                      <span className="mx-1">·</span>
-                      <span
-                        className={
-                          user.mobileNumberConfirmed ? "text-emerald-400" : "text-yellow-400"
-                        }
-                      >
-                        Móvil {user.mobileNumberConfirmed ? "confirmado" : "pendiente"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-=======
               {!loading && !err && pageData?.items?.map((user) => (
                 <tr key={user.userId} className="hover:bg-[#121217]">
                   <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
@@ -427,7 +395,6 @@ export default function UsersAdmin() {
                   </td>
                 </tr>
               ))}
->>>>>>> b30b73a8ebb5222ee53ccb664ba008d7975fafb2
             </tbody>
           </table>
         </div>
