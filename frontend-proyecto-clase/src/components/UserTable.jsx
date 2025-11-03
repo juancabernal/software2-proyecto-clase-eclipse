@@ -1,9 +1,12 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowUpDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { requestEmailConfirmation, requestMobileConfirmation } from "../services/api";
 
 const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPage = 10, onPageChange }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [loadingActions, setLoadingActions] = useState({});
+  const [feedbackMessages, setFeedbackMessages] = useState({});
 
   const handleSort = (key) => {
     let direction = "asc";
@@ -22,6 +25,57 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
     if (valueA > valueB) return sortConfig.direction === "asc" ? 1 : -1;
     return 0;
   });
+
+  const updateFeedback = (userId, variant, message) => {
+    setFeedbackMessages((prev) => {
+      if (!message) {
+        const { [userId]: _removed, ...rest } = prev;
+        return rest;
+      }
+
+      return {
+        ...prev,
+        [userId]: { variant, message },
+      };
+    });
+  };
+
+  const handleValidationClick = async (userId, type) => {
+    if (!userId) {
+      return;
+    }
+
+    const key = `${userId}-${type}`;
+    const successMessage =
+      type === "email"
+        ? "Se envió la solicitud de validación del correo electrónico."
+        : "Se envió la solicitud de validación del teléfono móvil.";
+    const errorFallback =
+      type === "email"
+        ? "No fue posible solicitar la validación del correo electrónico."
+        : "No fue posible solicitar la validación del teléfono móvil.";
+
+    setLoadingActions((prev) => ({ ...prev, [key]: true }));
+    updateFeedback(userId, null, null);
+
+    try {
+      if (type === "email") {
+        await requestEmailConfirmation(userId);
+      } else {
+        await requestMobileConfirmation(userId);
+      }
+      updateFeedback(userId, "success", successMessage);
+    } catch (error) {
+      const message = error?.message || errorFallback;
+      updateFeedback(userId, "error", message);
+      console.error(`Error solicitando validación de ${type}:`, error);
+    } finally {
+      setLoadingActions((prev) => {
+        const { [key]: _removed, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
 
   const renderSortIcon = (key) => (
     <ArrowUpDown
@@ -51,7 +105,7 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
             <th
               onClick={() => handleSort("email")}
               className="px-6 py-4 cursor-pointer select-none hover:text-white transition-colors break-words"
-              style={{ width: '45%' }}
+              style={{ width: '35%' }}
             >
               Correo {renderSortIcon("email")}
             </th>
@@ -62,13 +116,19 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
             >
               Rol {renderSortIcon("rol")}
             </th>
+            <th
+              className="px-6 py-4 text-gray-300"
+              style={{ width: '20%' }}
+            >
+              Acciones
+            </th>
           </tr>
         </thead>
         <tbody>
           {sortedUsers.length === 0 ? (
             <tr>
               <td
-                colSpan="3"
+                colSpan="4"
                 className="text-center py-6 text-gray-500 italic bg-[#181818]"
               >
                 No se encontraron usuarios.
@@ -95,6 +155,39 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
                   >
                     {user.rol}
                   </span>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                    <button
+                      type="button"
+                      className="btn btn-outline text-xs sm:text-sm"
+                      onClick={() => handleValidationClick(user.id, "email")}
+                      disabled={!user.id || Boolean(loadingActions[`${user.id}-email`])}
+                    >
+                      {loadingActions[`${user.id}-email`] ? "Enviando..." : "Validar correo"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline text-xs sm:text-sm"
+                      onClick={() => handleValidationClick(user.id, "mobile")}
+                      disabled={!user.id || Boolean(loadingActions[`${user.id}-mobile`])}
+                    >
+                      {loadingActions[`${user.id}-mobile`] ? "Enviando..." : "Validar teléfono"}
+                    </button>
+                  </div>
+                  {feedbackMessages[user.id]?.message && (
+                    <p
+                      className={`mt-2 text-xs ${
+                        feedbackMessages[user.id]?.variant === "error"
+                          ? "text-rose-400"
+                          : feedbackMessages[user.id]?.variant === "success"
+                          ? "text-emerald-400"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {feedbackMessages[user.id].message}
+                    </p>
+                  )}
                 </td>
               </motion.tr>
             ))
