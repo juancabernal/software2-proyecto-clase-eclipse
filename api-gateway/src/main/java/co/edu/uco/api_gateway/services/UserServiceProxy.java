@@ -45,6 +45,8 @@ public class UserServiceProxy {
             new ParameterizedTypeReference<>() {};
 
     private final WebClient webClient;
+    
+    
 
     public UserServiceProxy(final WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
@@ -131,6 +133,23 @@ public class UserServiceProxy {
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de consulta de usuario no puede ser nula");
+    }
+    public ApiSuccessResponse<Void> requestEmailConfirmation(UUID userId, String authorizationHeader) {
+        return webClient.post()
+                .uri("/users/{id}/confirmations/email", userId)
+                .headers(headers -> setAuthorization(headers, authorizationHeader))
+                .retrieve()
+                .bodyToMono(VOID_RESPONSE)
+                .block();
+    }
+
+    public ApiSuccessResponse<Void> requestMobileConfirmation(UUID userId, String authorizationHeader) {
+        return webClient.post()
+                .uri("/users/{id}/confirmations/mobile", userId)
+                .headers(headers -> setAuthorization(headers, authorizationHeader))
+                .retrieve()
+                .bodyToMono(VOID_RESPONSE)
+                .block();
     }
 
     /**
