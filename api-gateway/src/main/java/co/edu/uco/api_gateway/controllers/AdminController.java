@@ -134,6 +134,32 @@ public class AdminController {
     }
 
     /**
+     * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/email}.
+     */
+    @PostMapping("/users/{id}/confirmations/email")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response =
+                userServiceProxy.requestEmailConfirmation(id, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/mobile}.
+     */
+    @PostMapping("/users/{id}/confirmations/mobile")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response =
+                userServiceProxy.requestMobileConfirmation(id, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Proxy de {@code GET /uco-challenge/api/v1/catalogs/id-types}.
      */
     @GetMapping("/catalogs/id-types")
