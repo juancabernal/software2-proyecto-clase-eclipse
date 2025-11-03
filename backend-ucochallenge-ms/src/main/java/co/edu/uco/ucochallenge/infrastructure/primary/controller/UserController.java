@@ -26,6 +26,8 @@ import co.edu.uco.ucochallenge.application.user.registerUser.dto.RegisterUserOut
 import co.edu.uco.ucochallenge.application.user.registerUser.interactor.RegisterUserInteractor;
 import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQueryDTO;
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
+import co.edu.uco.ucochallenge.crosscuting.key.MessageKey;
+import co.edu.uco.ucochallenge.crosscuting.messages.MessageProvider;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 import co.edu.uco.ucochallenge.infrastructure.secondary.repository.CityJpaRepository;
 import co.edu.uco.ucochallenge.infrastructure.secondary.repository.DepartmentJpaRepository;
@@ -72,7 +74,9 @@ public class UserController {
                         @RequestBody final RegisterUserInputDTO dto) {
                 final RegisterUserOutputDTO response = registerUserInteractor.execute(dto);
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(ApiSuccessResponse.of("Usuario registrado exitosamente.", response));
+                                .body(ApiSuccessResponse.of(
+                                                MessageProvider.getMessage(MessageKey.RegisterUser.SUCCESS),
+                                                response));
         }
 
         @GetMapping
@@ -82,13 +86,17 @@ public class UserController {
                 final PaginationRequestDTO pagination = PaginationRequestDTO.normalize(page, size);
                 final ListUsersResponseDTO response = listUsersInteractor
                                 .execute(ListUsersRequestDTO.of(pagination));
-                return ResponseEntity.ok(ApiSuccessResponse.of("Usuarios obtenidos exitosamente.", response));
+                return ResponseEntity.ok(ApiSuccessResponse.of(
+                                MessageProvider.getMessage(MessageKey.ListUsers.SUCCESS),
+                                response));
         }
 
         @GetMapping("/{id}")
         public ResponseEntity<ApiSuccessResponse<GetUserOutputDTO>> getUser(@PathVariable("id") final UUID id) {
                 final GetUserOutputDTO response = getUserInteractor.execute(id);
-                return ResponseEntity.ok(ApiSuccessResponse.of("Usuario obtenido exitosamente.", response));
+                return ResponseEntity.ok(ApiSuccessResponse.of(
+                                MessageProvider.getMessage(MessageKey.GetUser.SUCCESS),
+                                response));
         }
 
         @GetMapping("/search")
@@ -113,13 +121,17 @@ public class UserController {
                                 page,
                                 size);
                 final ListUsersResponseDTO response = searchUsersInteractor.execute(filter);
-                return ResponseEntity.ok(ApiSuccessResponse.of("Usuarios filtrados exitosamente.", response));
+                return ResponseEntity.ok(ApiSuccessResponse.of(
+                                MessageProvider.getMessage(MessageKey.SearchUsers.SUCCESS),
+                                response));
         }
 
         @DeleteMapping("/{id}")
         public ResponseEntity<ApiSuccessResponse<Void>> deleteUser(@PathVariable("id") final UUID id) {
                 deleteUserInteractor.execute(id);
-                return ResponseEntity.ok(ApiSuccessResponse.of("Usuario eliminado exitosamente.", Void.returnVoid()));
+                return ResponseEntity.ok(ApiSuccessResponse.of(
+                                MessageProvider.getMessage(MessageKey.DeleteUser.SUCCESS),
+                                Void.returnVoid()));
         }
 
         @GetMapping("/departments")

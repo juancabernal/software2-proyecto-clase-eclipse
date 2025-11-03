@@ -52,7 +52,7 @@ services:
   message:
     base-url: http://localhost:8082/api/v1/messages
   parameters:
-    base-url: http://localhost:8089/api/v1/parameters
+    base-url: http://localhost:8083/api/v1/parameters
 
 
 # =========================
@@ -67,39 +67,17 @@ logging:
   pattern:
     level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
 
-  # =========================
-  # ✅ Management + Tracing + Prometheus + OTLP
-  # =========================
+# =========================
+# ✅ Management + Tracing + Prometheus + OTLP (Fusión de ambos)
+# =========================
 management:
-  tracing:
-    sampling:
-      probability: 1.0   # 100% en dev
-  otlp:
-    tracing:
-      endpoint: http://localhost:4318/v1/traces
-      protocol: http/protobuf
   endpoints:
     web:
       exposure:
-        include: health,info,gateway,prometheus
+        include: health,info,prometheus
   endpoint:
-    gateway:
-      access: read-only
     health:
-      show-details: always
-  # =========================
-  # ✅ Logging con TraceId y SpanId
-  # =========================
-  logging:
-    level:
-      org.springframework.cloud.gateway: DEBUG
-      reactor.netty: INFO
-    pattern:
-      level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
-
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
-
-
 
 
 
@@ -107,9 +85,8 @@ notification:
   api:
     base-url: "https://api.notificationapi.com"
     duplicate-path: "/sender"
-    api-key: ${secrets.cliente-id:${NOTIFICATION_API_KEY:}}
-    api-secret: ${secrets.cliente-secret-id:${NOTIFICATION_API_SECRET:}}
-
+    api-key: "${NOTIFICATION_API_KEY:}"
+    api-secret: "${NOTIFICATION_API_SECRET:}"
 
   metrics:
     tags:
@@ -127,4 +104,10 @@ notification:
         enabled: true
         endpoint: http://localhost:4318/v1/traces
         compression: gzip
+
+
+# =========================
+# ✅ Configuración de IA (segunda versión)
+# =========================
+
 

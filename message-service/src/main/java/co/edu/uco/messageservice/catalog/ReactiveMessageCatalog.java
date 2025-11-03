@@ -76,7 +76,11 @@ public class ReactiveMessageCatalog {
         register("exception.general.technical", "Se produjo un error interno al procesar la solicitud.");
         register("exception.general.user", "No fue posible procesar la solicitud con la información recibida.");
 
-        register("register.user.success", "Usuario registrado correctamente.");
+        register("register.user.success", "Usuario registrado exitosamente.");
+        register("list.users.success", "Usuarios obtenidos exitosamente.");
+        register("get.user.success", "Usuario obtenido exitosamente.");
+        register("search.users.success", "Usuarios filtrados exitosamente.");
+        register("delete.user.success", "Usuario eliminado exitosamente.");
         register("register.user.validation.idType.required", "El tipo de identificación es obligatorio.");
         register("register.user.validation.idType.notFound",
                 "El tipo de identificación indicado no existe en el sistema.");
@@ -124,22 +128,15 @@ public class ReactiveMessageCatalog {
         register("list.users.validation.page.negative", "La página solicitada no puede ser negativa.");
         register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
 
-        register("application.unexpectedError.technical", "Ocurrió un error inesperado al procesar la solicitud.");
-        register("application.unexpectedError.user",
-                "No pudimos procesar tu solicitud en este momento. Por favor, inténtalo más tarde.");
+        register("application.unexpectedError.user", "Se presentó un error inesperado. Intenta nuevamente.");
+        register("application.unexpectedError.technical", "UNEXPECTED_ERROR - Revisa trazas y causa raíz.");
 
-        register("infrastructure.messageService.unavailable.technical",
-                "El servicio de mensajes no está disponible en este momento.");
-        register("infrastructure.messageService.unavailable.user",
-                "No fue posible recuperar los mensajes solicitados. Inténtalo de nuevo más tarde.");
-        register("infrastructure.parameterService.unavailable.technical",
-                "El servicio de parámetros no está disponible en este momento.");
-        register("infrastructure.parameterService.unavailable.user",
-                "No fue posible recuperar los parámetros de validación. Inténtalo de nuevo más tarde.");
-        register("infrastructure.parameterService.invalidResponse.technical",
-                "Se recibió una respuesta inválida del servicio de parámetros.");
-        register("infrastructure.parameterService.invalidResponse.user",
-                "No fue posible procesar la configuración solicitada. Inténtalo nuevamente más tarde.");
+        register("infrastructure.messageService.unavailable.user", "El servicio de mensajes no está disponible.");
+        register("infrastructure.messageService.unavailable.technical", "MESSAGE_SERVICE_UNAVAILABLE");
+        register("infrastructure.parameterService.unavailable.user", "El servicio de parámetros no está disponible.");
+        register("infrastructure.parameterService.unavailable.technical", "PARAMETER_SERVICE_UNAVAILABLE");
+        register("infrastructure.parameterService.invalidResponse.user", "Valor de parámetro inválido.");
+        register("infrastructure.parameterService.invalidResponse.technical", "PARAMETER_INVALID_RESPONSE");
 
         register("domain.user.idType.mandatory.technical", "El tipo de identificación del usuario es obligatorio.");
         register("domain.user.idType.mandatory.user", "Debe seleccionar un tipo de identificación.");
@@ -181,17 +178,16 @@ public class ReactiveMessageCatalog {
                 "El número de celular debe tener {expectedLength} dígitos.");
         register("domain.user.notFound.technical", "El usuario solicitado no existe en el sistema.");
         register("domain.user.notFound.user", "No encontramos un usuario con la información suministrada.");
-        register("domain.user.email.alreadyRegistered.technical",
-                "El correo electrónico ya se encuentra asociado a otro usuario.");
-        register("domain.user.email.alreadyRegistered.user", "El correo electrónico ingresado ya está registrado.");
-        register("domain.user.idNumber.alreadyRegistered.technical",
-                "El número de identificación ya está asociado a otro usuario.");
-        register("domain.user.idNumber.alreadyRegistered.user",
-                "El número de identificación ingresado ya está registrado.");
-        register("domain.user.mobile.alreadyRegistered.technical",
-                "El número de teléfono móvil ya se encuentra asociado a otro usuario.");
-        register("domain.user.mobile.alreadyRegistered.user",
-                "El número de celular ingresado ya está registrado.");
+        register("domain.user.email.alreadyRegistered.user", "El correo ya se encuentra registrado.");
+        register("domain.user.email.alreadyRegistered.technical", "EMAIL_ALREADY_REGISTERED");
+        register("domain.user.idNumber.alreadyRegistered.user", "El número de documento ya se encuentra registrado.");
+        register("domain.user.idNumber.alreadyRegistered.technical", "ID_NUMBER_ALREADY_REGISTERED");
+        register("domain.user.mobile.alreadyRegistered.user", "El número de móvil ya se encuentra registrado.");
+        register("domain.user.mobile.alreadyRegistered.technical", "MOBILE_ALREADY_REGISTERED");
+        register("request.payload.invalid", "El cuerpo de la solicitud tiene datos con formato inválido.");
+        register("request.payload.invalid.fields",
+                "Los campos {fields} deben tener un formato válido (UUID si aplica).");
+        register("request.payload.invalid.technical", "INVALID_REQUEST_PAYLOAD");
         register("domain.user.idType.notFound.technical", "El tipo de identificación solicitado no existe.");
         register("domain.user.idType.notFound.user", "El tipo de identificación seleccionado no es válido.");
         register("domain.user.homeCity.notFound.technical", "La ciudad de residencia indicada no existe.");

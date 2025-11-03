@@ -13,7 +13,11 @@ public final class MessageCatalog {
 		register("exception.general.technical", "Se produjo un error interno al procesar la solicitud.");
 		register("exception.general.user", "No fue posible procesar la solicitud con la información recibida.");
 
-		register("register.user.success", "Usuario registrado correctamente.");
+                register("register.user.success", "Usuario registrado exitosamente.");
+                register("list.users.success", "Usuarios obtenidos exitosamente.");
+                register("get.user.success", "Usuario obtenido exitosamente.");
+                register("search.users.success", "Usuarios filtrados exitosamente.");
+                register("delete.user.success", "Usuario eliminado exitosamente.");
 		register("register.user.validation.idType.required", "El tipo de identificación es obligatorio.");
 		register("register.user.validation.idType.notFound",
 				"El tipo de identificación indicado no existe en el sistema.");
@@ -44,12 +48,12 @@ public final class MessageCatalog {
 				"Ya existe un usuario registrado con ese tipo y número de identificación.");
 		register("register.user.rule.email.duplicated.owner",
 				"El correo electrónico suministrado ya está registrado; se notificará al propietario.");
-		register("register.user.rule.email.duplicated.executor",
-				"Ya existe un usuario con el correo electrónico proporcionado.");
-		register("register.user.rule.mobile.duplicated.owner",
-				"El número de teléfono suministrado ya está registrado; se notificará al propietario.");
-		register("register.user.rule.mobile.duplicated.executor",
-				"Ya existe un usuario con el número de teléfono proporcionado.");
+                register("register.user.rule.email.duplicated.executor",
+                                "Ya existe un usuario con el correo electrónico proporcionado.");
+                register("register.user.rule.mobile.duplicated.owner",
+                                "El número de teléfono suministrado ya está registrado; se notificará al propietario.");
+                register("register.user.rule.mobile.duplicated.executor",
+                                "Ya existe un usuario con el número de teléfono proporcionado.");
 		register("register.user.rule.email.confirmation.strategy",
 				"Se enviará la estrategia de confirmación del correo electrónico.");
 		register("register.user.rule.email.confirmation.pending",
@@ -69,6 +73,25 @@ public final class MessageCatalog {
 		register("domain.user.mobile.alreadyConfirmed.user",
 		                "El número de teléfono móvil del usuario ya está confirmado.");
 		
+                register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
+                register("application.unexpectedError.user", "Se presentó un error inesperado. Intenta nuevamente.");
+                register("application.unexpectedError.technical", "UNEXPECTED_ERROR - Revisa trazas y causa raíz.");
+                register("infrastructure.messageService.unavailable.user", "El servicio de mensajes no está disponible.");
+                register("infrastructure.messageService.unavailable.technical", "MESSAGE_SERVICE_UNAVAILABLE");
+                register("infrastructure.parameterService.unavailable.user", "El servicio de parámetros no está disponible.");
+                register("infrastructure.parameterService.unavailable.technical", "PARAMETER_SERVICE_UNAVAILABLE");
+                register("infrastructure.parameterService.invalidResponse.user", "Valor de parámetro inválido.");
+                register("infrastructure.parameterService.invalidResponse.technical", "PARAMETER_INVALID_RESPONSE");
+                register("domain.user.email.alreadyRegistered.user", "El correo ya se encuentra registrado.");
+                register("domain.user.email.alreadyRegistered.technical", "EMAIL_ALREADY_REGISTERED");
+                register("domain.user.idNumber.alreadyRegistered.user", "El número de documento ya se encuentra registrado.");
+                register("domain.user.idNumber.alreadyRegistered.technical", "ID_NUMBER_ALREADY_REGISTERED");
+                register("domain.user.mobile.alreadyRegistered.user", "El número de móvil ya se encuentra registrado.");
+                register("domain.user.mobile.alreadyRegistered.technical", "MOBILE_ALREADY_REGISTERED");
+                register("request.payload.invalid", "El cuerpo de la solicitud tiene datos con formato inválido.");
+                register("request.payload.invalid.fields",
+                                "Los campos {fields} deben tener un formato válido (UUID si aplica).");
+                register("request.payload.invalid.technical", "INVALID_REQUEST_PAYLOAD");
 	}
 
 	private MessageCatalog() {
