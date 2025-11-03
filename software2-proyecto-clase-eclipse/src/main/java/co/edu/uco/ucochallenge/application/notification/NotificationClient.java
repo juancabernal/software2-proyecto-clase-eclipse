@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.Person;
 import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.Recipient;
@@ -41,6 +42,10 @@ public class NotificationClient {
         this.secretProvider = secretProvider;
     }
 
+    // ============================================================
+    // MÉTODO PRINCIPAL (MODIFICADO)
+    // ============================================================
+
     public void sendNotification(final DuplicateRegistrationNotificationRequest request) {
         final String baseUrl = TextHelper.getDefaultWithTrim(properties.getBaseUrl());
         if (TextHelper.isEmpty(baseUrl)) {
@@ -54,21 +59,39 @@ public class NotificationClient {
             return;
         }
 
-        final Map<String, Object> payload = buildPayload(request);
         try {
             final URI target = buildTargetUri(baseUrl, properties.getDuplicatePath());
             final HttpHeaders headers = buildHeaders();
-            final HttpEntity<Map<String, Object>> entity = new HttpEntity<>(payload, headers);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // ✅ Construimos el payload
+            final Map<String, Object> payload = buildPayload(request);
+
+            // ✅ Serialización explícita con ObjectMapper para evitar diferencias entre entornos
+            final ObjectMapper mapper = new ObjectMapper();
+            final String jsonBody = mapper.writeValueAsString(payload);
 
             LOGGER.info("🚀 Sending notification '{}' to {}", request.type(), target);
-            LOGGER.debug("Notification payload: {}", payload);
+            LOGGER.info("📤 JSON Body sent to NotificationAPI: {}", jsonBody);
 
+            // ✅ Envío garantizado limpio y sin encoding extra
+            final HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
             final ResponseEntity<String> response = restTemplate.postForEntity(target, entity, String.class);
+
             LOGGER.info("✅ Notification dispatched successfully. Status: {}", response.getStatusCode());
+            LOGGER.debug("Response body: {}", response.getBody());
+
         } catch (final RestClientException exception) {
             LOGGER.error("❌ Unable to dispatch notification '{}'", request.type(), exception);
+        } catch (final Exception ex) {
+            LOGGER.error("❌ Error serializing or sending notification '{}': {}", request.type(), ex.getMessage(), ex);
         }
     }
+
+    // ============================================================
+    // HEADERS Y AUTENTICACIÓN
+    // ============================================================
+
     private HttpHeaders buildHeaders() {
         final HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -79,7 +102,7 @@ public class NotificationClient {
         final String clientSecret = TextHelper.getDefaultWithTrim(secretProvider.getSecret("cliente-secret-id"));
 
         if (!TextHelper.isEmpty(clientId) && !TextHelper.isEmpty(clientSecret)) {
-            headers.setBasicAuth(clientId, clientSecret); // 👈 Basic Auth real, como Bruno
+            headers.setBasicAuth(clientId, clientSecret);
             LOGGER.debug("NotificationAPI Basic Auth configured with client ID '{}'.", clientId);
         } else {
             LOGGER.warn("NotificationAPI credentials are missing. The request may fail with 401 Unauthorized.");
@@ -88,6 +111,9 @@ public class NotificationClient {
         return headers;
     }
 
+    // ============================================================
+    // CONSTRUCCIÓN DE ENDPOINT
+    // ============================================================
 
     private URI buildTargetUri(final String baseUrl, final String path) {
         final String clientId = TextHelper.getDefaultWithTrim(secretProvider.getSecret("cliente-id"));
@@ -98,10 +124,14 @@ public class NotificationClient {
         return URI.create(endpoint);
     }
 
+    // ============================================================
+    // CONSTRUCCIÓN DEL PAYLOAD
+    // ============================================================
+
     private Map<String, Object> buildPayload(final DuplicateRegistrationNotificationRequest request) {
         final Map<String, Object> payload = new HashMap<>();
 
-        // 🔹 Identificador de la notificación (tal como se ve en tu panel)
+        // 🔹 Identificador de la notificación (como está en tu panel NotificationAPI)
         payload.put("notificationId", request.notificationType()); // Ej: "duplicate_alert"
 
         // 🔹 Construir objeto 'user' con email o número
@@ -130,12 +160,15 @@ public class NotificationClient {
         // 🔹 Plantilla predeterminada
         payload.put("templateId", "predeterminado");
 
-        // 🔹 Log para verificar el JSON enviado
-        LOGGER.info("📤 Payload SMS NotificationAPI: {}", payload);
+        // 🔹 Log de payload
+        LOGGER.info("📤 Payload NotificationAPI: {}", payload);
 
         return payload;
     }
 
+    // ============================================================
+    // AUXILIARES
+    // ============================================================
 
     private List<String> resolveChannels(final DuplicateRegistrationNotificationRequest request) {
         final List<String> channels = new ArrayList<>();
@@ -146,8 +179,10 @@ public class NotificationClient {
         }
 
         final Person attempted = request.attemptedUser();
-        if (!TextHelper.isEmpty(attempted.email())) channels.add("EMAIL");
-        if (!TextHelper.isEmpty(attempted.mobileNumber())) channels.add("SMS");
+        if (attempted != null) {
+            if (!TextHelper.isEmpty(attempted.email())) channels.add("EMAIL");
+            if (!TextHelper.isEmpty(attempted.mobileNumber())) channels.add("SMS");
+        }
         return channels;
     }
 
@@ -187,6 +222,4 @@ public class NotificationClient {
         map.put("channels", channels);
         return map;
     }
-
- 
 }
