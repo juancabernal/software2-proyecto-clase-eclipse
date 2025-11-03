@@ -211,6 +211,23 @@ export default function UsersAdmin() {
         ? "No fue posible solicitar la validación del correo electrónico."
         : "No fue posible solicitar la validación del teléfono móvil.";
 
+    const targetUser = pageData?.items?.find((user) => user.userId === userId);
+    if (!targetUser) {
+      updateFeedback(userId, { variant: "error", message: "No se encontró el usuario seleccionado." });
+      return;
+    }
+
+    if (type === "email" && !targetUser.email) {
+      updateFeedback(userId, { variant: "error", message: "El usuario no tiene un correo electrónico registrado." });
+      return;
+    }
+
+    const hasMobileContact = Boolean(targetUser.mobileNumber);
+    if (type === "mobile" && !hasMobileContact) {
+      updateFeedback(userId, { variant: "error", message: "El usuario no tiene un teléfono móvil registrado." });
+      return;
+    }
+
     setActionLoading((prev) => ({ ...prev, [key]: true }));
     updateFeedback(userId, null);
 
@@ -344,38 +361,6 @@ export default function UsersAdmin() {
                 </tr>
               )}
 
-<<<<<<< HEAD
-              {!loading &&
-                !err &&
-                pageData?.items?.map((user) => (
-                  <tr key={user.userId} className="hover:bg-[#121217]">
-                    <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{user.email}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">
-                      {user.mobileNumber || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{user.idType}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber}</td>
-                    <td className="px-4 py-3 text-sm text-gray-300">
-                      <span
-                        className={
-                          user.emailConfirmed ? "text-emerald-400" : "text-yellow-400"
-                        }
-                      >
-                        Correo {user.emailConfirmed ? "confirmado" : "pendiente"}
-                      </span>
-                      <span className="mx-1">·</span>
-                      <span
-                        className={
-                          user.mobileNumberConfirmed ? "text-emerald-400" : "text-yellow-400"
-                        }
-                      >
-                        Móvil {user.mobileNumberConfirmed ? "confirmado" : "pendiente"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-=======
               {!loading && !err && pageData?.items?.map((user) => (
                 <tr key={user.userId} className="hover:bg-[#121217]">
                   <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
@@ -399,7 +384,7 @@ export default function UsersAdmin() {
                         <button
                           type="button"
                           onClick={() => handleRequestConfirmation(user.userId, "email")}
-                          disabled={Boolean(actionLoading[`${user.userId}-email`])}
+                          disabled={Boolean(actionLoading[`${user.userId}-email`]) || !user.email}
                           className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {actionLoading[`${user.userId}-email`] ? "Enviando…" : "Validar correo"}
@@ -407,7 +392,7 @@ export default function UsersAdmin() {
                         <button
                           type="button"
                           onClick={() => handleRequestConfirmation(user.userId, "mobile")}
-                          disabled={Boolean(actionLoading[`${user.userId}-mobile`])}
+                          disabled={Boolean(actionLoading[`${user.userId}-mobile`]) || !user.mobileNumber}
                           className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {actionLoading[`${user.userId}-mobile`] ? "Enviando…" : "Validar teléfono"}
@@ -427,7 +412,6 @@ export default function UsersAdmin() {
                   </td>
                 </tr>
               ))}
->>>>>>> b30b73a8ebb5222ee53ccb664ba008d7975fafb2
             </tbody>
           </table>
         </div>

@@ -85,7 +85,8 @@ export const requestEmailConfirmation = async (userId) => {
   }
 
   try {
-    const response = await api.post(`/uco-challenge/api/v1/users/${userId}/confirmations/email`);
+    const targetId = encodeURIComponent(String(userId).trim());
+    const response = await api.post(`/api/admin/users/${targetId}/confirmations/email`);
     return response.data;
   } catch (error) {
     const message = error?.response?.data?.message || 'No fue posible solicitar la validación del correo electrónico.';
@@ -101,7 +102,8 @@ export const requestMobileConfirmation = async (userId) => {
   }
 
   try {
-    const response = await api.post(`/uco-challenge/api/v1/users/${userId}/confirmations/mobile`);
+    const targetId = encodeURIComponent(String(userId).trim());
+    const response = await api.post(`/api/admin/users/${targetId}/confirmations/mobile`);
     return response.data;
   } catch (error) {
     const message = error?.response?.data?.message || 'No fue posible solicitar la validación del teléfono móvil.';

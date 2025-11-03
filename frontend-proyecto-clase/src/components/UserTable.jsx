@@ -40,7 +40,8 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
     });
   };
 
-  const handleValidationClick = async (userId, type) => {
+  const handleValidationClick = async (user, type) => {
+    const userId = user?.id;
     if (!userId) {
       return;
     }
@@ -54,6 +55,17 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
       type === "email"
         ? "No fue posible solicitar la validación del correo electrónico."
         : "No fue posible solicitar la validación del teléfono móvil.";
+
+    if (type === "email" && !user?.email) {
+      updateFeedback(userId, "error", "El usuario no tiene un correo electrónico registrado.");
+      return;
+    }
+
+    const hasMobileContact = Boolean(user?.mobileNumber || user?.telefonoMovil || user?.telefono);
+    if (type !== "email" && !hasMobileContact) {
+      updateFeedback(userId, "error", "El usuario no tiene un teléfono móvil registrado.");
+      return;
+    }
 
     setLoadingActions((prev) => ({ ...prev, [key]: true }));
     updateFeedback(userId, null, null);
@@ -161,16 +173,20 @@ const UserTable = ({ users, currentPage, totalPages, totalCount = 0, usersPerPag
                     <button
                       type="button"
                       className="btn btn-outline text-xs sm:text-sm"
-                      onClick={() => handleValidationClick(user.id, "email")}
-                      disabled={!user.id || Boolean(loadingActions[`${user.id}-email`])}
+                      onClick={() => handleValidationClick(user, "email")}
+                      disabled={!user.id || !user.email || Boolean(loadingActions[`${user.id}-email`])}
                     >
                       {loadingActions[`${user.id}-email`] ? "Enviando..." : "Validar correo"}
                     </button>
                     <button
                       type="button"
                       className="btn btn-outline text-xs sm:text-sm"
-                      onClick={() => handleValidationClick(user.id, "mobile")}
-                      disabled={!user.id || Boolean(loadingActions[`${user.id}-mobile`])}
+                      onClick={() => handleValidationClick(user, "mobile")}
+                      disabled={
+                        !user.id ||
+                        !(user.mobileNumber || user.telefonoMovil || user.telefono) ||
+                        Boolean(loadingActions[`${user.id}-mobile`])
+                      }
                     >
                       {loadingActions[`${user.id}-mobile`] ? "Enviando..." : "Validar teléfono"}
                     </button>

@@ -93,7 +93,7 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       }
 
       const res = await api.post(
-        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/email`,
+        `/api/admin/users/${encodeURIComponent(trimmedId)}/confirmations/email`,
         undefined,
         { validateStatus: () => true }
       );
@@ -113,7 +113,7 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       }
 
       const res = await api.post(
-        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/mobile`,
+        `/api/admin/users/${encodeURIComponent(trimmedId)}/confirmations/mobile`,
         undefined,
         { validateStatus: () => true }
       );
