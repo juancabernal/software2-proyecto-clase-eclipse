@@ -1,5 +1,4 @@
 // src/components/layout/Header.tsx
-import React from "react";
 import LoginButton from "./LoginButton";
 import LogoutButton from "./LogoutButton";
 import ProfileButton from "./ProfileButton";
@@ -14,6 +13,8 @@ type HeaderProps = {
 export default function Header({
   subtitle,
   isAuthenticated = false,
+  onLogin,
+  onLogout,
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-gray-800 bg-[#0f0f12]/95 backdrop-blur-md">
@@ -47,12 +48,12 @@ export default function Header({
         <div>
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
-               <LogoutButton/> 
+              <LogoutButton onLogout={onLogout} />
               <ProfileButton />
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <LoginButton nextPath="/auth/gate" />
+              <LoginButton onLogin={onLogin} nextPath="/auth/gate" />
             </div>
           )}
         </div>

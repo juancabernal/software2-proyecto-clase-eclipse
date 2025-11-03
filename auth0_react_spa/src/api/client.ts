@@ -85,6 +85,46 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
     },
+
+    async requestEmailConfirmation(userId: string): Promise<void> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+
+      const res = await api.post(
+        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/email`,
+        undefined,
+        { validateStatus: () => true }
+      );
+
+      if (res.status < 200 || res.status >= 300) {
+        const message =
+          (res.data && (res.data.message || res.data.error)) ||
+          "No fue posible solicitar la validación del correo electrónico.";
+        throw new Error(message);
+      }
+    },
+
+    async requestMobileConfirmation(userId: string): Promise<void> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+
+      const res = await api.post(
+        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/mobile`,
+        undefined,
+        { validateStatus: () => true }
+      );
+
+      if (res.status < 200 || res.status >= 300) {
+        const message =
+          (res.data && (res.data.message || res.data.error)) ||
+          "No fue posible solicitar la validación del teléfono móvil.";
+        throw new Error(message);
+      }
+    },
   };
 };
 

@@ -78,3 +78,35 @@ export const getUsers = async (page = 1, limit = 5) => {
     }, 500);
   });
 };
+
+export const requestEmailConfirmation = async (userId) => {
+  if (!userId) {
+    throw new Error('Es necesario proporcionar el identificador del usuario.');
+  }
+
+  try {
+    const response = await api.post(`/uco-challenge/api/v1/users/${userId}/confirmations/email`);
+    return response.data;
+  } catch (error) {
+    const message = error?.response?.data?.message || 'No fue posible solicitar la validación del correo electrónico.';
+    const enhancedError = new Error(message);
+    enhancedError.originalError = error;
+    throw enhancedError;
+  }
+};
+
+export const requestMobileConfirmation = async (userId) => {
+  if (!userId) {
+    throw new Error('Es necesario proporcionar el identificador del usuario.');
+  }
+
+  try {
+    const response = await api.post(`/uco-challenge/api/v1/users/${userId}/confirmations/mobile`);
+    return response.data;
+  } catch (error) {
+    const message = error?.response?.data?.message || 'No fue posible solicitar la validación del teléfono móvil.';
+    const enhancedError = new Error(message);
+    enhancedError.originalError = error;
+    throw enhancedError;
+  }
+};
