@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
 import co.edu.uco.ucochallenge.application.Void;
+import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
 import co.edu.uco.ucochallenge.application.user.deleteUser.interactor.DeleteUserInteractor;
 import co.edu.uco.ucochallenge.application.user.getUser.dto.GetUserOutputDTO;
 import co.edu.uco.ucochallenge.application.user.getUser.interactor.GetUserInteractor;

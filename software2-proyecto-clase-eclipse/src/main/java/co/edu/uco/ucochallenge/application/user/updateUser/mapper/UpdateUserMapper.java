@@ -1,17 +1,6 @@
 package co.edu.uco.ucochallenge.application.user.updateUser.mapper;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-
-import co.edu.uco.ucochallenge.application.hateoas.LinkDTO;
-import co.edu.uco.ucochallenge.application.user.updateUser.dto.UpdateUserOutputDTO;
-import co.edu.uco.ucochallenge.application.user.updateUser.interactor.UpdateUserInteractor;
-import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
-import co.edu.uco.ucochallenge.domain.user.model.User;
 
 @Mapper(componentModel = "spring")
 public interface UpdateUserMapper {

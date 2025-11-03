@@ -9,7 +9,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
-import co.edu.uco.ucochallenge.domain.user.model.User;
 
 class UserTest {
 

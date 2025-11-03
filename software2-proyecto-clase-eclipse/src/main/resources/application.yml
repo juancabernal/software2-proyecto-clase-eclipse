@@ -15,7 +15,7 @@ server:
   port: 8081
 
 # =========================
-# ✅ Eureka
+# ✅ Eureka (NO estaba en el 2do)
 # =========================
 eureka:
   client:
@@ -27,7 +27,7 @@ eureka:
     prefer-ip-address: true
 
 # =========================
-# ✅ Azure Key Vault
+# ✅ Azure Key Vault (ya estaba)
 # =========================
 azure:
   keyvault:
@@ -38,6 +38,7 @@ azure:
     credential:
       managed-identity-enabled: ${AZURE_KEYVAULT_MANAGED_IDENTITY:true}
 
+
 # ✅ Fallbacks si Key Vault falla
 secrets:
   db-url: ${DB_URL:jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:ucochallenge}}
@@ -45,7 +46,7 @@ secrets:
   db-password: ${DB_PASSWORD:postgres}
 
 # =========================
-# ✅ Servicios internos
+# ✅ Servicios REST internos (del 1er YAML)
 # =========================
 services:
   message:
@@ -53,8 +54,9 @@ services:
   parameters:
     base-url: http://localhost:8083/api/v1/parameters
 
+
 # =========================
-# ✅ Logging con traceId / spanId
+# ✅ Logging con TraceId y SpanId (del 1er YAML)
 # =========================
 logging:
   level:
@@ -66,35 +68,19 @@ logging:
     level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
 
 # =========================
-# ✅ Actuator + Prometheus + Tracing (OTLP)
+# ✅ Management + Tracing + Prometheus + OTLP (Fusión de ambos)
 # =========================
 management:
   endpoints:
     web:
       exposure:
-        include: health, info, prometheus
+        include: health,info,prometheus
   endpoint:
     health:
-      show-details: always
-  metrics:
-    tags:
-      application: ${spring.application.name}
-    distribution:
-      percentiles-histogram:
-        http.server.requests: true
-  tracing:
-    enabled: ${MANAGEMENT_TRACING_ENABLED:true}
-    sampling:
-      probability: 1.0
-    exporter:
-      otlp:
-        enabled: true
-        endpoint: http://localhost:4318/v1/traces
-        compression: gzip
+      show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
 
-# =========================
-# ✅ Notificaciones externas
-# =========================
+
+
 notification:
   api:
     base-url: "https://api.notificationapi.com"
@@ -102,8 +88,26 @@ notification:
     api-key: "${NOTIFICATION_API_KEY:}"
     api-secret: "${NOTIFICATION_API_SECRET:}"
 
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+  tracing:
+    enabled: ${MANAGEMENT_TRACING_ENABLED:true}  # en el 1° estaba true
+    sampling:
+      probability: 1.0  # para desarrollo, todo se traza
+    exporter:
+      otlp:
+        enabled: true
+        endpoint: http://localhost:4318/v1/traces
+        compression: gzip
+
+
 # =========================
-# ✅ Configuración de IA
+# ✅ Configuración de IA (segunda versión)
 # =========================
 uco-challenge:
   ai:
@@ -113,3 +117,4 @@ uco-challenge:
       api-key: ${AI_OPENAI_API_KEY:}
       model: ${AI_OPENAI_MODEL:gpt-4o-mini}
       temperature: ${AI_OPENAI_TEMPERATURE:0.2}
+

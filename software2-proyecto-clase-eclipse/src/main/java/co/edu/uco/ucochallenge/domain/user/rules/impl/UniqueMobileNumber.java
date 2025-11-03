@@ -2,13 +2,13 @@ package co.edu.uco.ucochallenge.domain.user.rules.impl;
 
 import org.springframework.stereotype.Component;
 
+import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
+import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
-import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
 
 @Component
 public class UniqueMobileNumber {

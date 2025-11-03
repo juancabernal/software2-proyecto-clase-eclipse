@@ -2,11 +2,6 @@ package co.edu.uco.ucochallenge.infrastructure.primary.logging;
 
 import java.io.IOException;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -15,6 +10,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import co.edu.uco.ucochallenge.crosscuting.security.SanitizationHelper;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class RequestTelemetryFilter extends OncePerRequestFilter {

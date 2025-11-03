@@ -1,19 +1,5 @@
 package co.edu.uco.ucochallenge.application.user.updateUser.interactor.impl;
 
-import java.util.List;
-import java.util.UUID;
-
-import org.springframework.stereotype.Service;
-
-import co.edu.uco.ucochallenge.application.hateoas.LinkDTO;
-import co.edu.uco.ucochallenge.application.user.updateUser.dto.UpdateUserInputDTO;
-import co.edu.uco.ucochallenge.application.user.updateUser.dto.UpdateUserOutputDTO;
-import co.edu.uco.ucochallenge.application.user.updateUser.interactor.UpdateUserInteractor;
-import co.edu.uco.ucochallenge.application.user.updateUser.mapper.UpdateUserMapper;
-import co.edu.uco.ucochallenge.application.user.updateUser.usecase.UpdateUserUseCase;
-import co.edu.uco.ucochallenge.domain.user.model.User;
-import jakarta.transaction.Transactional;
-
 /*@Service
 @Transactional
 public class UpdateUserInteractorImpl implements UpdateUserInteractor {*/
