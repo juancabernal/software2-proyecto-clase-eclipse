@@ -3,7 +3,7 @@ spring:
     name: parameters-service
 
 server:
-  port: ${SERVER_PORT:8089}
+  port: ${SERVER_PORT:8083}
 
 eureka:
   client:
