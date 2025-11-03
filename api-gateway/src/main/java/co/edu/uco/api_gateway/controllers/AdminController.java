@@ -153,21 +153,5 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listCities(authorizationHeader));
     }
-    @PostMapping("/users/{userId}/confirmations/email")
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(
-            @PathVariable UUID userId,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        ApiSuccessResponse<Void> response = userServiceProxy.requestEmailConfirmation(userId, authorizationHeader);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/users/{userId}/confirmations/mobile")
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(
-            @PathVariable UUID userId,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
-        ApiSuccessResponse<Void> response = userServiceProxy.requestMobileConfirmation(userId, authorizationHeader);
-        return ResponseEntity.ok(response);
-    }
+    
 }

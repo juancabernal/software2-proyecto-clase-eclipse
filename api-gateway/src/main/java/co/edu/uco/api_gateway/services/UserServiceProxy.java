@@ -134,23 +134,34 @@ public class UserServiceProxy {
 
         return Objects.requireNonNull(response, "La respuesta de consulta de usuario no puede ser nula");
     }
-    public ApiSuccessResponse<Void> requestEmailConfirmation(UUID userId, String authorizationHeader) {
-        return webClient.post()
-                .uri("/users/{id}/confirmations/email", userId)
-                .headers(headers -> setAuthorization(headers, authorizationHeader))
+    public ApiSuccessResponse<Void> requestEmailConfirmation(
+            final UUID id,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response = webClient.post()
+                .uri("/{id}/confirmations/email", id)
+                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(VOID_RESPONSE)
                 .block();
+
+        return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestMobileConfirmation(UUID userId, String authorizationHeader) {
-        return webClient.post()
-                .uri("/users/{id}/confirmations/mobile", userId)
-                .headers(headers -> setAuthorization(headers, authorizationHeader))
+    public ApiSuccessResponse<Void> requestMobileConfirmation(
+            final UUID id,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response = webClient.post()
+                .uri("/{id}/confirmations/mobile", id)
+                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(VOID_RESPONSE)
                 .block();
+
+        return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
     }
+
 
     /**
      * Busca usuarios aplicando filtros y paginación.

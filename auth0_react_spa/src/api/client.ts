@@ -54,7 +54,39 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       const payload = res.data as ApiSuccessResponse<Page<User>>;
       return payload.data;
     },
-        async requestEmailConfirmation(userId: string): Promise<void> {
+
+    // POST /api/admin/users
+    async createUser(payload: UserCreateInput): Promise<RegisterUserResponse> {
+      const res = await api.post("/api/admin/users", payload, {
+        validateStatus: () => true,
+      });
+      if (res.status !== 201) {
+        const msg = (res.data && (res.data.message || res.data.error)) || "No se pudo crear el usuario";
+        throw new Error(msg);
+      }
+      const payloadResponse = res.data as ApiSuccessResponse<RegisterUserResponse>;
+      return payloadResponse.data;
+    },
+
+    async listIdTypes(): Promise<CatalogItem[]> {
+      const res = await api.get("/api/admin/catalogs/id-types", { validateStatus: () => true });
+      if (res.status !== 200) {
+        throw new Error(`Catálogo idType HTTP ${res.status}`);
+      }
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
+    },
+
+    async listCities(): Promise<CatalogItem[]> {
+      const res = await api.get("/api/admin/catalogs/cities", { validateStatus: () => true });
+      if (res.status !== 200) {
+        throw new Error(`Catálogo ciudades HTTP ${res.status}`);
+      }
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
+    },
+
+    async requestEmailConfirmation(userId: string): Promise<void> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
@@ -92,37 +124,6 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
           "No fue posible solicitar la validación del teléfono móvil.";
         throw new Error(message);
       }
-    },
-
-    // POST /api/admin/users
-    async createUser(payload: UserCreateInput): Promise<RegisterUserResponse> {
-      const res = await api.post("/api/admin/users", payload, {
-        validateStatus: () => true,
-      });
-      if (res.status !== 201) {
-        const msg = (res.data && (res.data.message || res.data.error)) || "No se pudo crear el usuario";
-        throw new Error(msg);
-      }
-      const payloadResponse = res.data as ApiSuccessResponse<RegisterUserResponse>;
-      return payloadResponse.data;
-    },
-
-    async listIdTypes(): Promise<CatalogItem[]> {
-      const res = await api.get("/api/admin/catalogs/id-types", { validateStatus: () => true });
-      if (res.status !== 200) {
-        throw new Error(`Catálogo idType HTTP ${res.status}`);
-      }
-      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
-      return payload.data;
-    },
-
-    async listCities(): Promise<CatalogItem[]> {
-      const res = await api.get("/api/admin/catalogs/cities", { validateStatus: () => true });
-      if (res.status !== 200) {
-        throw new Error(`Catálogo ciudades HTTP ${res.status}`);
-      }
-      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
-      return payload.data;
     },
   };
 };

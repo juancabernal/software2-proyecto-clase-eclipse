@@ -1,4 +1,3 @@
-import React from "react";
 import Header from "../components/header/Header";
 import { useAuth0 } from "@auth0/auth0-react";
 export default function Home() {
@@ -11,11 +10,7 @@ export default function Home() {
 
   return (
     <>
-      <Header
-        subtitle="Inicio"
-        isAuthenticated={isAuthenticated}
-        onLogin={handleLogin}
-      />
+      <Header subtitle="Inicio" isAuthenticated={isAuthenticated} />
 
       <div className="min-h-screen bg-[#0f0f12] text-gray-100">
         {/* HERO / CONTENIDO */}

@@ -44,34 +44,6 @@ const emptyForm = (): UserFormState => ({
   mobileNumber: "",
 });
 
-const buildPayload = (form: UserFormState): UserCreateInput => {
-  const sanitize = (value: string) => value.trim();
-  const basePayload: UserCreateInput = {
-    idType: sanitize(form.idType),
-    idNumber: sanitize(form.idNumber),
-    firstName: sanitize(form.firstName),
-    firstSurname: sanitize(form.firstSurname),
-    homeCity: sanitize(form.homeCity),
-    email: sanitize(form.email),
-  };
-
-  const extras: Partial<UserCreateInput> = {};
-  const secondName = sanitize(form.secondName);
-  if (secondName) {
-    extras.secondName = secondName;
-  }
-  const secondSurname = sanitize(form.secondSurname);
-  if (secondSurname) {
-    extras.secondSurname = secondSurname;
-  }
-  const mobile = sanitize(form.mobileNumber);
-  if (mobile) {
-    extras.mobileNumber = mobile;
-  }
-
-  return { ...basePayload, ...extras };
-};
-
 export default function UsersAdmin() {
   const { getAccessTokenSilently } = useAuth0();
 
@@ -103,6 +75,7 @@ export default function UsersAdmin() {
   const [feedbackMessages, setFeedbackMessages] = useState<
     Record<string, { variant: "success" | "error"; message: string }>
   >({});
+
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
   const [cities, setCities] = useState<CatalogItem[]>([]);
   const [catalogErr, setCatalogErr] = useState<string | null>(null);
@@ -111,6 +84,34 @@ export default function UsersAdmin() {
   const resetForm = () => {
     setForm(emptyForm());
     setFormErr(null);
+  };
+
+  // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y cities
+  const buildPayload = (form: UserFormState): UserCreateInput => {
+    const sanitize = (value: string) => value.trim();
+
+    // Buscar el UUID correspondiente al idType y homeCity
+    const idTypeItem = idTypes.find((t) => t.name === form.idType || t.id === form.idType);
+    const cityItem = cities.find((c) => c.name === form.homeCity || c.id === form.homeCity);
+
+    const basePayload: UserCreateInput = {
+      idType: sanitize(idTypeItem?.id || form.idType),
+      idNumber: sanitize(form.idNumber),
+      firstName: sanitize(form.firstName),
+      firstSurname: sanitize(form.firstSurname),
+      homeCity: sanitize(cityItem?.id || form.homeCity),
+      email: sanitize(form.email),
+    };
+
+    const extras: Partial<UserCreateInput> = {};
+    const secondName = sanitize(form.secondName);
+    if (secondName) extras.secondName = secondName;
+    const secondSurname = sanitize(form.secondSurname);
+    if (secondSurname) extras.secondSurname = secondSurname;
+    const mobile = sanitize(form.mobileNumber);
+    if (mobile) extras.mobileNumber = mobile;
+
+    return { ...basePayload, ...extras };
   };
 
   const fetchUsers = useCallback(async () => {
@@ -143,6 +144,8 @@ export default function UsersAdmin() {
           api.listIdTypes(),
           api.listCities(),
         ]);
+        console.log("🪪 idTypes desde API:", idTypeOptions);
+        console.log("🏙️ cities desde API:", cityOptions);
         if (!active) return;
         setIdTypes(idTypeOptions);
         setCities(cityOptions);
@@ -179,7 +182,8 @@ export default function UsersAdmin() {
       setFilters((f) => ({ ...f, page: f.page - 1 }));
     }
   };
-   const updateFeedback = (userId: string, payload: { variant: "success" | "error"; message: string } | null) => {
+
+  const updateFeedback = (userId: string, payload: { variant: "success" | "error"; message: string } | null) => {
     setFeedbackMessages((prev) => {
       if (!payload) {
         const { [userId]: _removed, ...rest } = prev;
@@ -229,7 +233,6 @@ export default function UsersAdmin() {
     }
   };
 
-
   const validateForm = (state: UserFormState) => {
     if (!state.idType.trim()) return "Selecciona el tipo de identificación.";
     if (!state.idNumber.trim()) return "Ingresa el número de identificación.";
@@ -252,6 +255,7 @@ export default function UsersAdmin() {
       setFormErr(null);
       setCreating(true);
       const payload = buildPayload(form);
+      console.log("📦 Payload enviado al backend:", JSON.stringify(payload, null, 2));
       const result = await api.createUser(payload);
       setCreationResult(result);
       setOpenNew(false);
@@ -301,6 +305,7 @@ export default function UsersAdmin() {
         </div>
       </div>
 
+      {/* Tabla de usuarios */}
       <div className="overflow-hidden rounded-2xl border border-gray-800">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-800">
@@ -344,7 +349,9 @@ export default function UsersAdmin() {
                   <td className="px-4 py-3 text-sm text-gray-100">{user.fullName}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.email}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.mobileNumber || "—"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-300">{user.idType}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">
+                    {idTypes.find((t) => t.id === user.idType)?.name || "Desconocido"}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">
                     <div className="flex flex-col gap-3">
@@ -419,6 +426,7 @@ export default function UsersAdmin() {
         </div>
       </div>
 
+      {/* Modal de creación */}
       {openNew && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 px-4">
           <div className="w-full max-w-3xl rounded-2xl border border-gray-800 bg-[#141418] p-6">
@@ -451,53 +459,72 @@ export default function UsersAdmin() {
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 >
                   <option value="">Selecciona…</option>
-                  {idTypes.map((option) => (
-                    <option key={option.id} value={option.id}>
+                  {idTypes.map((option, index) => (
+                    <option
+                      key={`${option?.id ?? "null"}-${index}`}
+                      value={option.id}
+                    >
                       {option.name}
                     </option>
                   ))}
                 </select>
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Número de identificación *
                 <input
                   value={form.idNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, idNumber: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, idNumber: e.target.value }))
+                  }
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Primer nombre *
                 <input
                   value={form.firstName}
-                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, firstName: e.target.value }))
+                  }
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Segundo nombre
                 <input
                   value={form.secondName}
-                  onChange={(e) => setForm((f) => ({ ...f, secondName: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, secondName: e.target.value }))
+                  }
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Primer apellido *
                 <input
                   value={form.firstSurname}
-                  onChange={(e) => setForm((f) => ({ ...f, firstSurname: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, firstSurname: e.target.value }))
+                  }
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Segundo apellido
                 <input
                   value={form.secondSurname}
-                  onChange={(e) => setForm((f) => ({ ...f, secondSurname: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, secondSurname: e.target.value }))
+                  }
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Ciudad de residencia *
                 <select
@@ -507,13 +534,17 @@ export default function UsersAdmin() {
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 >
                   <option value="">Selecciona…</option>
-                  {cities.map((option) => (
-                    <option key={option.id} value={option.id}>
+                  {cities.map((option, index) => (
+                    <option
+                      key={`${option?.id ?? "null"}-${index}`}
+                      value={option.id}
+                    >
                       {option.name}
                     </option>
                   ))}
                 </select>
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Correo electrónico *
                 <input
@@ -523,11 +554,14 @@ export default function UsersAdmin() {
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
+
               <label className="flex flex-col text-sm text-gray-300">
                 Teléfono móvil
                 <input
                   value={form.mobileNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, mobileNumber: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, mobileNumber: e.target.value }))
+                  }
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 />
               </label>
@@ -559,7 +593,8 @@ export default function UsersAdmin() {
 
       {creationResult && (
         <div className="rounded-xl border border-emerald-800 bg-emerald-900/30 px-4 py-3 text-sm text-emerald-200">
-          Usuario <strong>{creationResult.fullName}</strong> registrado con ID {creationResult.userId}.
+          Usuario <strong>{creationResult.fullName}</strong> registrado con ID{" "}
+          {creationResult.userId}.
         </div>
       )}
     </section>
