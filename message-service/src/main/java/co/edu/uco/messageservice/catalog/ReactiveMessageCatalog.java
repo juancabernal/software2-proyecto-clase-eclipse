@@ -196,5 +196,15 @@ public class ReactiveMessageCatalog {
         register("domain.user.idType.notFound.user", "El tipo de identificación seleccionado no es válido.");
         register("domain.user.homeCity.notFound.technical", "La ciudad de residencia indicada no existe.");
         register("domain.user.homeCity.notFound.user", "La ciudad de residencia seleccionada no es válida.");
+        register("domain.user.email.alreadyConfirmed.technical",
+                "El correo electrónico ya fue confirmado anteriormente.");
+        register("domain.user.email.alreadyConfirmed.user",
+                "El correo electrónico del usuario ya está confirmado.");
+        register("domain.user.mobile.alreadyConfirmed.technical",
+                "El número de teléfono móvil ya fue confirmado anteriormente.");
+        register("domain.user.mobile.alreadyConfirmed.user",
+                "El número de teléfono móvil del usuario ya está confirmado.");
+        
+       
     }
 }

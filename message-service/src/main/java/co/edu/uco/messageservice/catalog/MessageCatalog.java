@@ -60,6 +60,15 @@ public final class MessageCatalog {
 				"El número móvil debe ser confirmado para finalizar el registro.");
 		register("list.users.validation.page.negative", "La página solicitada no puede ser negativa.");
 		register("list.users.validation.size.invalid", "El tamaño de página debe estar entre 1 y 50 registros.");
+        register("domain.user.email.alreadyConfirmed.technical",
+                "El correo electrónico ya fue confirmado anteriormente.");
+		register("domain.user.email.alreadyConfirmed.user",
+		                "El correo electrónico del usuario ya está confirmado.");
+		register("domain.user.mobile.alreadyConfirmed.technical",
+		                "El número de teléfono móvil ya fue confirmado anteriormente.");
+		register("domain.user.mobile.alreadyConfirmed.user",
+		                "El número de teléfono móvil del usuario ya está confirmado.");
+		
 	}
 
 	private MessageCatalog() {
