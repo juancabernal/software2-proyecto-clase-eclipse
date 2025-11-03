@@ -45,7 +45,14 @@ secrets:
   db-username: ${DB_USERNAME:postgres}
   db-password: ${DB_PASSWORD:postgres}
 
-
+# =========================
+# ✅ Servicios REST internos (del 1er YAML)
+# =========================
+services:
+  message:
+    base-url: http://localhost:8082/api/v1/messages
+  parameters:
+    base-url: http://localhost:8089/api/v1/parameters
 
 
 # =========================
@@ -72,6 +79,7 @@ management:
     health:
       show-details: always  # puedes cambiar a "when_authorized" si lo quieres seguro
 
+<<<<<<< HEAD
 
 services:
   message:
@@ -79,14 +87,17 @@ services:
   parameters:
     base-url: "http://localhost:8083/api/v1/parameters"
 
+=======
+>>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)
 
 
 notification:
   api:
     base-url: "https://api.notificationapi.com"
     duplicate-path: "/sender"
-    api-key: "${NOTIFICATION_API_KEY:}"
-    api-secret: "${NOTIFICATION_API_SECRET:}"
+    api-key: ${secrets.cliente-id:${NOTIFICATION_API_KEY:}}
+    api-secret: ${secrets.cliente-secret-id:${NOTIFICATION_API_SECRET:}}
+
 
   metrics:
     tags:
@@ -116,5 +127,9 @@ uco-challenge:
       endpoint: ${AI_OPENAI_ENDPOINT:https://api.openai.com/v1/responses}
       api-key: ${AI_OPENAI_API_KEY:}
       model: ${AI_OPENAI_MODEL:gpt-4o-mini}
+<<<<<<< HEAD
       temperature: ${AI_OPENAI_TEMPERATURE:0.2}
 
+=======
+      temperature: ${AI_OPENAI_TEMPERATURE:0.2}
+>>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)

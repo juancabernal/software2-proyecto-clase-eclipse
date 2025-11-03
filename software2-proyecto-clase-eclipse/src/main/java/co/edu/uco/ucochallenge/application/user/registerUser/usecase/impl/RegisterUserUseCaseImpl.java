@@ -15,6 +15,10 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
     private final UserRepository repository;
     private final DuplicateRegistrationNotificationService notificationService;
+<<<<<<< HEAD
+=======
+    private final UserIntelligencePort intelligencePort;
+>>>>>>> 8465ad1 (Se configuro correctamente el envio de notificaciones al momento de registrar un usuario con email o telefono duplicado)
 
     public RegisterUserUseCaseImpl(final UserRepository repository,
                                    final DuplicateRegistrationNotificationService notificationService) {
@@ -29,6 +33,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
         return savedUser;
     }
 
+    
     private void validateUniqueness(final User domain) {
         // 🔹 1. Correo duplicado
         if (repository.existsByEmail(domain.email())) {
