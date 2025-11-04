@@ -1,0 +1,41 @@
+services:
+  message-service:
+    container_name: message-service
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile
+    # Rutas relativas desde este archivo compose (message-service/docker/compose)
+    # ../env/.env.example apunta a message-service/docker/env/.env.example
+    env_file:
+      - ../env/.env.example
+      - ../env/.env.local # opcional: uso local con overrides (si existe)
+    ports:
+      - "8082:8082" # Alineado con Dockerfile (EXPOSE 8082). Cambiar si se usa otro puerto y actualizar ../env/.env.local
+    networks:
+      - workspace-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://message-service:8082/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    # Pasar todas las variables del archivo env. Evita hardcodear secrets aquí.
+    environment:
+      - SPRING_APPLICATION_NAME
+      - SERVER_PORT
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+      - MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED
+      - MANAGEMENT_SERVER_PORT
+      - OTEL_SERVICE_NAME
+      - OTEL_EXPORTER_OTLP_ENDPOINT
+      - OTEL_EXPORTER_OTLP_PROTOCOL
+      - OTEL_TRACES_SAMPLER
+      - OTEL_METRICS_EXPORTER
+
+networks:
+  workspace-net:
+    driver: bridge
+    # Si quiere unirse a una red externa ya provista por infra (eureka/otel en otra stack), descomente y ajuste:
+    # external: true

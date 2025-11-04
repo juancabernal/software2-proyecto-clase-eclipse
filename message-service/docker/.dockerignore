@@ -1,0 +1,11 @@
+# Ignorar artefactos de build y archivos locales
+target/
+build/
+.idea/
+*.iml
+.git/
+.DS_Store
+logs/
+tmp/
+node_modules/
+
