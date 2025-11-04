@@ -134,6 +134,7 @@ public class AdminController {
     }
 
     /**
+    /**
      * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/email}.
      */
     @PostMapping("/users/{id}/confirmations/email")
@@ -179,4 +180,5 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listCities(authorizationHeader));
     }
+    
 }

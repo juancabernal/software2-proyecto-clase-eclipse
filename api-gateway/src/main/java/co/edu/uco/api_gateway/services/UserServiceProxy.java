@@ -45,6 +45,8 @@ public class UserServiceProxy {
             new ParameterizedTypeReference<>() {};
 
     private final WebClient webClient;
+    
+    
 
     public UserServiceProxy(final WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
@@ -133,6 +135,8 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de consulta de usuario no puede ser nula");
     }
 
+
+
     /**
      * Busca usuarios aplicando filtros y paginación.
      *
@@ -215,6 +219,7 @@ public class UserServiceProxy {
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
     }
+
 
     private ApiSuccessResponse<PageResponse<UserDto>> buildPageResponse(
             final ApiSuccessResponse<ListUsersResponse> response) {
