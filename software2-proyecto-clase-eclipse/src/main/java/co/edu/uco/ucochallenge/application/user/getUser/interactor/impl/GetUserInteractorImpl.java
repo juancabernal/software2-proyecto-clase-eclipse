@@ -17,14 +17,14 @@ public class GetUserInteractorImpl implements GetUserInteractor {
 
         private final GetUserUseCase useCase;
         private final GetUserMapper mapper;
-        public static final String USERS_CACHE = "users";
+        public static final String USER_CACHE = "user";
         public GetUserInteractorImpl(final GetUserUseCase useCase, final GetUserMapper mapper) {
                 this.useCase = useCase;
                 this.mapper = mapper;
         }
 
         @Override
-        @Cacheable(value = USERS_CACHE, key = "#dto")
+        @Cacheable(value = USER_CACHE, key = "#dto")
         public GetUserOutputDTO execute(final UUID dto) {
                 return mapper.toOutput(useCase.execute(dto));
         }

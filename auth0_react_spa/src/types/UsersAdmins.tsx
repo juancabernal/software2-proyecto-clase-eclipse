@@ -325,7 +325,12 @@ export default function UsersAdmin() {
       resetForm();
       setFilters((f) => ({ ...f, page: 1 }));
     } catch (error: any) {
-      setFormErr(error?.message || "No se pudo crear el usuario.");
+      const backendMsg =
+        error?.response?.data?.userMessage ||
+        error?.response?.data?.technicalMessage ||
+        error?.message ||
+        "No se pudo crear el usuario.";
+      setFormErr(backendMsg);
     } finally {
       setCreating(false);
     }
@@ -449,9 +454,8 @@ export default function UsersAdmin() {
 
                       {feedbackMessages[user.userId]?.message && (
                         <p
-                          className={`text-xs ${
-                            feedbackMessages[user.userId]?.variant === "error" ? "text-rose-400" : "text-emerald-400"
-                          }`}
+                          className={`text-xs ${feedbackMessages[user.userId]?.variant === "error" ? "text-rose-400" : "text-emerald-400"
+                            }`}
                         >
                           {feedbackMessages[user.userId]?.message}
                         </p>
