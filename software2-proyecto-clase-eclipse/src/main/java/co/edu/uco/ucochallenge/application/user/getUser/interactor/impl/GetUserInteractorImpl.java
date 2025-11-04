@@ -2,6 +2,7 @@ package co.edu.uco.ucochallenge.application.user.getUser.interactor.impl;
 
 import java.util.UUID;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +17,14 @@ public class GetUserInteractorImpl implements GetUserInteractor {
 
         private final GetUserUseCase useCase;
         private final GetUserMapper mapper;
-
+        public static final String USER_CACHE = "user";
         public GetUserInteractorImpl(final GetUserUseCase useCase, final GetUserMapper mapper) {
                 this.useCase = useCase;
                 this.mapper = mapper;
         }
 
         @Override
+        @Cacheable(value = "users.byId", key = "#dto")
         public GetUserOutputDTO execute(final UUID dto) {
                 return mapper.toOutput(useCase.execute(dto));
         }

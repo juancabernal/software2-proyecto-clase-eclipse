@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.application.user.listUsers.interactor.impl;
 
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,13 +17,17 @@ public class ListUsersInteractorImpl implements ListUsersInteractor {
 
         private final ListUsersUseCase useCase;
         private final ListUsersMapper mapper;
-
         public ListUsersInteractorImpl(final ListUsersUseCase useCase, final ListUsersMapper mapper) {
                 this.useCase = useCase;
                 this.mapper = mapper;
         }
 
         @Override
+        @Cacheable(
+                value = "users.pages",
+                key = "'page=' + #dto.pagination().page() + ',size=' + #dto.pagination().size()",
+                unless = "#result == null || #result.users().isEmpty()"
+        )
         public ListUsersResponseDTO execute(final ListUsersRequestDTO dto) {
                 final PaginationRequestDTO pagination = dto == null || dto.pagination() == null
                                 ? PaginationRequestDTO.normalize(null, null)

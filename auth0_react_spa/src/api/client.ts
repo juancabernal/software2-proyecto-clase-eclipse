@@ -114,6 +114,7 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
       }
 
+
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email`;
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email`;
@@ -141,6 +142,7 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
       }
+
 
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile`;
