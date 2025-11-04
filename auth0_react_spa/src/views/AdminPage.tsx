@@ -11,9 +11,6 @@ const AdminPage = () => {
           audience: import.meta.env.VITE_AUTH0_AUDIENCE,
         },
       });
-
-      console.log("token: " + token);
-
       const response = await axios.get(
         `${import.meta.env.VITE_API_SERVER_URL}/api/admin`,
         {
@@ -22,15 +19,11 @@ const AdminPage = () => {
           },
         }
       );
-
-      console.log(response);
-
       const responseData = response.data;
 
       alert(responseData.message);
     } catch (error) {
       alert(error);
-      console.error(error);
     }
   };
 

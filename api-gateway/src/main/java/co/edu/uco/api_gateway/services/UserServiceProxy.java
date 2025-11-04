@@ -33,20 +33,23 @@ public class UserServiceProxy {
     private static final Set<String> PAGINATION_PARAMS = Set.of("page", "size");
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<ListUsersResponse>> LIST_USERS_RESPONSE =
-            new ParameterizedTypeReference<>() {};
+            new ParameterizedTypeReference<>() {
+            };
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<RegisterUserResponse>> REGISTER_USER_RESPONSE =
-            new ParameterizedTypeReference<>() {};
+            new ParameterizedTypeReference<>() {
+            };
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<GetUserResponse>> GET_USER_RESPONSE =
-            new ParameterizedTypeReference<>() {};
+            new ParameterizedTypeReference<>() {
+            };
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<Void>> VOID_RESPONSE =
-            new ParameterizedTypeReference<>() {};
+            new ParameterizedTypeReference<>() {
+            };
 
     private final WebClient webClient;
-    
-    
+
 
     public UserServiceProxy(final WebClient.Builder webClientBuilder) {
         this.webClient = webClientBuilder
@@ -134,7 +137,6 @@ public class UserServiceProxy {
 
         return Objects.requireNonNull(response, "La respuesta de consulta de usuario no puede ser nula");
     }
-
 
 
     /**
@@ -253,11 +255,32 @@ public class UserServiceProxy {
     }
 
     private Mono<? extends Throwable> mapError(final ClientResponse response) {
-        return response.bodyToMono(ApiErrorResponse.class)
-                .defaultIfEmpty(ApiErrorResponse.of(
-                        response.statusCode().value(),
-                        response.statusCode().toString(),
-                        response.statusCode().toString()))
-                .flatMap(error -> Mono.error(new DownstreamException(response.statusCode(), error)));
+        final var contentType = response.headers().contentType().orElse(null);
+        return response.bodyToMono(byte[].class)
+                .defaultIfEmpty(new byte[0])
+                .flatMap(bytes -> {
+                    String body = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                    ApiErrorResponse parsed = null;
+                    // Si es JSON, intentamos parsear; si falla, seguimos con texto plano
+                    if (contentType != null && MediaType.APPLICATION_JSON.includes(contentType)) {
+                        try {
+                            com.fasterxml.jackson.databind.ObjectMapper om = new com.fasterxml.jackson.databind.ObjectMapper();
+                            parsed = om.readValue(bytes, ApiErrorResponse.class);
+                        } catch (Exception ignored) { /* cae a texto plano */ }
+                    }
+                    if (parsed == null) {
+                        String msg = "Upstream error %d %s".formatted(
+                                response.statusCode().value(), response.statusCode());
+                        if (!body.isBlank()) {
+                            msg += " - body: " + body;
+                        }
+                        parsed = ApiErrorResponse.of(
+                                response.statusCode().value(),
+                                "UPSTREAM_ERROR",
+                                msg
+                        );
+                    }
+                    return Mono.error(new DownstreamException(response.statusCode(), parsed));
+                });
     }
 }

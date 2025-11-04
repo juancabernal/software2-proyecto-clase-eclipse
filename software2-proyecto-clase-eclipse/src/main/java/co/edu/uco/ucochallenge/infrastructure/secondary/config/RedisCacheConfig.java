@@ -29,7 +29,7 @@ public class RedisCacheConfig {
         Map<String, RedisCacheConfiguration> perCache = new HashMap<>();
         perCache.put("users.byId",  defaults.entryTtl(Duration.ofMinutes(10)));
         perCache.put("users.pages", defaults.entryTtl(Duration.ofMinutes(3)));
-
+        perCache.put("users.search", defaults.entryTtl(Duration.ofMinutes(3)));
         return RedisCacheManager.builder(cf)
                 .cacheDefaults(defaults)
                 .withInitialCacheConfigurations(perCache)

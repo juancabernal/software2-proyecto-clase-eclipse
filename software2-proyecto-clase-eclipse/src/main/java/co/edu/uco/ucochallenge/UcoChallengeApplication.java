@@ -4,8 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.scheduling.annotation.EnableAsync;
 
-// Main application class for the UcoChallenge Spring Boot application.
+@EnableAsync
 @SpringBootApplication
 @EnableCaching// Asegura que escanee todos los subpaquetes.
 public class UcoChallengeApplication {
