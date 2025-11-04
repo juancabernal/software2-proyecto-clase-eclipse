@@ -17,14 +17,17 @@ public class ListUsersInteractorImpl implements ListUsersInteractor {
 
         private final ListUsersUseCase useCase;
         private final ListUsersMapper mapper;
-        public static final String USERS_CACHE = "users";
         public ListUsersInteractorImpl(final ListUsersUseCase useCase, final ListUsersMapper mapper) {
                 this.useCase = useCase;
                 this.mapper = mapper;
         }
 
         @Override
-        @Cacheable(value = USERS_CACHE, key = "#dto")
+        @Cacheable(
+                value = "users.pages",
+                key = "'page=' + #dto.pagination().page() + ',size=' + #dto.pagination().size()",
+                unless = "#result == null || #result.users().isEmpty()"
+        )
         public ListUsersResponseDTO execute(final ListUsersRequestDTO dto) {
                 final PaginationRequestDTO pagination = dto == null || dto.pagination() == null
                                 ? PaginationRequestDTO.normalize(null, null)
