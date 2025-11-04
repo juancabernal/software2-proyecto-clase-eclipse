@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from "axios";
+import axios from "axios";
 import { User } from "../types/users";
 
 export type ApiSuccessResponse<T> = {
@@ -87,61 +87,45 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
     },
 
     async requestEmailConfirmation(userId: string): Promise<void> {
-      await requestConfirmation(api, userId, "email", {
-        missingIdMessage: "Es necesario proporcionar el identificador del usuario.",
-        failureMessage: "No fue posible solicitar la validación del correo electrónico.",
-      });
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+
+      const res = await api.post(
+        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/email`,
+        undefined,
+        { validateStatus: () => true }
+      );
+
+      if (res.status < 200 || res.status >= 300) {
+        const message =
+          (res.data && (res.data.message || res.data.error)) ||
+          "No fue posible solicitar la validación del correo electrónico.";
+        throw new Error(message);
+      }
     },
 
     async requestMobileConfirmation(userId: string): Promise<void> {
-      await requestConfirmation(api, userId, "mobile", {
-        missingIdMessage: "Es necesario proporcionar el identificador del usuario.",
-        failureMessage: "No fue posible solicitar la validación del teléfono móvil.",
-      });
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+
+      const res = await api.post(
+        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/mobile`,
+        undefined,
+        { validateStatus: () => true }
+      );
+
+      if (res.status < 200 || res.status >= 300) {
+        const message =
+          (res.data && (res.data.message || res.data.error)) ||
+          "No fue posible solicitar la validación del teléfono móvil.";
+        throw new Error(message);
+      }
     },
   };
-};
-
-type ConfirmationType = "email" | "mobile";
-
-const requestConfirmation = async (
-  api: AxiosInstance,
-  userId: string,
-  type: ConfirmationType,
-  messages: { missingIdMessage: string; failureMessage: string }
-) => {
-  const trimmedId = userId?.trim();
-  if (!trimmedId) {
-    throw new Error(messages.missingIdMessage);
-  }
-
-  const encodedId = encodeURIComponent(trimmedId);
-  const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/${type}`;
-  const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/${type}`;
-
-  const endpoints = [adminEndpoint, fallbackEndpoint];
-  let lastResponse: any = null;
-
-  for (let index = 0; index < endpoints.length; index += 1) {
-    const endpoint = endpoints[index];
-    const res = await api.post(endpoint, undefined, { validateStatus: () => true });
-
-    if (res.status >= 200 && res.status < 300) {
-      return;
-    }
-
-    lastResponse = res;
-
-    const shouldTryFallback = index === 0 && res.status === 404;
-    if (!shouldTryFallback) {
-      break;
-    }
-  }
-
-  const message =
-    (lastResponse?.data && (lastResponse.data.message || lastResponse.data.error)) ||
-    messages.failureMessage;
-  throw new Error(message);
 };
 
 // Tipos
