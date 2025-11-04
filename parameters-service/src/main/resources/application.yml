@@ -20,12 +20,12 @@ management:
     web:
       exposure:
         include: health,info,prometheus
-  endpoint:
-    health:
-      show-details: always
-  tracing:
-    enabled: false
-
+  metrics:
+    tags:
+      application: ${spring.application.name}   # <— CLAVE para el dropdown
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 logging:
   pattern:
     level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"

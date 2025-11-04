@@ -165,7 +165,7 @@ export default function UsersAdmin() {
       setLoading(true);
       setErr(null);
       const data = await api.listUsers({
-        page: filters.page,
+        page: Math.max(filters.page - 1, 0),
         size: filters.size,
       });
       setPageData(data);
