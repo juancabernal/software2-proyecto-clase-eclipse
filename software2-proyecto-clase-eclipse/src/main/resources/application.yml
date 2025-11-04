@@ -70,8 +70,11 @@ logging:
     org.hibernate.SQL: DEBUG
     com.azure.identity: INFO
     co.edu.uco.ucochallenge.infrastructure.secondary.secret: DEBUG
+    org.springframework.cache: TRACE
+    org.springframework.data.redis.cache: TRACE
   pattern:
     level: "%5p [traceId=%X{traceId:-}, spanId=%X{spanId:-}]"
+
 
 # =========================
 # ✅ Management + Tracing + Prometheus + OTLP (Fusión de ambos)
