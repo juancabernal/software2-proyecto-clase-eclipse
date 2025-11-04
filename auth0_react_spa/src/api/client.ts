@@ -25,6 +25,28 @@ export type CatalogItem = {
   name: string;
 };
 
+type ConfirmationResponse = { remainingSeconds: number };
+
+const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
+
+const postAndReturnTTL = async (
+  api: AxiosInstance,
+  endpoint: string,
+  failureMessage: string
+): Promise<ConfirmationResponse> => {
+  const res = await api.post(endpoint, undefined, { validateStatus: () => true });
+  if (res.status >= 200 && res.status < 300) {
+    const data = (res.data as any)?.data ?? res.data;
+    const seconds = Number(data?.remainingSeconds ?? 0);
+    return { remainingSeconds: Number.isFinite(seconds) ? seconds : 0 };
+  }
+  const msg =
+    (res.data && (res.data.message || res.data.error)) || failureMessage || DEFAULT_FAILURE_MESSAGE;
+  const error: any = new Error(msg);
+  error.response = res;
+  throw error;
+};
+
 export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
   const api = axios.create({ baseURL });
 
@@ -86,62 +108,62 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       return payload.data;
     },
 
-    async requestEmailConfirmation(userId: string): Promise<void> {
-      await requestConfirmation(api, userId, "email", {
-        missingIdMessage: "Es necesario proporcionar el identificador del usuario.",
-        failureMessage: "No fue posible solicitar la validación del correo electrónico.",
-      });
+    async requestEmailConfirmation(userId: string): Promise<ConfirmationResponse> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email`;
+
+      try {
+        return await postAndReturnTTL(
+          api,
+          adminEndpoint,
+          "No fue posible solicitar la validación del correo electrónico."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postAndReturnTTL(
+            api,
+            fallbackEndpoint,
+            "No fue posible solicitar la validación del correo electrónico."
+          );
+        }
+        throw error;
+      }
     },
 
-    async requestMobileConfirmation(userId: string): Promise<void> {
-      await requestConfirmation(api, userId, "mobile", {
-        missingIdMessage: "Es necesario proporcionar el identificador del usuario.",
-        failureMessage: "No fue posible solicitar la validación del teléfono móvil.",
-      });
+    async requestMobileConfirmation(userId: string): Promise<ConfirmationResponse> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile`;
+
+      try {
+        return await postAndReturnTTL(
+          api,
+          adminEndpoint,
+          "No fue posible solicitar la validación del teléfono móvil."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postAndReturnTTL(
+            api,
+            fallbackEndpoint,
+            "No fue posible solicitar la validación del teléfono móvil."
+          );
+        }
+        throw error;
+      }
     },
   };
-};
-
-type ConfirmationType = "email" | "mobile";
-
-const requestConfirmation = async (
-  api: AxiosInstance,
-  userId: string,
-  type: ConfirmationType,
-  messages: { missingIdMessage: string; failureMessage: string }
-) => {
-  const trimmedId = userId?.trim();
-  if (!trimmedId) {
-    throw new Error(messages.missingIdMessage);
-  }
-
-  const encodedId = encodeURIComponent(trimmedId);
-  const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/${type}`;
-  const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/${type}`;
-
-  const endpoints = [adminEndpoint, fallbackEndpoint];
-  let lastResponse: any = null;
-
-  for (let index = 0; index < endpoints.length; index += 1) {
-    const endpoint = endpoints[index];
-    const res = await api.post(endpoint, undefined, { validateStatus: () => true });
-
-    if (res.status >= 200 && res.status < 300) {
-      return;
-    }
-
-    lastResponse = res;
-
-    const shouldTryFallback = index === 0 && res.status === 404;
-    if (!shouldTryFallback) {
-      break;
-    }
-  }
-
-  const message =
-    (lastResponse?.data && (lastResponse.data.message || lastResponse.data.error)) ||
-    messages.failureMessage;
-  throw new Error(message);
 };
 
 // Tipos
