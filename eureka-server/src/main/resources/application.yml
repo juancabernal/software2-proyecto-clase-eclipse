@@ -13,20 +13,17 @@ eureka:
     enable-self-preservation: false
 
 management:
-  tracing:
-    sampling:
-      probability: 1.0
-  otlp:
-    tracing:
-      endpoint: http://localhost:4318/v1/traces
-      protocol: http/protobuf
   endpoints:
     web:
       exposure:
         include: health,info,prometheus
-  endpoint:
-    health:
-      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}   # <— CLAVE para el dropdown
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
 
 logging:
   level:

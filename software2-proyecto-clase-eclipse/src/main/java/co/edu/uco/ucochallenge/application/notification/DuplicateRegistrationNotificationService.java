@@ -66,12 +66,12 @@ public class DuplicateRegistrationNotificationService {
 
     public void notifyEmailConfirmation(final RegistrationAttempt attempt) {
         sendNotification(EMAIL_CONFIRMATION, attempt, EMAIL_CONFIRMATION_TEMPLATE,
-                "Confirma tu correo electrónico", "contact_confirmation", "EMAIL", false);
+                "Confirma tu correo electrónico", "confirmar_datos", "EMAIL", false);
     }
 
     public void notifyMobileConfirmation(final RegistrationAttempt attempt) {
         sendNotification(MOBILE_CONFIRMATION, attempt, MOBILE_CONFIRMATION_TEMPLATE,
-                "Confirma tu número de teléfono", "contact_confirmation", "SMS", false);
+                "Confirma tu número de teléfono", "confirmar_datos", "SMS", false);
     }
 
     private void sendNotification(final NotificationEvent event,

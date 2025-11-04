@@ -61,6 +61,12 @@
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
 
+        <!-- 🗃️ Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- 💾 Persistencia con JPA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -102,12 +108,6 @@
             <artifactId>micrometer-registry-prometheus</artifactId>
         </dependency>
 
-        <!-- 🧩 Starter interno de observabilidad -->
-        <dependency>
-            <groupId>co.edu.uco</groupId>
-            <artifactId>observability-config</artifactId>
-            <version>1.0.0</version>
-        </dependency>
 
         <!-- 🔐 Azure Key Vault -->
         <dependency>

@@ -33,4 +33,11 @@ public final class ParameterCodes {
         private User() {
         }
     }
+
+    public static final class Verification {
+        public static final String VERIFICATION_CODE_EXPIRATION_MINUTES = "validation.code.timeExpiration";
+
+        private Verification() {
+        }
+    }
 }

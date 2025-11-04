@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import { User } from "../types/users";
 
 export type ApiSuccessResponse<T> = {
@@ -23,6 +23,28 @@ export type RegisterUserResponse = {
 export type CatalogItem = {
   id: string;
   name: string;
+};
+
+type ConfirmationResponse = { remainingSeconds: number };
+
+const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
+
+const postAndReturnTTL = async (
+  api: AxiosInstance,
+  endpoint: string,
+  failureMessage: string
+): Promise<ConfirmationResponse> => {
+  const res = await api.post(endpoint, undefined, { validateStatus: () => true });
+  if (res.status >= 200 && res.status < 300) {
+    const data = (res.data as any)?.data ?? res.data;
+    const seconds = Number(data?.remainingSeconds ?? 0);
+    return { remainingSeconds: Number.isFinite(seconds) ? seconds : 0 };
+  }
+  const msg =
+    (res.data && (res.data.message || res.data.error)) || failureMessage || DEFAULT_FAILURE_MESSAGE;
+  const error: any = new Error(msg);
+  error.response = res;
+  throw error;
 };
 
 export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
@@ -86,43 +108,61 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       return payload.data;
     },
 
-    async requestEmailConfirmation(userId: string): Promise<void> {
+    async requestEmailConfirmation(userId: string): Promise<ConfirmationResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
       }
 
-      const res = await api.post(
-        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/email`,
-        undefined,
-        { validateStatus: () => true }
-      );
 
-      if (res.status < 200 || res.status >= 300) {
-        const message =
-          (res.data && (res.data.message || res.data.error)) ||
-          "No fue posible solicitar la validación del correo electrónico.";
-        throw new Error(message);
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email`;
+
+      try {
+        return await postAndReturnTTL(
+          api,
+          adminEndpoint,
+          "No fue posible solicitar la validación del correo electrónico."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postAndReturnTTL(
+            api,
+            fallbackEndpoint,
+            "No fue posible solicitar la validación del correo electrónico."
+          );
+        }
+        throw error;
       }
     },
 
-    async requestMobileConfirmation(userId: string): Promise<void> {
+    async requestMobileConfirmation(userId: string): Promise<ConfirmationResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
       }
 
-      const res = await api.post(
-        `/uco-challenge/api/v1/users/${encodeURIComponent(trimmedId)}/confirmations/mobile`,
-        undefined,
-        { validateStatus: () => true }
-      );
 
-      if (res.status < 200 || res.status >= 300) {
-        const message =
-          (res.data && (res.data.message || res.data.error)) ||
-          "No fue posible solicitar la validación del teléfono móvil.";
-        throw new Error(message);
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile`;
+
+      try {
+        return await postAndReturnTTL(
+          api,
+          adminEndpoint,
+          "No fue posible solicitar la validación del teléfono móvil."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postAndReturnTTL(
+            api,
+            fallbackEndpoint,
+            "No fue posible solicitar la validación del teléfono móvil."
+          );
+        }
+        throw error;
       }
     },
   };

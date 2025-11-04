@@ -9,3 +9,19 @@ scrape_configs:
     static_configs:
       # Para Docker Desktop en Windows/Mac usa host.docker.internal
       - targets: ['host.docker.internal:8081']
+  - job_name: 'parameters-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'host.docker.internal:8083' ]
+  - job_name: 'api-gateway'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'host.docker.internal:8085' ]
+  - job_name: 'message-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'host.docker.internal:8082' ]
+  - job_name: 'eureka-aplication'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: [ 'host.docker.internal:8761' ]

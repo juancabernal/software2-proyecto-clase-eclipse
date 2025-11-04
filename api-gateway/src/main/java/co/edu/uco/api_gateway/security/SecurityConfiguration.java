@@ -45,6 +45,7 @@ public class SecurityConfiguration {
                 .cors(withDefaults()) //por defecto spring va a buscar un bean con el nombre "corsConfigurationSource".
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests
+                                .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers("/api/public").permitAll()
                                 .requestMatchers("/api/admin/**").hasAuthority("administrador")
                                 .anyRequest().authenticated()

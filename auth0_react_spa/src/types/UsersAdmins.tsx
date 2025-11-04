@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
 import {
@@ -75,6 +75,52 @@ export default function UsersAdmin() {
   const [feedbackMessages, setFeedbackMessages] = useState<
     Record<string, { variant: "success" | "error"; message: string }>
   >({});
+  const [countdown, setCountdown] = useState<Record<string, number>>({});
+  const timersRef = useRef<Map<string, number>>(new Map());
+
+  const startCountdown = useCallback((key: string, seconds: number) => {
+    const sanitizedSeconds = Math.max(Number.isFinite(seconds) ? Math.floor(seconds) : 0, 0);
+
+    const previousTimer = timersRef.current.get(key);
+    if (previousTimer) {
+      clearInterval(previousTimer);
+      timersRef.current.delete(key);
+    }
+
+    if (sanitizedSeconds <= 0) {
+      setCountdown((current) => {
+        const { [key]: _removed, ...rest } = current;
+        return rest;
+      });
+      return;
+    }
+
+    setCountdown((current) => ({ ...current, [key]: sanitizedSeconds }));
+
+    const intervalId = window.setInterval(() => {
+      setCountdown((current) => {
+        const currentValue = current[key] ?? 0;
+        const nextValue = Math.max(currentValue - 1, 0);
+        const updated = { ...current, [key]: nextValue };
+        if (nextValue <= 0) {
+          clearInterval(intervalId);
+          timersRef.current.delete(key);
+          const { [key]: _removed, ...rest } = updated;
+          return rest;
+        }
+        return updated;
+      });
+    }, 1000);
+
+    timersRef.current.set(key, intervalId);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((intervalId) => clearInterval(intervalId));
+      timersRef.current.clear();
+    };
+  }, []);
 
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
   const [cities, setCities] = useState<CatalogItem[]>([]);
@@ -119,7 +165,7 @@ export default function UsersAdmin() {
       setLoading(true);
       setErr(null);
       const data = await api.listUsers({
-        page: filters.page,
+        page: Math.max(filters.page - 1, 0),
         size: filters.size,
       });
       setPageData(data);
@@ -232,11 +278,11 @@ export default function UsersAdmin() {
     updateFeedback(userId, null);
 
     try {
-      if (type === "email") {
-        await api.requestEmailConfirmation(userId);
-      } else {
-        await api.requestMobileConfirmation(userId);
-      }
+      const response =
+        type === "email"
+          ? await api.requestEmailConfirmation(userId)
+          : await api.requestMobileConfirmation(userId);
+      startCountdown(key, response.remainingSeconds);
       updateFeedback(userId, { variant: "success", message: successMessage });
     } catch (error: any) {
       const message = error?.message || errorFallback;
@@ -409,6 +455,26 @@ export default function UsersAdmin() {
                         >
                           {feedbackMessages[user.userId]?.message}
                         </p>
+                      )}
+                      {(countdown[`${user.userId}-email`] || countdown[`${user.userId}-mobile`]) && (
+                        <div className="text-xs text-indigo-300">
+                          {countdown[`${user.userId}-email`] && countdown[`${user.userId}-email`] > 0 && (
+                            <span>
+                              Correo: tu código vence en {countdown[`${user.userId}-email`]}s
+                            </span>
+                          )}
+                          {countdown[`${user.userId}-email`] &&
+                            countdown[`${user.userId}-email`] > 0 &&
+                            countdown[`${user.userId}-mobile`] &&
+                            countdown[`${user.userId}-mobile`] > 0 && (
+                              <span className="mx-2 text-gray-600">·</span>
+                            )}
+                          {countdown[`${user.userId}-mobile`] && countdown[`${user.userId}-mobile`] > 0 && (
+                            <span>
+                              Teléfono: tu código vence en {countdown[`${user.userId}-mobile`]}s
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </td>
