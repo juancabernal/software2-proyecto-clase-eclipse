@@ -28,6 +28,7 @@ import co.edu.uco.ucochallenge.application.user.registerUser.dto.RegisterUserOut
 import co.edu.uco.ucochallenge.application.user.registerUser.interactor.RegisterUserInteractor;
 import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQueryDTO;
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
+import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 
 @RestController
@@ -121,19 +122,21 @@ public class UserController {
         }
         
         @PostMapping("/{id}/confirmations/email")
-        public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(@PathVariable("id") final UUID id) {
-                requestEmailConfirmationInteractor.execute(id);
+        public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestEmailConfirmation(
+                        @PathVariable("id") final UUID id) {
+                final ConfirmationResponseDTO response = requestEmailConfirmationInteractor.execute(id);
                 return ResponseEntity.ok(ApiSuccessResponse.of(
                                 "Se envió la solicitud de validación del correo electrónico.",
-                                Void.returnVoid()));
+                                response));
         }
 
         @PostMapping("/{id}/confirmations/mobile")
-        public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(@PathVariable("id") final UUID id) {
-                requestMobileConfirmationInteractor.execute(id);
+        public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestMobileConfirmation(
+                        @PathVariable("id") final UUID id) {
+                final ConfirmationResponseDTO response = requestMobileConfirmationInteractor.execute(id);
                 return ResponseEntity.ok(ApiSuccessResponse.of(
                                 "Se envió la solicitud de validación del teléfono móvil.",
-                                Void.returnVoid()));
+                                response));
         }
 
 

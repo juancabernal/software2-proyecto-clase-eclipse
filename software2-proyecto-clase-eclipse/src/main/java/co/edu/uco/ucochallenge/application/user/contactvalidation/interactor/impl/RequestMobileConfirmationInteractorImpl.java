@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import co.edu.uco.ucochallenge.application.Void;
+import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.RequestMobileConfirmationUseCase;
 
@@ -20,8 +20,7 @@ public class RequestMobileConfirmationInteractorImpl implements RequestMobileCon
     }
 
     @Override
-    public Void execute(final UUID userId) {
-        useCase.execute(userId);
-        return Void.returnVoid();
+    public ConfirmationResponseDTO execute(final UUID userId) {
+        return useCase.execute(userId);
     }
 }

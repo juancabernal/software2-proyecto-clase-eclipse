@@ -11,6 +11,12 @@ spring:
       minimum-idle: ${SPRING_DATASOURCE_MIN_IDLE:1}
       connection-timeout: ${SPRING_DATASOURCE_CONNECTION_TIMEOUT:30000}
 
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 5000
+
 server:
   port: 8081
 

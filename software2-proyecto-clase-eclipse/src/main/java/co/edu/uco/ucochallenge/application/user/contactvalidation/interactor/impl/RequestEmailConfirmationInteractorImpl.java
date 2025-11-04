@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import co.edu.uco.ucochallenge.application.Void;
+import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.RequestEmailConfirmationUseCase;
 
@@ -18,8 +18,7 @@ public class RequestEmailConfirmationInteractorImpl implements RequestEmailConfi
     }
 
     @Override
-    public Void execute(final UUID userId) {
-        useCase.execute(userId);
-        return Void.returnVoid();
+    public ConfirmationResponseDTO execute(final UUID userId) {
+        return useCase.execute(userId);
     }
 }
