@@ -57,7 +57,12 @@ public class VerificationTokenService {
         repository.save(new VerificationToken(null, contact, code, expiration, maxAttempts, now));
 
         LOGGER.info("Generated verification token for user {} via {}", user.id(), channel.name());
-        notifyUser(user, channel, code, ttlSeconds, maxAttempts);
+        try {
+            notifyUser(user, channel, code, ttlSeconds, maxAttempts);
+        } catch (Exception ex) {
+            LOGGER.error("⚠️ Failed to send notification for user {} (token saved anyway): {}", user.id(), ex.getMessage());
+        }
+
         return new ConfirmationResponseDTO(ttlSeconds);
     }
     @Transactional

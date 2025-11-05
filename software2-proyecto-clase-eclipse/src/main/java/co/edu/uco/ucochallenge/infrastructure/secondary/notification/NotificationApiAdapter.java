@@ -114,8 +114,11 @@ public class NotificationApiAdapter implements NotificationSenderPort {
     private Map<String, Object> buildPayload(final NotificationMessage message) {
         final Map<String, Object> payload = new HashMap<>();
 
+        // Campos base requeridos por NotificationAPI
         payload.put("notificationId", message.notificationType());
+        payload.put("templateId", "predeterminado");
 
+        // Construir user exactamente igual que antes
         final Map<String, Object> user = new HashMap<>();
         if (message.attemptedUser() != null) {
             if (!TextHelper.isEmpty(message.attemptedUser().email())) {
@@ -133,14 +136,25 @@ public class NotificationApiAdapter implements NotificationSenderPort {
                 }
             }
         }
-
         payload.put("user", user);
-        payload.put("templateId", "predeterminado");
 
-        LOGGER.info("📤 Payload NotificationAPI: {}", payload);
+        // ✅ NUEVO BLOQUE: mergeTags (igual que en tu compañero)
+        final Map<String, Object> mergeTags = new HashMap<>();
+        mergeTags.put("currentYear", "2025");
+        mergeTags.put("comment", "Confirma tu contacto - UCO Challenge");
 
+        // Solo agregamos el código si existe
+        if (message.extraData() != null && message.extraData().get("code") != null) {
+            mergeTags.put("confirmationCode", message.extraData().get("code"));
+        }
+
+        payload.put("mergeTags", mergeTags);
+
+        LOGGER.info("📤 Payload NotificationAPI (formato final): {}", payload);
         return payload;
     }
+
+
 
     private List<Map<String, Object>> convertRecipients(final List<Recipient> recipients) {
         final List<Map<String, Object>> result = new ArrayList<>();

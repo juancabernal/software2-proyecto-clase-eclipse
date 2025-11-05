@@ -16,7 +16,10 @@ public class ParameterCatalog {
         register("notification.confirmation.email.strategy", "ENVIAR_LINK_CONFIRMACION");
         register("notification.confirmation.mobile.strategy", "ENVIAR_CODIGO_SMS");
         register("notification.email.maxRetries", "3");
-        register("validation.code.timeExpiration", "5"); // in minutes
+        register("validation.code.timeExpiration", "5");
+        register("verification.code.expiration.minutes", "5");  // tiempo de vida del token
+        register("verification.code.max.attempts", "3");         // número máximo de intentos
+// in minutes
     }
 
     public static Parameter getParameterValue(String key) {
