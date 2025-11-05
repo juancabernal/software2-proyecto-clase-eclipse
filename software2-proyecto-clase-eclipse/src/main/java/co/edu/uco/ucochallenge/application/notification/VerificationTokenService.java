@@ -1,7 +1,6 @@
 package co.edu.uco.ucochallenge.application.notification;
 
 import java.security.SecureRandom;
-import java.time.Instant;
 import java.time.LocalDateTime;  // Se añade esta importación
 import java.util.Locale;
 import java.util.Map;
@@ -107,7 +106,8 @@ public class VerificationTokenService {
             return buildFailureResponse(user, channel, message, false, 0);
         }
 
-        if (token.isExpired(LocalDateTime.now())) {
+        final LocalDateTime now = LocalDateTime.now();
+        if (token.isExpired(now)) {
             LOGGER.warn("⌛ El token {} expiró antes de completar la validación para el contacto {}", token.id(),
                     contact);
             repository.deleteById(token.id());
