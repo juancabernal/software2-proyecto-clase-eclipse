@@ -18,7 +18,9 @@ public class ValidateEmailConfirmationInteractorImpl implements ValidateEmailCon
     }
 
     @Override
-    public VerificationAttemptResponseDTO execute(final UUID userId, final String code) {
-        return useCase.execute(userId, code);
+    public VerificationAttemptResponseDTO execute(final UUID userId,
+            final UUID tokenId,
+            final String code) {
+        return useCase.execute(userId, tokenId, code);
     }
 }

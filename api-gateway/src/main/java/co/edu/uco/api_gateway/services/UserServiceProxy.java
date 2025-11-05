@@ -16,11 +16,14 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
+import co.edu.uco.api_gateway.dto.ConfirmationRequestResponseDto;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.ListUsersResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.PaginationMetadataDto;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
+import co.edu.uco.api_gateway.dto.VerificationAttemptResponseDto;
+import co.edu.uco.api_gateway.dto.VerificationCodeRequestDto;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
 import co.edu.uco.api_gateway.exception.DownstreamException;
@@ -41,6 +44,14 @@ public class UserServiceProxy {
             };
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<GetUserResponse>> GET_USER_RESPONSE =
+            new ParameterizedTypeReference<>() {
+            };
+
+    private static final ParameterizedTypeReference<ApiSuccessResponse<ConfirmationRequestResponseDto>> CONFIRMATION_RESPONSE =
+            new ParameterizedTypeReference<>() {
+            };
+
+    private static final ParameterizedTypeReference<ApiSuccessResponse<VerificationAttemptResponseDto>> VERIFICATION_ATTEMPT_RESPONSE =
             new ParameterizedTypeReference<>() {
             };
 
@@ -174,32 +185,70 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de eliminación de usuario no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestEmailConfirmation(
+    public ApiSuccessResponse<ConfirmationRequestResponseDto> requestEmailConfirmation(
             final UUID id,
             final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final ApiSuccessResponse<ConfirmationRequestResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/email", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestMobileConfirmation(
+    public ApiSuccessResponse<ConfirmationRequestResponseDto> requestMobileConfirmation(
             final UUID id,
             final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final ApiSuccessResponse<ConfirmationRequestResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/mobile", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
+    }
+
+    public ApiSuccessResponse<VerificationAttemptResponseDto> verifyEmailConfirmation(
+            final UUID id,
+            final VerificationCodeRequestDto request,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
+                .uri("/{id}/confirmations/email/verify", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de validación de correo no puede ser nula");
+    }
+
+    public ApiSuccessResponse<VerificationAttemptResponseDto> verifyMobileConfirmation(
+            final UUID id,
+            final VerificationCodeRequestDto request,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
+                .uri("/{id}/confirmations/mobile/verify", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(request)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de validación de teléfono no puede ser nula");
     }
 
 

@@ -21,9 +21,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.CatalogItemDto;
+import co.edu.uco.api_gateway.dto.ConfirmationRequestResponseDto;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
+import co.edu.uco.api_gateway.dto.VerificationAttemptResponseDto;
+import co.edu.uco.api_gateway.dto.VerificationCodeRequestDto;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
 import co.edu.uco.api_gateway.services.CatalogServiceProxy;
@@ -118,10 +121,10 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/email")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(
+    public ResponseEntity<ApiSuccessResponse<ConfirmationRequestResponseDto>> requestEmailConfirmation(
             @PathVariable("id") final UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response =
+        final ApiSuccessResponse<ConfirmationRequestResponseDto> response =
                 userServiceProxy.requestEmailConfirmation(id, authorizationHeader);
         return ResponseEntity.ok(response);
     }
@@ -131,11 +134,39 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/mobile")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(
+    public ResponseEntity<ApiSuccessResponse<ConfirmationRequestResponseDto>> requestMobileConfirmation(
             @PathVariable("id") final UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response =
+        final ApiSuccessResponse<ConfirmationRequestResponseDto> response =
                 userServiceProxy.requestMobileConfirmation(id, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/email/verify}.
+     */
+    @PostMapping("/users/{id}/confirmations/email/verify")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDto>> verifyEmailConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestBody final VerificationCodeRequestDto request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
+                .verifyEmailConfirmation(id, request, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/mobile/verify}.
+     */
+    @PostMapping("/users/{id}/confirmations/mobile/verify")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDto>> verifyMobileConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestBody final VerificationCodeRequestDto request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
+                .verifyMobileConfirmation(id, request, authorizationHeader);
         return ResponseEntity.ok(response);
     }
 

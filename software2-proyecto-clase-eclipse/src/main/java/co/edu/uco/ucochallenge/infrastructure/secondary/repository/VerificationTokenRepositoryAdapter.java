@@ -2,6 +2,7 @@ package co.edu.uco.ucochallenge.infrastructure.secondary.repository;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +40,22 @@ public class VerificationTokenRepositoryAdapter implements VerificationTokenRepo
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<VerificationToken> findById(final UUID id) {
+        return jpaRepository.findById(id)
+                .map(mapper::toDomain);
+    }
+
+    @Override
     @Transactional
     public void deleteByContact(final String contact) {
         jpaRepository.deleteByContactIgnoreCase(contact);
+    }
+
+    @Override
+    @Transactional
+    public void deleteById(final UUID id) {
+        jpaRepository.deleteById(id);
     }
 
     @Override

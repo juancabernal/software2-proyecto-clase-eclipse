@@ -1,5 +1,7 @@
 package co.edu.uco.ucochallenge.application.notification;
 
-public record ConfirmationResponseDTO(int remainingSeconds) {
+import java.util.UUID;
+
+public record ConfirmationResponseDTO(int remainingSeconds, UUID tokenId) {
 }
 
