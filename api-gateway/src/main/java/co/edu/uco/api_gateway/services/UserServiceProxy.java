@@ -5,6 +5,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -34,6 +36,8 @@ public class UserServiceProxy {
 
     private static final String USERS_BASE_PATH = "lb://UCOCHALLENGE/uco-challenge/api/v1/users";
     private static final Set<String> PAGINATION_PARAMS = Set.of("page", "size");
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserServiceProxy.class);
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<ListUsersResponse>> LIST_USERS_RESPONSE =
             new ParameterizedTypeReference<>() {
@@ -188,6 +192,7 @@ public class UserServiceProxy {
     public ApiSuccessResponse<ConfirmationRequestResponseDto> requestEmailConfirmation(
             final UUID id,
             final String authorizationHeader) {
+        LOGGER.info("📧 Solicitando token de confirmación de correo para el usuario {}", id);
         final ApiSuccessResponse<ConfirmationRequestResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/email", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
@@ -196,12 +201,23 @@ public class UserServiceProxy {
                 .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
-        return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
+        final ApiSuccessResponse<ConfirmationRequestResponseDto> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de solicitud de confirmación de correo no puede ser nula");
+        final ConfirmationRequestResponseDto data = nonNullResponse.data();
+        if (data != null) {
+            LOGGER.info("📧 Backend devolvió token {} con TTL de {} segundos para el usuario {}", data.tokenId(),
+                    data.remainingSeconds(), id);
+        } else {
+            LOGGER.warn("⚠️ El backend devolvió una respuesta vacía para la solicitud de confirmación de correo del usuario {}",
+                    id);
+        }
+        return nonNullResponse;
     }
 
     public ApiSuccessResponse<ConfirmationRequestResponseDto> requestMobileConfirmation(
             final UUID id,
             final String authorizationHeader) {
+        LOGGER.info("📱 Solicitando token de confirmación de teléfono para el usuario {}", id);
         final ApiSuccessResponse<ConfirmationRequestResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/mobile", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
@@ -210,13 +226,26 @@ public class UserServiceProxy {
                 .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
-        return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
+        final ApiSuccessResponse<ConfirmationRequestResponseDto> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
+        final ConfirmationRequestResponseDto data = nonNullResponse.data();
+        if (data != null) {
+            LOGGER.info("📱 Backend devolvió token {} con TTL de {} segundos para el usuario {}", data.tokenId(),
+                    data.remainingSeconds(), id);
+        } else {
+            LOGGER.warn("⚠️ El backend devolvió una respuesta vacía para la solicitud de confirmación de teléfono del usuario {}",
+                    id);
+        }
+        return nonNullResponse;
     }
 
     public ApiSuccessResponse<VerificationAttemptResponseDto> verifyEmailConfirmation(
             final UUID id,
             final VerificationCodeRequestDto request,
             final String authorizationHeader) {
+        LOGGER.info("🔐 Enviando validación de correo al backend para el usuario {} con token {}", id,
+                request.tokenId());
+        LOGGER.debug("🔐 Código enviado al backend para validar el correo del usuario {}: {}", id, request.code());
         final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/email/verify", id)
                 .headers(httpHeaders -> {
@@ -229,13 +258,23 @@ public class UserServiceProxy {
                 .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
                 .block();
 
-        return Objects.requireNonNull(response, "La respuesta de validación de correo no puede ser nula");
+        final ApiSuccessResponse<VerificationAttemptResponseDto> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de validación de correo no puede ser nula");
+        final VerificationAttemptResponseDto data = nonNullResponse.data();
+        if (data != null) {
+            LOGGER.info("🔐 Resultado de validación de correo para el usuario {}: éxito={}, expirado={}", id,
+                    data.success(), data.expired());
+        }
+        return nonNullResponse;
     }
 
     public ApiSuccessResponse<VerificationAttemptResponseDto> verifyMobileConfirmation(
             final UUID id,
             final VerificationCodeRequestDto request,
             final String authorizationHeader) {
+        LOGGER.info("📱 Enviando validación de teléfono al backend para el usuario {} con token {}", id,
+                request.tokenId());
+        LOGGER.debug("📱 Código enviado al backend para validar el teléfono del usuario {}: {}", id, request.code());
         final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/mobile/verify", id)
                 .headers(httpHeaders -> {
@@ -248,7 +287,14 @@ public class UserServiceProxy {
                 .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
                 .block();
 
-        return Objects.requireNonNull(response, "La respuesta de validación de teléfono no puede ser nula");
+        final ApiSuccessResponse<VerificationAttemptResponseDto> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de validación de teléfono no puede ser nula");
+        final VerificationAttemptResponseDto data = nonNullResponse.data();
+        if (data != null) {
+            LOGGER.info("📱 Resultado de validación de teléfono para el usuario {}: éxito={}, expirado={}", id,
+                    data.success(), data.expired());
+        }
+        return nonNullResponse;
     }
 
 
