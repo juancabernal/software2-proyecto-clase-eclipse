@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
+import co.edu.uco.api_gateway.dto.ConfirmationResponseDto;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.ListUsersResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
@@ -23,6 +24,7 @@ import co.edu.uco.api_gateway.dto.PaginationMetadataDto;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
+import co.edu.uco.api_gateway.dto.VerificationAttemptResponseDto;
 import co.edu.uco.api_gateway.exception.DownstreamException;
 import reactor.core.publisher.Mono;
 
@@ -41,6 +43,14 @@ public class UserServiceProxy {
             };
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<GetUserResponse>> GET_USER_RESPONSE =
+            new ParameterizedTypeReference<>() {
+            };
+
+    private static final ParameterizedTypeReference<ApiSuccessResponse<ConfirmationResponseDto>> CONFIRMATION_RESPONSE =
+            new ParameterizedTypeReference<>() {
+            };
+
+    private static final ParameterizedTypeReference<ApiSuccessResponse<VerificationAttemptResponseDto>> VERIFICATION_ATTEMPT_RESPONSE =
             new ParameterizedTypeReference<>() {
             };
 
@@ -174,29 +184,29 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de eliminación de usuario no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestEmailConfirmation(
+    public ApiSuccessResponse<ConfirmationResponseDto> requestEmailConfirmation(
             final UUID id,
             final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final ApiSuccessResponse<ConfirmationResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/email", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestMobileConfirmation(
+    public ApiSuccessResponse<ConfirmationResponseDto> requestMobileConfirmation(
             final UUID id,
             final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final ApiSuccessResponse<ConfirmationResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/mobile", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
@@ -217,21 +227,25 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de verificación de correo no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> verifyEmail(
+    public ApiSuccessResponse<VerificationAttemptResponseDto> verifyEmailManually(
             final UUID id,
-            final String token,
+            final String tokenId,
+            final String code,
             final String authorizationHeader) {
-        final String sanitizedToken = requireToken(token);
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final String sanitizedTokenId = requireText(tokenId, "El tokenId de verificación es obligatorio.");
+        final String sanitizedCode = requireText(code, "El código de verificación es obligatorio.");
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
                 .uri("/{id}/confirmations/email/verify", id)
                 .headers(httpHeaders -> {
                     setAuthorization(httpHeaders, authorizationHeader);
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                 })
-                .bodyValue(Map.of("token", sanitizedToken))
+                .bodyValue(Map.of(
+                        "tokenId", sanitizedTokenId,
+                        "code", sanitizedCode))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de verificación manual de correo no puede ser nula");
@@ -254,10 +268,14 @@ public class UserServiceProxy {
 
 
     private String requireToken(final String token) {
-        if (!StringUtils.hasText(token)) {
-            throw new IllegalArgumentException("El token de verificación es obligatorio.");
+        return requireText(token, "El token de verificación es obligatorio.");
+    }
+
+    private String requireText(final String value, final String message) {
+        if (!StringUtils.hasText(value)) {
+            throw new IllegalArgumentException(message);
         }
-        return token.trim();
+        return value.trim();
     }
 
 

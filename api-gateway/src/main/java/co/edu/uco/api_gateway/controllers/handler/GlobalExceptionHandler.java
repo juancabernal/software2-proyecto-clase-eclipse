@@ -51,6 +51,15 @@ public class GlobalExceptionHandler {
             }
         }
 
+        final String userMessage = Optional.ofNullable(error.userMessage()).orElse("");
+        if (userMessage.contains("domain.verification.token.notFound")
+                || userMessage.contains("domain.verification.token.invalid")) {
+            error = ApiErrorResponse.of(
+                    status.value(),
+                    "Ese código fue reemplazado o expiró. Reenvíalo y usa el código más reciente.",
+                    error.technicalMessage());
+        }
+
         LOGGER.warn("Downstream request failed with status {} and user message {}", status, error.userMessage());
         return ResponseEntity.status(status).body(error);
     }

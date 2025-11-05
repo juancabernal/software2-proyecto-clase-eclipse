@@ -5,7 +5,7 @@ export type ApiSuccessResponse<T> = { userMessage: string; data: T; };
 export type Page<T> = { items: T[]; page: number; size: number; totalItems: number; totalPages: number; };
 export type RegisterUserResponse = { userId: string; fullName: string; email: string; };
 export type CatalogItem = { id: string; name: string; };
-type ConfirmationResponse = { remainingSeconds: number };
+type ConfirmationResponse = { remainingSeconds: number; tokenId?: string | null };
 export type VerificationAttemptResponse = {
   success: boolean;
   expired: boolean;
@@ -28,7 +28,14 @@ const postAndReturnTTL = async (
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
     const seconds = Number(data?.remainingSeconds ?? 0);
-    return { remainingSeconds: Number.isFinite(seconds) ? seconds : 0 };
+    const rawTokenId = data?.tokenId;
+    const tokenId = typeof rawTokenId === "string" && rawTokenId.trim().length > 0
+      ? rawTokenId.trim()
+      : undefined;
+    return {
+      remainingSeconds: Number.isFinite(seconds) ? seconds : 0,
+      tokenId,
+    };
   }
   const msg =
     (res.data && (res.data.message || res.data.error)) || failureMessage || DEFAULT_FAILURE_MESSAGE;
@@ -39,13 +46,13 @@ const postAndReturnTTL = async (
 const postVerificationCode = async (
   api: AxiosInstance,
   endpoint: string,
-  code: string,
+  payload: Record<string, unknown>,
   failureMessage: string
 ): Promise<VerificationAttemptResponse> => {
   // Debug logging removed to avoid exposing sensitive information in the browser console
   const res = await api.post(
     endpoint,
-    { code },
+    payload,
     { validateStatus: () => true }
   );
   // Response logging removed to avoid exposing sensitive information in the browser console
@@ -195,16 +202,8 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
 
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email`;
 
-      try {
-        return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.");
-      } catch (error: any) {
-        if (error?.response?.status === 404) {
-          return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.");
-        }
-        throw error;
-      }
+      return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.");
     },
 
     async requestMobileConfirmation(userId: string): Promise<ConfirmationResponse> {
@@ -224,7 +223,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw error;
       }
     },
-    async validateEmailConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateEmailConfirmation(userId: string, code: string, tokenId: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
@@ -233,29 +232,19 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       if (!sanitizedCode) {
         throw new Error("Debes ingresar el código de verificación.");
       }
+      const sanitizedTokenId = tokenId?.trim();
+      if (!sanitizedTokenId) {
+        throw new Error("El tokenId de verificación es obligatorio.");
+      }
 
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email/verify`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email/verify`;
-
-      try {
-        return await postVerificationCode(
-          api,
-          adminEndpoint,
-          sanitizedCode,
-          "No fue posible validar el código del correo electrónico."
-        );
-      } catch (error: any) {
-        if (error?.response?.status === 404) {
-          return await postVerificationCode(
-            api,
-            fallbackEndpoint,
-            sanitizedCode,
-            "No fue posible validar el código del correo electrónico."
-          );
-        }
-        throw error;
-      }
+      return await postVerificationCode(
+        api,
+        adminEndpoint,
+        { code: sanitizedCode, tokenId: sanitizedTokenId },
+        "No fue posible validar el código del correo electrónico."
+      );
     },
 
     async validateMobileConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
@@ -276,7 +265,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postVerificationCode(
           api,
           adminEndpoint,
-          sanitizedCode,
+          { code: sanitizedCode },
           "No fue posible validar el código del teléfono móvil."
         );
       } catch (error: any) {
@@ -284,7 +273,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           return await postVerificationCode(
             api,
             fallbackEndpoint,
-            sanitizedCode,
+            { code: sanitizedCode },
             "No fue posible validar el código del teléfono móvil."
           );
         }

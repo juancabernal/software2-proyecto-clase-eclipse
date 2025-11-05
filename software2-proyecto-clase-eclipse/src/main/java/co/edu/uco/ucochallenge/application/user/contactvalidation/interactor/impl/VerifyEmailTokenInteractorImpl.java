@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import co.edu.uco.ucochallenge.application.Void;
+import co.edu.uco.ucochallenge.application.notification.VerificationAttemptResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.VerifyEmailTokenInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.VerifyEmailTokenUseCase;
 
@@ -18,8 +18,7 @@ public class VerifyEmailTokenInteractorImpl implements VerifyEmailTokenInteracto
     }
 
     @Override
-    public Void execute(final UUID userId, final UUID tokenId, final String code) {
-        useCase.execute(userId, tokenId, code);
-        return Void.returnVoid();
+    public VerificationAttemptResponseDTO execute(final UUID userId, final UUID tokenId, final String code) {
+        return useCase.execute(userId, tokenId, code);
     }
 }

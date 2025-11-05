@@ -106,13 +106,14 @@ public class UserController {
 
 
     @PostMapping("/{id}/confirmations/email/verify")
-    public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> verifyEmailManually(
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
-        verifyEmailTokenInteractor.execute(id, request.sanitizedTokenId(), request.sanitizedCode());
+        final VerificationAttemptResponseDTO response = verifyEmailTokenInteractor
+                .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(
-                "Correo verificado correctamente.",
-                Void.returnVoid()));
+                response.message(),
+                response));
     }
 
     @PostMapping("/{id}/confirmations/mobile/verify")
@@ -145,9 +146,10 @@ public class UserController {
             @RequestParam(name = "tokenId", required = false) final UUID tokenId,
             @RequestParam(name = "token", required = false) final String token,
             @RequestParam(name = "code", required = false) final String code) {
-        verifyEmailTokenInteractor.execute(id, tokenId, resolveToken(token, code));
+        final VerificationAttemptResponseDTO response = verifyEmailTokenInteractor
+                .execute(id, tokenId, resolveToken(token, code));
         return ResponseEntity.ok(ApiSuccessResponse.of(
-                "Correo verificado correctamente.",
+                response.message(),
                 Void.returnVoid()));
     }
 

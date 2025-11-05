@@ -5,14 +5,14 @@ import java.util.UUID;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 
-public record VerificationCodeRequestDTO(String code, String token) {
+public record VerificationCodeRequestDTO(String code, String tokenId) {
 
     public String sanitizedCode() {
         return TextHelper.getDefaultWithTrim(code);
     }
 
     public UUID sanitizedTokenId() {
-        final String rawToken = TextHelper.getDefaultWithTrim(token);
+        final String rawToken = TextHelper.getDefaultWithTrim(tokenId);
         if (TextHelper.isEmpty(rawToken)) {
             return null;
         }

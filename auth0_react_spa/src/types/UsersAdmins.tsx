@@ -38,6 +38,7 @@ type VerificationModalState = {
   loading: boolean;
   status: VerificationAttemptResponse | null;
   error: string | null;
+  tokenId?: string;
 };
 
 const initialFilters: Filters = {
@@ -56,6 +57,7 @@ const emptyVerificationModal = (): VerificationModalState => ({
   loading: false,
   status: null,
   error: null,
+  tokenId: undefined,
 });
 
 const emptyForm = (): UserFormState => ({
@@ -142,6 +144,40 @@ export default function UsersAdmin() {
   const [countdown, setCountdown] = useState<Record<string, number>>({});
   const timersRef = useRef<Map<string, number>>(new Map());
   const [verificationModal, setVerificationModal] = useState<VerificationModalState>(emptyVerificationModal());
+  const TOKEN_REPLACED_MESSAGE = "Ese código fue reemplazado o expiró. Reenvíalo y usa el código más reciente.";
+  const TOKEN_MISSING_MESSAGE = "No se recibió tokenId. Reenvía el código para continuar.";
+  const VERIFY_SUCCESS_MESSAGE = "Código verificado correctamente.";
+
+  const normalizeVerificationMessage = (raw: unknown, fallback: string): string => {
+    if (typeof raw !== "string") {
+      return fallback;
+    }
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return fallback;
+    }
+    if (/domain\.verification\.token\.(?:notFound|invalid)/i.test(trimmed)) {
+      return TOKEN_REPLACED_MESSAGE;
+    }
+    return trimmed;
+  };
+
+  const extractVerificationErrorMessage = (error: any, fallback: string): string => {
+    const fromUserMessage = normalizeVerificationMessage(error?.response?.data?.userMessage, "");
+    if (fromUserMessage) {
+      return fromUserMessage;
+    }
+    const fromMessage = normalizeVerificationMessage(error?.response?.data?.message, "");
+    if (fromMessage) {
+      return fromMessage;
+    }
+    const fromError = normalizeVerificationMessage(error?.message, "");
+    if (fromError) {
+      return fromError;
+    }
+    return fallback;
+  };
+
   const countdownKeyFor = useCallback((userId: string, type: "email" | "mobile") => `${userId}-${type}`, []);
   const clearCountdown = useCallback((key: string) => {
     const existingTimer = timersRef.current.get(key);
@@ -438,6 +474,14 @@ export default function UsersAdmin() {
         type === "email"
           ? await api.requestEmailConfirmation(userId)
           : await api.requestMobileConfirmation(userId);
+      const resolvedTokenId = type === "email"
+        ? (typeof response.tokenId === "string" ? response.tokenId.trim() : "")
+        : undefined;
+      if (type === "email" && !resolvedTokenId) {
+        updateFeedback(userId, { variant: "error", message: TOKEN_MISSING_MESSAGE });
+        closeVerificationModal();
+        return;
+      }
       startCountdown(key, response.remainingSeconds);
       updateFeedback(userId, { variant: "success", message: successMessage });
       setVerificationModal({
@@ -449,16 +493,13 @@ export default function UsersAdmin() {
         loading: false,
         status: null,
         error: null,
+        tokenId: resolvedTokenId,
       });
     } catch (error: any) {
-      const message = error?.message || errorFallback;
+      const message = extractVerificationErrorMessage(error, errorFallback);
       updateFeedback(userId, { variant: "error", message });
-
       console.error(`Error solicitando validación de ${type}:`, error);
       closeVerificationModal();
-
-      updateFeedback(userId, { variant: "error", message: error?.message || errorFallback });
-
     } finally {
       setActionLoading((prev) => {
         const { [key]: _r, ...rest } = prev;
@@ -481,37 +522,62 @@ export default function UsersAdmin() {
       return;
     }
 
+    let tokenIdForRequest: string | undefined;
+    if (verificationModal.type === "email") {
+      tokenIdForRequest = typeof verificationModal.tokenId === "string"
+        ? verificationModal.tokenId.trim()
+        : "";
+      if (!tokenIdForRequest) {
+        setVerificationModal((prev) => ({
+          ...prev,
+          error: TOKEN_REPLACED_MESSAGE,
+        }));
+        return;
+      }
+    }
+
     const key = countdownKeyFor(verificationModal.userId, verificationModal.type);
     setVerificationModal((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const response =
         verificationModal.type === "email"
-          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode)
+          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode, tokenIdForRequest as string)
           : await api.validateMobileConfirmation(verificationModal.userId, trimmedCode);
+
+      const normalizedMessage = normalizeVerificationMessage(
+        response.message,
+        response.success ? VERIFY_SUCCESS_MESSAGE : response.message || VERIFY_SUCCESS_MESSAGE
+      );
+      const normalizedResponse: VerificationAttemptResponse = {
+        ...response,
+        message: normalizedMessage,
+      };
 
       setVerificationModal((prev) => ({
         ...prev,
         loading: false,
-        status: response,
-        code: response.success ? "" : prev.code,
+        status: normalizedResponse,
+        code: normalizedResponse.success ? "" : prev.code,
         error: null,
+        tokenId: normalizedResponse.success && prev.type === "email" ? undefined : prev.tokenId,
       }));
 
       updateFeedback(verificationModal.userId, {
-        variant: response.success ? "success" : "error",
-        message: response.message,
+        variant: normalizedResponse.success ? "success" : "error",
+        message: normalizedMessage,
       });
 
-      if (response.success) {
+      if (normalizedResponse.success) {
         clearCountdown(key);
         await fetchUsers();
-      } else if (response.expired || response.attemptsRemaining <= 0) {
+      } else if (normalizedResponse.expired || normalizedResponse.attemptsRemaining <= 0) {
         clearCountdown(key);
       }
     } catch (error: any) {
-      const message = error?.message || "No fue posible validar el código.";
+      const message = extractVerificationErrorMessage(error, "No fue posible validar el código.");
       setVerificationModal((prev) => ({ ...prev, loading: false, error: message }));
+      updateFeedback(verificationModal.userId, { variant: "error", message });
     }
   };
 

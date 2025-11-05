@@ -7,11 +7,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.edu.uco.ucochallenge.application.notification.VerificationAttemptResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.VerifyEmailTokenUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
+import co.edu.uco.ucochallenge.crosscuting.messages.MessageProvider;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
 import co.edu.uco.ucochallenge.domain.verification.model.VerificationToken;
@@ -32,7 +34,7 @@ public class VerifyEmailTokenUseCaseImpl implements VerifyEmailTokenUseCase {
     }
 
     @Override
-    public void execute(final UUID userId, final UUID tokenId, final String rawCode) {
+    public VerificationAttemptResponseDTO execute(final UUID userId, final UUID tokenId, final String rawCode) {
         final String code = TextHelper.getDefaultWithTrim(rawCode);
         if (TextHelper.isEmpty(code)) {
             throw DomainException.buildFromCatalog(
@@ -86,5 +88,16 @@ public class VerifyEmailTokenUseCaseImpl implements VerifyEmailTokenUseCase {
         final User updatedUser = user.markEmailAsConfirmed();
         userRepository.save(updatedUser);
         tokenRepository.deleteByContact(contact);
+
+        final String message = MessageProvider
+                .getMessage(MessageCodes.Domain.Verification.CONTACT_CONFIRMED_USER);
+        final boolean allContactsConfirmed = updatedUser.emailConfirmed() && updatedUser.mobileNumberConfirmed();
+        return new VerificationAttemptResponseDTO(
+                true,
+                false,
+                verificationToken.attempts(),
+                true,
+                allContactsConfirmed,
+                message);
     }
 }

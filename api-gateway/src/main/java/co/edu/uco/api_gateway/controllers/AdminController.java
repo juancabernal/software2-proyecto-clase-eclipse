@@ -23,11 +23,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.CatalogItemDto;
+import co.edu.uco.api_gateway.dto.ConfirmationResponseDto;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
+import co.edu.uco.api_gateway.dto.VerificationAttemptResponseDto;
 import co.edu.uco.api_gateway.services.CatalogServiceProxy;
 import co.edu.uco.api_gateway.services.UserServiceProxy;
 
@@ -120,10 +122,10 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/email")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(
+    public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDto>> requestEmailConfirmation(
             @PathVariable("id") final UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response =
+        final ApiSuccessResponse<ConfirmationResponseDto> response =
                 userServiceProxy.requestEmailConfirmation(id, authorizationHeader);
         return ResponseEntity.ok(response);
     }
@@ -151,17 +153,17 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/email/verify")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDto>> verifyEmailManually(
             @PathVariable("id") final UUID id,
-            @RequestBody final Map<String, String> requestBody,
+            @RequestBody final ManualEmailVerificationRequest requestBody,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final String resolvedToken = resolveToken(requestBody.get("token"), requestBody.get("code"));
-        if (!StringUtils.hasText(resolvedToken)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token de verificación es obligatorio.");
+        if (!StringUtils.hasText(requestBody.tokenId()) || !StringUtils.hasText(requestBody.code())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Se requieren tokenId y code para verificación manual.");
         }
 
-        final ApiSuccessResponse<Void> response =
-                userServiceProxy.verifyEmail(id, resolvedToken, authorizationHeader);
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response =
+                userServiceProxy.verifyEmailManually(id, requestBody.tokenId(), requestBody.code(), authorizationHeader);
         return ResponseEntity.ok(response);
     }
 
@@ -170,12 +172,15 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/mobile")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(
+    public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDto>> requestMobileConfirmation(
             @PathVariable("id") final UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response =
+        final ApiSuccessResponse<ConfirmationResponseDto> response =
                 userServiceProxy.requestMobileConfirmation(id, authorizationHeader);
         return ResponseEntity.ok(response);
+    }
+
+    private record ManualEmailVerificationRequest(String tokenId, String code) {
     }
 
     /**
