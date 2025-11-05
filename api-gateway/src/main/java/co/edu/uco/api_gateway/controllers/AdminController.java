@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.CatalogItemDto;
@@ -132,8 +134,14 @@ public class AdminController {
     @GetMapping("/users/{id}/confirmations/email/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmail(
             @PathVariable("id") final UUID id,
-            @RequestParam("token") final String token) {
-        final ApiSuccessResponse<Void> response = userServiceProxy.verifyEmail(id, token);
+            @RequestParam(name = "token", required = false) final String token,
+            @RequestParam(name = "code", required = false) final String code) {
+        final String resolvedToken = resolveToken(token, code);
+        if (!StringUtils.hasText(resolvedToken)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token de verificación es obligatorio.");
+        }
+
+        final ApiSuccessResponse<Void> response = userServiceProxy.verifyEmail(id, resolvedToken);
         return ResponseEntity.ok(response);
     }
 
@@ -147,9 +155,13 @@ public class AdminController {
             @PathVariable("id") final UUID id,
             @RequestBody final Map<String, String> requestBody,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final String token = requestBody.get("token");
+        final String resolvedToken = resolveToken(requestBody.get("token"), requestBody.get("code"));
+        if (!StringUtils.hasText(resolvedToken)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token de verificación es obligatorio.");
+        }
+
         final ApiSuccessResponse<Void> response =
-                userServiceProxy.verifyEmail(id, token, authorizationHeader);
+                userServiceProxy.verifyEmail(id, resolvedToken, authorizationHeader);
         return ResponseEntity.ok(response);
     }
 
@@ -172,8 +184,14 @@ public class AdminController {
     @GetMapping("/users/{id}/confirmations/mobile/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyMobile(
             @PathVariable("id") final UUID id,
-            @RequestParam("token") final String token) {
-        final ApiSuccessResponse<Void> response = userServiceProxy.verifyMobile(id, token);
+            @RequestParam(name = "token", required = false) final String token,
+            @RequestParam(name = "code", required = false) final String code) {
+        final String resolvedToken = resolveToken(token, code);
+        if (!StringUtils.hasText(resolvedToken)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token de verificación es obligatorio.");
+        }
+
+        final ApiSuccessResponse<Void> response = userServiceProxy.verifyMobile(id, resolvedToken);
         return ResponseEntity.ok(response);
     }
 
@@ -217,6 +235,13 @@ public class AdminController {
             @PathVariable final String departmentId,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listCitiesByDepartment(authorizationHeader, departmentId));
+    }
+
+    private String resolveToken(final String primary, final String secondary) {
+        if (StringUtils.hasText(primary)) {
+            return primary.trim();
+        }
+        return StringUtils.hasText(secondary) ? secondary.trim() : null;
     }
 
 }
