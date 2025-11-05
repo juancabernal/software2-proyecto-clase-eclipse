@@ -11,4 +11,5 @@ public interface VerificationTokenEntityMapper {
     VerificationToken toDomain(VerificationTokenEntity entity);
 
     VerificationTokenEntity toEntity(VerificationToken token);
-}
+
+    }

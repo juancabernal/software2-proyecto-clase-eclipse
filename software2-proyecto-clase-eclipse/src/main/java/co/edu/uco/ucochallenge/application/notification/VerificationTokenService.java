@@ -2,6 +2,7 @@ package co.edu.uco.ucochallenge.application.notification;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDateTime;  // Se añade esta importación
 import java.util.Locale;
 import java.util.Map;
 
@@ -34,7 +35,6 @@ public class VerificationTokenService {
     private final DuplicateRegistrationNotificationService notificationService;
     private final UserRepository userRepository;
     
-    
     public VerificationTokenService(
             final VerificationTokenRepository repository,
             final DuplicateRegistrationNotificationService notificationService,
@@ -42,19 +42,22 @@ public class VerificationTokenService {
         this.repository = repository;
         this.notificationService = notificationService;
         this.userRepository = userRepository;
-        }
+    }
     
     @Transactional
     public ConfirmationResponseDTO generateToken(final User user, final VerificationChannel channel) {
         final String contact = resolveContact(user, channel);
         final int ttlSeconds = resolveTtlSeconds();
         final int maxAttempts = resolveMaxAttempts();
-        final Instant now = Instant.now();
-        final Instant expiration = now.plusSeconds(ttlSeconds);
+        
+        // Cambiar a LocalDateTime para usar la hora local
+        final LocalDateTime now = LocalDateTime.now();  // Hora local
+        // Calculamos la expiración en función de la hora local
+        final LocalDateTime expiration = now.plusSeconds(ttlSeconds);  // Expiración sumando los segundos de TTL
         final String code = generateCode();
 
         repository.deleteByContact(contact);
-        repository.save(new VerificationToken(null, contact, code, expiration, maxAttempts, now));
+        repository.save(new VerificationToken(null, contact, code, expiration, maxAttempts, now));  // Guardar con la hora local
 
         LOGGER.info("Generated verification token for user {} via {}", user.id(), channel.name());
         try {
@@ -65,6 +68,7 @@ public class VerificationTokenService {
 
         return new ConfirmationResponseDTO(ttlSeconds);
     }
+    
     @Transactional
     public VerificationAttemptResponseDTO validateToken(final User user,
             final VerificationChannel channel,
@@ -92,7 +96,7 @@ public class VerificationTokenService {
                     message);
         }
 
-        if (token.isExpired(Instant.now())) {
+        if (token.isExpired(LocalDateTime.now())) {
             repository.deleteByContact(contact);
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_EXPIRED_USER);
@@ -149,10 +153,6 @@ public class VerificationTokenService {
                 message);
     }
 
-
-
-
-
     private void notifyUser(final User user,
             final VerificationChannel channel,
             final String code,
@@ -165,7 +165,6 @@ public class VerificationTokenService {
         } else {
             notificationService.notifyMobileConfirmation(attempt, code, ttlMinutes, maxAttempts);
         }
-       
     }
 
     private String resolveContact(final User user, final VerificationChannel channel) {
@@ -228,6 +227,7 @@ public class VerificationTokenService {
         }
         return Math.max(minutes, 1) * 60;
     }
+    
     private int resolveMaxAttempts() {
         int attempts = DEFAULT_MAX_ATTEMPTS;
         try {

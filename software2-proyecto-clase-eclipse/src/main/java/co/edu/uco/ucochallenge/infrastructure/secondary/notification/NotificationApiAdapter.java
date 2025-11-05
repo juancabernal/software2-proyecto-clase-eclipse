@@ -114,11 +114,10 @@ public class NotificationApiAdapter implements NotificationSenderPort {
     private Map<String, Object> buildPayload(final NotificationMessage message) {
         final Map<String, Object> payload = new HashMap<>();
 
-        // Campos base requeridos por NotificationAPI
         payload.put("notificationId", message.notificationType());
         payload.put("templateId", "predeterminado");
 
-        // Construir user exactamente igual que antes
+        // Usuario destino
         final Map<String, Object> user = new HashMap<>();
         if (message.attemptedUser() != null) {
             if (!TextHelper.isEmpty(message.attemptedUser().email())) {
@@ -138,17 +137,13 @@ public class NotificationApiAdapter implements NotificationSenderPort {
         }
         payload.put("user", user);
 
-        // ✅ NUEVO BLOQUE: mergeTags (igual que en tu compañero)
-        final Map<String, Object> mergeTags = new HashMap<>();
-        mergeTags.put("currentYear", "2025");
-        mergeTags.put("comment", "Confirma tu contacto - UCO Challenge");
-
-        // Solo agregamos el código si existe
+        // ⚡ Aquí está la clave: usar "parameters" con el nombre exacto del tag del template
+        final Map<String, Object> parameters = new HashMap<>();
         if (message.extraData() != null && message.extraData().get("code") != null) {
-            mergeTags.put("confirmationCode", message.extraData().get("code"));
+            parameters.put("verificationCode", message.extraData().get("code")); // nombre exacto del tag en tu plantilla
         }
 
-        payload.put("mergeTags", mergeTags);
+        payload.put("parameters", parameters);
 
         LOGGER.info("📤 Payload NotificationAPI (formato final): {}", payload);
         return payload;

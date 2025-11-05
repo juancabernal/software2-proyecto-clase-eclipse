@@ -18,7 +18,9 @@ public class ParameterCatalog {
         register("notification.email.maxRetries", "3");
         register("validation.code.timeExpiration", "5");
         register("verification.code.expiration.minutes", "5");  // tiempo de vida del token
-        register("verification.code.max.attempts", "3");         // número máximo de intentos
+        register("verification.code.max.attempts", "3"); 
+        register("validation.code.timeExpiration", "5");
+        register("validation.code.maxAttempts", "3");// número máximo de intentos
 // in minutes
     }
 

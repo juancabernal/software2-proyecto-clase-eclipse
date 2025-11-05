@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.repository;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -46,7 +46,7 @@ public class VerificationTokenRepositoryAdapter implements VerificationTokenRepo
 
     @Override
     @Transactional
-    public int deleteExpired(final Instant reference) {
+    public int deleteExpired(final LocalDateTime reference) {
         return jpaRepository.deleteExpired(reference);
     }
 }
