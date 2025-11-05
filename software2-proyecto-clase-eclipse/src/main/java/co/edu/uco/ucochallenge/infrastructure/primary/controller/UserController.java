@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.infrastructure.primary.controller;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -20,7 +21,6 @@ import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationCodeRequestDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
-import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.VerifyEmailTokenInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.VerifyMobileTokenInteractor;
@@ -48,7 +48,6 @@ public class UserController {
     private final DeleteUserInteractor deleteUserInteractor;
     private final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor;
     private final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor;
-    private final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor;
     private final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor;
     private final VerifyEmailTokenInteractor verifyEmailTokenInteractor;
     private final VerifyMobileTokenInteractor verifyMobileTokenInteractor;
@@ -62,7 +61,6 @@ public class UserController {
             final DeleteUserInteractor deleteUserInteractor,
             final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor,
             final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor,
-            final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor,
             final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor,
             final VerifyEmailTokenInteractor verifyEmailTokenInteractor,
             final VerifyMobileTokenInteractor verifyMobileTokenInteractor
@@ -75,7 +73,6 @@ public class UserController {
         this.deleteUserInteractor = deleteUserInteractor;
         this.requestEmailConfirmationInteractor = requestEmailConfirmationInteractor;
         this.requestMobileConfirmationInteractor = requestMobileConfirmationInteractor;
-        this.validateEmailConfirmationInteractor = validateEmailConfirmationInteractor;
         this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
         this.verifyEmailTokenInteractor = verifyEmailTokenInteractor;
         this.verifyMobileTokenInteractor = verifyMobileTokenInteractor;
@@ -109,12 +106,14 @@ public class UserController {
 
 
     @PostMapping("/{id}/confirmations/email/verify")
-    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
+    public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
             @PathVariable("id") final UUID id,
-            @RequestBody final VerificationCodeRequestDTO request) {
-        final VerificationAttemptResponseDTO response = validateEmailConfirmationInteractor
-                .execute(id, request.sanitizedCode());
-        return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
+            @RequestBody final Map<String, String> requestBody) {
+        final String token = requestBody.get("token");
+        verifyEmailTokenInteractor.execute(id, token);
+        return ResponseEntity.ok(ApiSuccessResponse.of(
+                "Correo verificado correctamente.",
+                Void.returnVoid()));
     }
 
     @PostMapping("/{id}/confirmations/mobile/verify")

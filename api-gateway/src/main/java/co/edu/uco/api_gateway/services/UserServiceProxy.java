@@ -216,6 +216,25 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de verificación de correo no puede ser nula");
     }
 
+    public ApiSuccessResponse<Void> verifyEmail(
+            final UUID id,
+            final String token,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response = webClient.post()
+                .uri("/{id}/confirmations/email/verify", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(Map.of("token", token))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VOID_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de verificación manual de correo no puede ser nula");
+    }
+
     public ApiSuccessResponse<Void> verifyMobile(final UUID id, final String token) {
         final ApiSuccessResponse<Void> response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
