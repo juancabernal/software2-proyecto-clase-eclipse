@@ -31,5 +31,17 @@ public class CatalogsController {
         var data = service.listCities();
         return ResponseEntity.ok(ApiSuccessResponse.of("Ciudades obtenidas exitosamente.", data));
     }
-    //Falta lógica para ciudad POR departamento
+
+    @GetMapping("/departments")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogDTO>>> listDepartments() {
+        var data = service.listDepartments();
+        return ResponseEntity.ok(ApiSuccessResponse.of("Departamentos obtenidos exitosamente.", data));
+    }
+
+    @GetMapping("/departments/{departmentId}/cities")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogDTO>>> listCitiesByDepartment(
+            @PathVariable String departmentId) {
+        var data = service.listCitiesByDepartment(departmentId);
+        return ResponseEntity.ok(ApiSuccessResponse.of("Ciudades obtenidas exitosamente.", data));
+    }
 }

@@ -179,13 +179,13 @@ export default function UsersAdmin() {
       try {
         setCatalogLoading(true);
         setCatalogErr(null);
-        const [idTypeOptions, cityOptions] = await Promise.all([
+        const [idTypeOptions, departmentOptions] = await Promise.all([
           api.listIdTypes(),
-          api.listCities(),
+          api.listDepartments(),
         ]);
         if (!active) return;
         setIdTypes(idTypeOptions);
-        setCities(cityOptions);
+        setDepartments(departmentOptions);
       } catch (error: any) {
         if (active) setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
       } finally {
@@ -196,6 +196,68 @@ export default function UsersAdmin() {
       active = false;
     };
   }, [api]);
+
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setCities([]);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const cityOptions = await api.listCitiesByDepartment(selectedDepartment);
+        if (active) {
+          setCities(cityOptions);
+        }
+      } catch (error: any) {
+        if (active) {
+          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
+        }
+      } finally {
+        if (active) {
+          setCatalogLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedDepartment, api]);
+
+  useEffect(() => {
+    if (!filterDepartment) {
+      setFilterCities([]);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const cityOptions = await api.listCitiesByDepartment(filterDepartment);
+        if (active) {
+          setFilterCities(cityOptions);
+        }
+      } catch (error: any) {
+        if (active) {
+          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
+        }
+      } finally {
+        if (active) {
+          setCatalogLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [filterDepartment, api]);
 
   // tamaño de página
   // (Eliminado: declaración duplicada de onChangePageSize)
@@ -251,14 +313,11 @@ export default function UsersAdmin() {
     };
   }, []);
 
-  const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
-  const [cities, setCities] = useState<CatalogItem[]>([]);
-  const [catalogErr, setCatalogErr] = useState<string | null>(null);
-  const [catalogLoading, setCatalogLoading] = useState(false);
-
   const resetForm = () => {
     setForm(emptyForm());
     setFormErr(null);
+    setSelectedDepartment("");
+    setCities([]);
   };
 
   const verificationCountdown = verificationModal.open
@@ -297,37 +356,6 @@ export default function UsersAdmin() {
   };
 
   // (Removed duplicate fetchUsers and related useEffect)
-
-  useEffect(() => {
-    let active = true;
-    const loadCatalogs = async () => {
-      try {
-        setCatalogLoading(true);
-        setCatalogErr(null);
-        const [idTypeOptions, cityOptions] = await Promise.all([
-          api.listIdTypes(),
-          api.listCities(),
-        ]);
-        console.log("🪪 idTypes desde API:", idTypeOptions);
-        console.log("🏙️ cities desde API:", cityOptions);
-        if (!active) return;
-        setIdTypes(idTypeOptions);
-        setCities(cityOptions);
-      } catch (error: any) {
-        if (active) {
-          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
-        }
-      } finally {
-        if (active) {
-          setCatalogLoading(false);
-        }
-      }
-    };
-    loadCatalogs();
-    return () => {
-      active = false;
-    };
-  }, [api]);
 
   const onChangePageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
@@ -859,16 +887,37 @@ export default function UsersAdmin() {
               </label>
 
               <label className="flex flex-col text-sm text-gray-300">
+                Departamento *
+                <select
+                  value={selectedDepartment}
+                  disabled={catalogLoading}
+                  onChange={(e) => {
+                    const dept = e.target.value;
+                    setSelectedDepartment(dept);
+                    setForm((f) => ({ ...f, homeCity: "" }));
+                  }}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                >
+                  <option value="">Selecciona…</option>
+                  {departments.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
                 Ciudad de residencia *
                 <select
                   value={form.homeCity}
-                  disabled={catalogLoading}
+                  disabled={catalogLoading || !selectedDepartment}
                   onChange={(e) => setForm((f) => ({ ...f, homeCity: e.target.value }))}
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 >
                   <option value="">Selecciona…</option>
-                  {cities.map((opt, idx) => (
-                    <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>
+                  {cities.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
                       {opt.name}
                     </option>
                   ))}

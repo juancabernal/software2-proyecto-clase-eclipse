@@ -53,6 +53,16 @@ public class CatalogServiceProxy {
         return getCatalog("/cities", authorizationHeader);
     }
 
+    public ApiSuccessResponse<List<CatalogItemDto>> listDepartments(final String authorizationHeader) {
+        return getCatalog("/departments", authorizationHeader);
+    }
+
+    public ApiSuccessResponse<List<CatalogItemDto>> listCitiesByDepartment(
+            final String authorizationHeader,
+            final String departmentId) {
+        return getCatalog("/departments/" + departmentId + "/cities", authorizationHeader);
+    }
+
     private ApiSuccessResponse<List<CatalogItemDto>> getCatalog(
             final String path,
             final String authorizationHeader) {
