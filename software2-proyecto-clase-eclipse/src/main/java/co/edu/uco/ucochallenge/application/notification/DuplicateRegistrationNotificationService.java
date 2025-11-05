@@ -1,9 +1,9 @@
 package co.edu.uco.ucochallenge.application.notification;
 
-import static co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.NotificationEvent.DUPLICATE_EMAIL;
-import static co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.NotificationEvent.DUPLICATE_MOBILE;
-import static co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.NotificationEvent.EMAIL_CONFIRMATION;
-import static co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.NotificationEvent.MOBILE_CONFIRMATION;
+import static co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.NotificationEvent.DUPLICATE_EMAIL;
+import static co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.NotificationEvent.DUPLICATE_MOBILE;
+import static co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.NotificationEvent.EMAIL_CONFIRMATION;
+import static co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.NotificationEvent.MOBILE_CONFIRMATION;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,12 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.NotificationEvent;
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.Person;
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationRequest.Recipient;
-import co.edu.uco.ucochallenge.application.notification.NotificationApiProperties.RecipientProperties;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.parameter.ParameterCodes;
+import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage;
+import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.NotificationEvent;
+import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.Person;
+import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.Recipient;
+import co.edu.uco.ucochallenge.domain.notification.port.out.NotificationSenderPort;
 import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.ParameterServicePort;
 
 @Component
@@ -42,15 +43,15 @@ public class DuplicateRegistrationNotificationService {
             ParameterCodes.Notification.MOBILE_CONFIRMATION_STRATEGY,
             "Hola %s, confirma tu número de teléfono para finalizar el registro.");
 
-    private final NotificationClient notificationClient;
-    private final NotificationApiProperties apiProperties;
+    private final NotificationSenderPort notificationSenderPort;
+    private final NotificationRecipientsProvider recipientsProvider;
     private final ParameterServicePort parameterServicePort;
 
-    public DuplicateRegistrationNotificationService(final NotificationClient notificationClient,
-            final NotificationApiProperties apiProperties,
+    public DuplicateRegistrationNotificationService(final NotificationSenderPort notificationSenderPort,
+            final NotificationRecipientsProvider recipientsProvider,
             final ParameterServicePort parameterServicePort) {
-        this.notificationClient = notificationClient;
-        this.apiProperties = apiProperties;
+        this.notificationSenderPort = notificationSenderPort;
+        this.recipientsProvider = recipientsProvider;
         this.parameterServicePort = parameterServicePort;
     }
 
@@ -103,7 +104,7 @@ public class DuplicateRegistrationNotificationService {
             final String message = template.resolve(parameterServicePort, templateArguments);
             final List<Recipient> recipients = resolveRecipients(attemptedPerson, includeAdminRecipients);
 
-            final DuplicateRegistrationNotificationRequest request = new DuplicateRegistrationNotificationRequest(
+            final NotificationMessage notificationMessage = new NotificationMessage(
                     event,
                     subject,
                     message,
@@ -114,7 +115,7 @@ public class DuplicateRegistrationNotificationService {
                     notificationType,
                     forceChannel);
 
-            notificationClient.sendNotification(request);
+            notificationSenderPort.send(notificationMessage);
         } catch (final Exception exception) {
             LOGGER.error("Unable to send '{}' notification for '{}'.", event, attempt.email(), exception);
         }
@@ -158,21 +159,21 @@ public class DuplicateRegistrationNotificationService {
         final String adminEmailParameter = parameterServicePort.getParameter(ParameterCodes.Notification.ADMIN_EMAIL);
         addRecipient(recipients, dedupe, new Recipient("ADMIN", "Administrador", adminEmailParameter, null));
 
-        appendConfiguredRecipients(recipients, dedupe, apiProperties.getAdminRecipients(), "ADMIN");
-        appendConfiguredRecipients(recipients, dedupe, apiProperties.getUserRecipients(), "USER");
+        appendConfiguredRecipients(recipients, dedupe, recipientsProvider.getAdminRecipients(), "ADMIN");
+        appendConfiguredRecipients(recipients, dedupe, recipientsProvider.getUserRecipients(), "USER");
         return recipients;
     }
 
     private void appendConfiguredRecipients(final List<Recipient> recipients, final Set<String> dedupe,
-            final List<RecipientProperties> configuredRecipients, final String defaultRole) {
-        for (final RecipientProperties properties : configuredRecipients) {
+            final List<Recipient> configuredRecipients, final String defaultRole) {
+        for (final Recipient properties : configuredRecipients) {
             if (properties == null || !properties.hasContactInfo()) {
                 continue;
             }
             addRecipient(recipients, dedupe, new Recipient(defaultRole,
-                    properties.getName(),
-                    properties.getEmail(),
-                    properties.getMobileNumber()));
+                    properties.name(),
+                    properties.email(),
+                    properties.mobileNumber()));
         }
     }
 

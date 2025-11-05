@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.application.notification;
+package co.edu.uco.ucochallenge.infrastructure.secondary.notification.config;
 
 import java.time.Duration;
 import java.util.ArrayList;
