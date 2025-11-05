@@ -77,10 +77,30 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
       return payload.data;
     },
 
+    async listDepartments(): Promise<CatalogItem[]> {
+      const res = await api.get("/api/admin/catalogs/departments", { validateStatus: () => true });
+      if (res.status !== 200) {
+        throw new Error(`Catálogo departamentos HTTP ${res.status}`);
+      }
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
+    },
+
     async listCities(): Promise<CatalogItem[]> {
       const res = await api.get("/api/admin/catalogs/cities", { validateStatus: () => true });
       if (res.status !== 200) {
         throw new Error(`Catálogo ciudades HTTP ${res.status}`);
+      }
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
+    },
+
+    async listCitiesByDepartment(departmentId: string): Promise<CatalogItem[]> {
+      const res = await api.get(`/api/admin/catalogs/departments/${departmentId}/cities`, {
+        validateStatus: () => true,
+      });
+      if (res.status !== 200) {
+        throw new Error(`Catálogo ciudades por departamento HTTP ${res.status}`);
       }
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;

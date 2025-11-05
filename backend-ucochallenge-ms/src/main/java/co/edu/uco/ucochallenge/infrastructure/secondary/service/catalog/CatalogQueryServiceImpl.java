@@ -54,4 +54,9 @@ public class CatalogQueryServiceImpl implements CatalogQueryService {
                                 .map(entity -> new CatalogItemDTO(entity.getId(), entity.getNombre()))
                                 .collect(Collectors.toList());
         }
+
+        @Override
+        public List<CatalogItemDTO> listCitiesByDepartment(final UUID departmentId) {
+                return listCities(departmentId);
+        }
 }

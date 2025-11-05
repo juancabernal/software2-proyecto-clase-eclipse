@@ -101,6 +101,8 @@ export default function UsersAdmin() {
   const [creationResult, setCreationResult] = useState<RegisterUserResponse | null>(null);
 
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
+  const [departments, setDepartments] = useState<CatalogItem[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [cities, setCities] = useState<CatalogItem[]>([]);
   const [catalogErr, setCatalogErr] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -108,6 +110,7 @@ export default function UsersAdmin() {
   const resetForm = () => {
     setForm(emptyForm());
     setFormErr(null);
+    setSelectedDepartment("");
   };
 
   const fetchUsers = useCallback(async () => {
@@ -136,13 +139,13 @@ export default function UsersAdmin() {
       try {
         setCatalogLoading(true);
         setCatalogErr(null);
-        const [idTypeOptions, cityOptions] = await Promise.all([
+        const [idTypeOptions, departmentOptions] = await Promise.all([
           api.listIdTypes(),
-          api.listCities(),
+          api.listDepartments(),
         ]);
         if (!active) return;
         setIdTypes(idTypeOptions);
-        setCities(cityOptions);
+        setDepartments(departmentOptions);
       } catch (error: any) {
         if (active) {
           setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
@@ -158,6 +161,36 @@ export default function UsersAdmin() {
       active = false;
     };
   }, [api]);
+
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setCities([]);
+      return;
+    }
+    let active = true;
+    const loadCities = async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const cityOptions = await api.listCitiesByDepartment(selectedDepartment);
+        if (active) {
+          setCities(cityOptions);
+        }
+      } catch (error: any) {
+        if (active) {
+          setCatalogErr(error?.message || "No se pudieron cargar las ciudades.");
+        }
+      } finally {
+        if (active) {
+          setCatalogLoading(false);
+        }
+      }
+    };
+    loadCities();
+    return () => {
+      active = false;
+    };
+  }, [selectedDepartment, api]);
 
   const onChangePageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
@@ -413,10 +446,30 @@ export default function UsersAdmin() {
                 />
               </label>
               <label className="flex flex-col text-sm text-gray-300">
+                Departamento *
+                <select
+                  value={selectedDepartment}
+                  disabled={catalogLoading}
+                  onChange={(e) => {
+                    const dept = e.target.value;
+                    setSelectedDepartment(dept);
+                    setForm((f) => ({ ...f, homeCity: "" }));
+                  }}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                >
+                  <option value="">Selecciona…</option>
+                  {departments.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col text-sm text-gray-300">
                 Ciudad de residencia *
                 <select
                   value={form.homeCity}
-                  disabled={catalogLoading}
+                  disabled={catalogLoading || !selectedDepartment}
                   onChange={(e) => setForm((f) => ({ ...f, homeCity: e.target.value }))}
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 >
