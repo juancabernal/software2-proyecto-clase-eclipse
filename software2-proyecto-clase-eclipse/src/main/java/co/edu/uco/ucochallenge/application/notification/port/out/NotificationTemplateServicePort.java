@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.infrastructure.secondary.ports.service;
+package co.edu.uco.ucochallenge.application.notification.port.out;
 
 import java.util.Optional;
 

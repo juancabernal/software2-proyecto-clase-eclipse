@@ -11,13 +11,13 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import co.edu.uco.ucochallenge.crosscuting.exception.InfrastructureException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
-import co.edu.uco.ucochallenge.crosscuting.parameter.ParameterServicePortHolder;
+import co.edu.uco.ucochallenge.crosscuting.parameter.ParameterProviderPortHolder;
+import co.edu.uco.ucochallenge.domain.shared.parameter.port.out.ParameterProviderPort;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service.orchestration.CatalogService;
-import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.ParameterServicePort;
 import jakarta.annotation.PostConstruct;
 
 @Component
-public class ParameterServiceAdapter implements ParameterServicePort {
+public class ParameterServiceAdapter implements ParameterProviderPort {
 
     private static final Logger log = LoggerFactory.getLogger(ParameterServiceAdapter.class);
 
@@ -29,7 +29,7 @@ public class ParameterServiceAdapter implements ParameterServicePort {
 
     @PostConstruct
     void configureHolder() {
-        ParameterServicePortHolder.configure(this);
+        ParameterProviderPortHolder.configure(this);
     }
 
     @Override

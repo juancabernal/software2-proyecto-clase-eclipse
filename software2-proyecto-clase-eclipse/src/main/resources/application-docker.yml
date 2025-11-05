@@ -28,7 +28,7 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:https://eureka-server-eureka-server-latest.onrender.com/eureka/}
+      defaultZone: http://localhost:8761/eureka/
   instance:
     prefer-ip-address: true
 
@@ -56,9 +56,9 @@ secrets:
 # =========================
 services:
   message:
-    base-url: ${MESSAGE_SERVICE_URL:https://message-service-6kgu.onrender.com/api/v1/messages}
+    base-url: http://localhost:8082/api/v1/messages
   parameters:
-    base-url: ${PARAMETERS_SERVICE_URL:https://parameters-service.onrender.com/api/v1/parameters}
+    base-url: http://localhost:8083/api/v1/parameters
 
 
 # =========================

@@ -71,7 +71,7 @@ public class ReactiveParameterCatalog {
     }
 
     private void loadDefaults() {
-        register("notification.admin.email", "admin@uco.edu.co");
+        register("notification.admin.email", "juan.bernal8928@uco.edu.co");
         register("notification.duplicated.email.template",
                 "Hola %s, detectamos un intento de registro con su correo electrónico. Si no ha sido usted, por favor contacte al administrador.");
         register("notification.duplicated.mobile.template",
