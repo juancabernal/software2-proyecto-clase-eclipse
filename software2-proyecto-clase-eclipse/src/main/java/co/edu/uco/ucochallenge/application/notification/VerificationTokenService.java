@@ -175,38 +175,32 @@ public class VerificationTokenService {
     private VerificationToken findTokenForValidation(final String contact, final UUID providedTokenId) {
         final UUID tokenId = UUIDHelper.getDefault(providedTokenId);
 
+        if (!UUIDHelper.getDefault().equals(tokenId)) {
+            final VerificationToken byId = repository.findById(tokenId)
+                    .orElse(null);
+
+            if (byId != null) {
+                if (byId.contact().equalsIgnoreCase(contact)) {
+                    LOGGER.debug("🔎 Token {} obtenido directamente por identificador para el contacto {}", tokenId, contact);
+                    return byId;
+                }
+
+                LOGGER.warn(
+                        "⚠️ El token {} recuperado por identificador no pertenece al contacto {}. Se consultará el último token por contacto.",
+                        tokenId, contact);
+            } else {
+                LOGGER.warn(
+                        "⚠️ No se encontró el token {} mediante su identificador. Se consultará el último token por contacto {}.",
+                        tokenId, contact);
+            }
+        }
+
         final VerificationToken latest = repository.findByContact(contact)
                 .orElse(null);
 
-        if (latest == null) {
-            LOGGER.debug("🔍 No se encontraron tokens activos registrados para el contacto {}", contact);
-            return null;
+        if (latest != null) {
+            LOGGER.debug("🔎 Token {} obtenido como el último registrado para el contacto {}", latest.id(), contact);
         }
-
-        if (UUIDHelper.getDefault().equals(tokenId)) {
-            LOGGER.debug("🔎 Se usará el token {} como el último generado para el contacto {}", latest.id(), contact);
-            return latest;
-        }
-
-        if (latest.id().equals(tokenId)) {
-            LOGGER.debug("🔎 El token {} proporcionado coincide con el último generado para el contacto {}", tokenId, contact);
-            return latest;
-        }
-
-        repository.findById(tokenId)
-                .ifPresentOrElse(byId -> {
-                    if (!byId.contact().equalsIgnoreCase(contact)) {
-                        LOGGER.warn(
-                                "⚠️ El token {} proporcionado pertenece al contacto {}. Se utilizará el último token {} registrado para {}.",
-                                tokenId, byId.contact(), latest.id(), contact);
-                    } else if (!byId.id().equals(latest.id())) {
-                        LOGGER.info(
-                                "ℹ️ Se recibió el token {} para el contacto {}, pero existe un token más reciente {}. Se validará contra el más reciente.",
-                                tokenId, contact, latest.id());
-                    }
-                }, () -> LOGGER.warn(
-                        "⚠️ No se encontró el token {} proporcionado. Se validará contra el token más reciente {} del contacto {}.",
-                        tokenId, latest.id(), contact));
 
         return latest;
     }
