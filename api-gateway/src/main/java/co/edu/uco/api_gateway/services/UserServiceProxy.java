@@ -203,10 +203,11 @@ public class UserServiceProxy {
     }
 
     public ApiSuccessResponse<Void> verifyEmail(final UUID id, final String token) {
+        final String sanitizedToken = requireToken(token);
         final ApiSuccessResponse<Void> response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/{id}/confirmations/email/verify")
-                        .queryParam("token", token)
+                        .queryParam("token", sanitizedToken)
                         .build(id))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
@@ -220,13 +221,14 @@ public class UserServiceProxy {
             final UUID id,
             final String token,
             final String authorizationHeader) {
+        final String sanitizedToken = requireToken(token);
         final ApiSuccessResponse<Void> response = webClient.post()
                 .uri("/{id}/confirmations/email/verify", id)
                 .headers(httpHeaders -> {
                     setAuthorization(httpHeaders, authorizationHeader);
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                 })
-                .bodyValue(Map.of("token", token))
+                .bodyValue(Map.of("token", sanitizedToken))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(VOID_RESPONSE)
@@ -236,10 +238,11 @@ public class UserServiceProxy {
     }
 
     public ApiSuccessResponse<Void> verifyMobile(final UUID id, final String token) {
+        final String sanitizedToken = requireToken(token);
         final ApiSuccessResponse<Void> response = webClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/{id}/confirmations/mobile/verify")
-                        .queryParam("token", token)
+                        .queryParam("token", sanitizedToken)
                         .build(id))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
@@ -247,6 +250,14 @@ public class UserServiceProxy {
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de verificación de teléfono no puede ser nula");
+    }
+
+
+    private String requireToken(final String token) {
+        if (!StringUtils.hasText(token)) {
+            throw new IllegalArgumentException("El token de verificación es obligatorio.");
+        }
+        return token.trim();
     }
 
 

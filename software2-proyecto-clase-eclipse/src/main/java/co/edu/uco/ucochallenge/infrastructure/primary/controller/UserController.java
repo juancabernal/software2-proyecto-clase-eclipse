@@ -1,6 +1,5 @@
 package co.edu.uco.ucochallenge.infrastructure.primary.controller;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -35,6 +34,7 @@ import co.edu.uco.ucochallenge.application.user.registerUser.dto.RegisterUserOut
 import co.edu.uco.ucochallenge.application.user.registerUser.interactor.RegisterUserInteractor;
 import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQueryDTO;
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
+import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 
 @RestController
@@ -108,9 +108,8 @@ public class UserController {
     @PostMapping("/{id}/confirmations/email/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
             @PathVariable("id") final UUID id,
-            @RequestBody final Map<String, String> requestBody) {
-        final String token = requestBody.get("token");
-        verifyEmailTokenInteractor.execute(id, token);
+            @RequestBody final VerificationCodeRequestDTO request) {
+        verifyEmailTokenInteractor.execute(id, request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Correo verificado correctamente.",
                 Void.returnVoid()));
@@ -143,8 +142,9 @@ public class UserController {
     @GetMapping("/{id}/confirmations/email/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailConfirmation(
             @PathVariable("id") final UUID id,
-            @RequestParam("token") final String token) {
-        verifyEmailTokenInteractor.execute(id, token);
+            @RequestParam(name = "token", required = false) final String token,
+            @RequestParam(name = "code", required = false) final String code) {
+        verifyEmailTokenInteractor.execute(id, resolveToken(token, code));
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Correo verificado correctamente.",
                 Void.returnVoid()));
@@ -162,13 +162,22 @@ public class UserController {
     @GetMapping("/{id}/confirmations/mobile/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyMobileConfirmation(
             @PathVariable("id") final UUID id,
-            @RequestParam("token") final String token) {
-        verifyMobileTokenInteractor.execute(id, token);
+            @RequestParam(name = "token", required = false) final String token,
+            @RequestParam(name = "code", required = false) final String code) {
+        verifyMobileTokenInteractor.execute(id, resolveToken(token, code));
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Teléfono móvil verificado correctamente.",
                 Void.returnVoid()));
     }
 
+
+    private String resolveToken(final String primary, final String secondary) {
+        final String first = TextHelper.getDefaultWithTrim(primary);
+        if (!TextHelper.isEmpty(first)) {
+            return first;
+        }
+        return TextHelper.getDefaultWithTrim(secondary);
+    }
 
     /*
      * @PutMapping("/{id}") public
