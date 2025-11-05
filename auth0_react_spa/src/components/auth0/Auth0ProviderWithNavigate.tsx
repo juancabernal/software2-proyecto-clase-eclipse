@@ -14,7 +14,8 @@ export const Auth0ProviderWithNavigate = ({ children }: Props) => {
   const scope = "read:users read:settings"; // ajusta a tus scopes reales
 
   const onRedirectCallback = (appState: AppState | undefined) => {
-    navigate(appState?.returnTo || "/", { replace: true });
+    // Si no hay appState, por defecto vamos al dashboard (mejor UX que la raíz)
+    navigate(appState?.returnTo || "/dashboard", { replace: true });
   };
 
   return (

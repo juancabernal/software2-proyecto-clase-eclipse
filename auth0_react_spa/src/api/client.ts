@@ -42,13 +42,13 @@ const postVerificationCode = async (
   code: string,
   failureMessage: string
 ): Promise<VerificationAttemptResponse> => {
-  console.log(`Enviando código de verificación: ${code} a ${endpoint}`); // Verificamos el código que estamos enviando
+  // Debug logging removed to avoid exposing sensitive information in the browser console
   const res = await api.post(
     endpoint,
     { code },
     { validateStatus: () => true }
   );
-  console.log("Respuesta de la verificación:", res.data); // Verificamos la respuesta completa del API
+  // Response logging removed to avoid exposing sensitive information in the browser console
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
     return {
@@ -100,8 +100,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     const sameOrigin = (reqUrl.origin === base.origin);
     if (sameOrigin) {
       try {
-        const token = await getToken();
-        console.log("Token obtenido en la solicitud:", token); // Aquí verificamos el token
+  const token = await getToken();
         if (token) {
           config.headers = config.headers ?? {};
           (config.headers as any).Authorization = `Bearer ${token}`;

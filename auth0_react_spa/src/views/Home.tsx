@@ -1,18 +1,76 @@
 import Header from "../components/header/Header";
 import { useAuth0 } from "@auth0/auth0-react";
-export default function Home() {
-  const { loginWithRedirect, isAuthenticated } = useAuth0();
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
-  const handleLogin = () =>
-    loginWithRedirect({
-      appState: { returnTo: "/auth/gate" }, // o "/" si prefieres decidir en Home
-    });
+export default function Home() {
+  const { loginWithRedirect, isAuthenticated, error, isLoading } = useAuth0();
+  const [redirecting, setRedirecting] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Lee flags de la URL (/?login=cancelado | /?login=error)
+  const loginStatus = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const v = params.get("login");
+    return v === "cancelado" ? "cancelado" : v === "error" ? "error" : null;
+  }, [location.search]);
+
+  // Limpia el query una vez leído, para no dejar ?login=... pegado
+  useEffect(() => {
+    if (loginStatus) {
+      const params = new URLSearchParams(location.search);
+      params.delete("login");
+      navigate({ pathname: location.pathname, search: params.toString() }, { replace: true });
+    }
+  }, [loginStatus, location.pathname, location.search, navigate]);
+
+  // Manejo defensivo por si el SDK expone error global (además de tu CallbackPage)
+  useEffect(() => {
+    if (!isLoading && error) {
+      const err = error as any;
+      if (err?.error === "access_denied") {
+        // ya estarías en / con ?login=cancelado (según tu flujo),
+        // pero si llegas por otra ruta, navega y muestra banner.
+        navigate("/?login=cancelado", { replace: true });
+      } else {
+        navigate("/?login=error", { replace: true });
+      }
+    }
+  }, [error, isLoading, navigate]);
+
+  const handleLogin = async () => {
+    try {
+      setRedirecting(true);
+      await loginWithRedirect({
+        appState: { returnTo: "/auth/gate" }, // o "/" si prefieres decidir en Home
+      });
+    } finally {
+      setRedirecting(false);
+    }
+  };
 
   return (
     <>
       <Header subtitle="Inicio" isAuthenticated={isAuthenticated} />
 
       <div className="min-h-screen bg-[#0f0f12] text-gray-100">
+        {/* ALERTAS */}
+        {loginStatus && (
+          <div
+            role="alert"
+            className={`border-b px-4 py-3 text-center text-sm ${
+              loginStatus === "cancelado"
+                ? "bg-yellow-900/30 border-yellow-700 text-yellow-200"
+                : "bg-red-900/30 border-red-700 text-red-200"
+            }`}
+          >
+            {loginStatus === "cancelado"
+              ? "Iniciaste sesión y cancelaste en Auth0. No se realizaron cambios."
+              : "Ocurrió un error al iniciar sesión. Inténtalo de nuevo."}
+          </div>
+        )}
+
         {/* HERO / CONTENIDO */}
         <main className="mx-auto max-w-6xl px-4 pb-20 pt-16 lg:pt-24">
           <section className="grid items-center gap-12 lg:grid-cols-2">
@@ -25,9 +83,9 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mt-6 text-lg text-gray-300">
-                Gestiona, analiza y visualiza toda la información de los retos de
-                UCO. Esta plataforma está diseñada para brindar una experiencia
-                clara, moderna y potente — completamente personalizable.
+                Gestiona, analiza y visualiza toda la información de los retos de UCO. Esta
+                plataforma está diseñada para brindar una experiencia clara, moderna y potente —
+                completamente personalizable.
               </p>
 
               <ul className="mt-8 space-y-3 text-gray-300">
@@ -48,10 +106,13 @@ export default function Home() {
               <div className="mt-10">
                 <button
                   onClick={handleLogin}
-                  className="rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  disabled={redirecting}
+                  className={`rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                    redirecting ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"
+                  }`}
                   aria-describedby="login-help"
                 >
-                  Iniciar sesión
+                  {redirecting ? "Redirigiendo…" : "Iniciar sesión"}
                 </button>
                 <p id="login-help" className="mt-2 text-sm text-gray-400">
                   Accede con tu cuenta para continuar.
@@ -73,9 +134,7 @@ export default function Home() {
                   className="h-full w-full object-cover opacity-90"
                 />
               </div>
-              <p className="mt-4 text-center text-sm text-gray-400">
-                ¡Acreditada en alta calidad!
-              </p>
+              <p className="mt-4 text-center text-sm text-gray-400">¡Acreditada en alta calidad!</p>
             </div>
           </section>
         </main>
