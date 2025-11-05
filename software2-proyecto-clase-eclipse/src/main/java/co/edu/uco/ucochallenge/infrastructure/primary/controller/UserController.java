@@ -22,6 +22,8 @@ import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.Req
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateMobileConfirmationInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.VerifyEmailTokenInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.VerifyMobileTokenInteractor;
 import co.edu.uco.ucochallenge.application.user.deleteUser.interactor.DeleteUserInteractor;
 import co.edu.uco.ucochallenge.application.user.getUser.dto.GetUserOutputDTO;
 import co.edu.uco.ucochallenge.application.user.getUser.interactor.GetUserInteractor;
@@ -48,6 +50,8 @@ public class UserController {
     private final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor;
     private final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor;
     private final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor;
+    private final VerifyEmailTokenInteractor verifyEmailTokenInteractor;
+    private final VerifyMobileTokenInteractor verifyMobileTokenInteractor;
 
     /* private final UpdateUserInteractor updateUserInteractor; */
 
@@ -59,7 +63,9 @@ public class UserController {
             final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor,
             final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor,
             final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor,
-            final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor
+            final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor,
+            final VerifyEmailTokenInteractor verifyEmailTokenInteractor,
+            final VerifyMobileTokenInteractor verifyMobileTokenInteractor
             /*
              * , final UpdateUserInteractor updateUserInteractor
              */) {
@@ -71,6 +77,8 @@ public class UserController {
         this.requestMobileConfirmationInteractor = requestMobileConfirmationInteractor;
         this.validateEmailConfirmationInteractor = validateEmailConfirmationInteractor;
         this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
+        this.verifyEmailTokenInteractor = verifyEmailTokenInteractor;
+        this.verifyMobileTokenInteractor = verifyMobileTokenInteractor;
         /* this.updateUserInteractor = updateUserInteractor; */
     }
 
@@ -133,6 +141,16 @@ public class UserController {
                 response));
     }
 
+    @GetMapping("/{id}/confirmations/email/verify")
+    public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestParam("token") final String token) {
+        verifyEmailTokenInteractor.execute(id, token);
+        return ResponseEntity.ok(ApiSuccessResponse.of(
+                "Correo verificado correctamente.",
+                Void.returnVoid()));
+    }
+
     @PostMapping("/{id}/confirmations/mobile")
     public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestMobileConfirmation(
             @PathVariable("id") final UUID id) {
@@ -140,6 +158,16 @@ public class UserController {
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Se envió la solicitud de validación del teléfono móvil.",
                 response));
+    }
+
+    @GetMapping("/{id}/confirmations/mobile/verify")
+    public ResponseEntity<ApiSuccessResponse<Void>> verifyMobileConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestParam("token") final String token) {
+        verifyMobileTokenInteractor.execute(id, token);
+        return ResponseEntity.ok(ApiSuccessResponse.of(
+                "Teléfono móvil verificado correctamente.",
+                Void.returnVoid()));
     }
 
 

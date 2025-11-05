@@ -3,6 +3,7 @@ package co.edu.uco.api_gateway.security;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -47,6 +48,10 @@ public class SecurityConfiguration {
                         authorizeRequests
                                 .requestMatchers("/actuator/**").permitAll()
                                 .requestMatchers("/api/public").permitAll()
+                                .requestMatchers(HttpMethod.GET,
+                                        "/api/admin/users/*/confirmations/email/verify",
+                                        "/api/admin/users/*/confirmations/mobile/verify")
+                                .permitAll()
                                 .requestMatchers("/api/admin/**").hasAuthority("administrador")
                                 .anyRequest().authenticated()
                 )

@@ -173,4 +173,24 @@ public record User(
         private static Pattern getMobilePattern() {
                 return ParameterProvider.getPattern(ParameterCodes.User.MOBILE_PATTERN);
         }
+
+        public User markEmailAsConfirmed() {
+                if (emailConfirmed) {
+                        throw DomainException.buildFromCatalog(
+                                        MessageCodes.Domain.User.EMAIL_ALREADY_CONFIRMED_TECHNICAL,
+                                        MessageCodes.Domain.User.EMAIL_ALREADY_CONFIRMED_USER);
+                }
+                return new User(id, idType, idNumber, firstName, secondName, firstSurname, secondSurname,
+                                homeCity, email, mobileNumber, true, mobileNumberConfirmed);
+        }
+
+        public User markMobileNumberAsConfirmed() {
+                if (mobileNumberConfirmed) {
+                        throw DomainException.buildFromCatalog(
+                                        MessageCodes.Domain.User.MOBILE_ALREADY_CONFIRMED_TECHNICAL,
+                                        MessageCodes.Domain.User.MOBILE_ALREADY_CONFIRMED_USER);
+                }
+                return new User(id, idType, idNumber, firstName, secondName, firstSurname, secondSurname,
+                                homeCity, email, mobileNumber, emailConfirmed, true);
+        }
 }
