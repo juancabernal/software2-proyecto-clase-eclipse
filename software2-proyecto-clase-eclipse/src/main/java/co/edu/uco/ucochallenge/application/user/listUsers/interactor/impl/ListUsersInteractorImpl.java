@@ -2,20 +2,20 @@ package co.edu.uco.ucochallenge.application.user.listUsers.interactor.impl;
 
 import co.edu.uco.ucochallenge.infrastructure.cache.UserPrefetchService;
 import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.CachedListUsersPort;
-import org.springframework.cache.annotation.Cacheable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersRequestDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.dto.ListUsersResponseDTO;
 import co.edu.uco.ucochallenge.application.user.listUsers.interactor.ListUsersInteractor;
-import co.edu.uco.ucochallenge.application.user.listUsers.mapper.ListUsersMapper;
-import co.edu.uco.ucochallenge.application.user.listUsers.usecase.ListUsersUseCase;
+
 
 @Service
 @Transactional(readOnly = true)
 public class ListUsersInteractorImpl implements ListUsersInteractor {
+        private static final Logger LOGGER = LoggerFactory.getLogger(ListUsersInteractorImpl.class);
 
         private final CachedListUsersPort cachedListUsersPort;
         private final UserPrefetchService prefetchService;
@@ -33,8 +33,12 @@ public class ListUsersInteractorImpl implements ListUsersInteractor {
 
                 var response = cachedListUsersPort.getPage(pagination);
 
-                if (pagination.page() == 1) {
-                        prefetchService.prefetchNextPages(2, pagination.size(), 100);
+                if (pagination.page() == 0) {
+                        try {
+                                prefetchService.prefetchNextPages(1, pagination.size(), 100);
+                        } catch (Exception exception) {
+                                LOGGER.warn("Failed to prefetch user list pages", exception);
+                        }
                 }
                 return response;
         }

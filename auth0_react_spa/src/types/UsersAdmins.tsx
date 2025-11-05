@@ -131,32 +131,13 @@ export default function UsersAdmin() {
       const { [key]: _removed, ...rest } = current;
       return rest;
     });
+  }, []);
 
   // Catálogos
   // Removed duplicate resetForm declaration
 
   // Mapea catálogo->payload para crear usuario
-  const buildPayload = (form: UserFormState): UserCreateInput => {
-    const sanitize = (v: string) => v.trim();
-    const idTypeItem = idTypes.find((t) => t.name === form.idType || t.id === form.idType);
-    const cityItem = cities.find((c) => c.name === form.homeCity || c.id === form.homeCity);
-    const basePayload: UserCreateInput = {
-      idType: sanitize(idTypeItem?.id || form.idType),
-      idNumber: sanitize(form.idNumber),
-      firstName: sanitize(form.firstName),
-      firstSurname: sanitize(form.firstSurname),
-      homeCity: sanitize(cityItem?.id || form.homeCity),
-      email: sanitize(form.email),
-    };
-    const extras: Partial<UserCreateInput> = {};
-    const s2 = sanitize(form.secondName);
-    if (s2) extras.secondName = s2;
-    const ap2 = sanitize(form.secondSurname);
-    if (ap2) extras.secondSurname = ap2;
-    const mob = sanitize(form.mobileNumber);
-    if (mob) extras.mobileNumber = mob;
-    return { ...basePayload, ...extras };
-  };
+  // (Eliminado: función duplicada buildPayload)
 
   // 🔎 helper: ¿hay filtros activos?
  const ENABLE_TEXT_FILTERS = false;
@@ -248,23 +229,10 @@ const hasActiveFilters = useMemo(() => {
   }, [api]);
 
   // tamaño de página
-  const onChangePageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = Number(e.target.value);
-    setFilters((prev) => ({ ...prev, size: value, page: 1 }));
-  };
+  // (Eliminado: declaración duplicada de onChangePageSize)
 
   // paginación
-  const nextPage = () => {
-    if (!pageData) return;
-    if (filters.page < pageData.totalPages) {
-      setFilters((f) => ({ ...f, page: f.page + 1 }));
-    }
-  };
-  const prevPage = () => {
-    if (filters.page > 1) {
-      setFilters((f) => ({ ...f, page: f.page - 1 }));
-    }
-  };
+  // (Eliminado: declaración duplicada de nextPage y prevPage)
 
   // cambios de filtros individuales -> siempre page=1
   const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
@@ -286,37 +254,7 @@ const hasActiveFilters = useMemo(() => {
   };
 
   // -------- resto (confirmaciones, creación) sin cambios relevantes --------
-  const startCountdown = useCallback((key: string, seconds: number) => {
-    const sanitizedSeconds = Math.max(Number.isFinite(seconds) ? Math.floor(seconds) : 0, 0);
-    const previousTimer = timersRef.current.get(key);
-    if (previousTimer) {
-      clearInterval(previousTimer);
-      timersRef.current.delete(key);
-    }
-    if (sanitizedSeconds <= 0) {
-      setCountdown((current) => {
-        const { [key]: _removed, ...rest } = current;
-        return rest;
-      });
-      return;
-    }
-    setCountdown((current) => ({ ...current, [key]: sanitizedSeconds }));
-    const intervalId = window.setInterval(() => {
-      setCountdown((current) => {
-        const currentValue = current[key] ?? 0;
-        const nextValue = Math.max(currentValue - 1, 0);
-        const updated = { ...current, [key]: nextValue };
-        if (nextValue <= 0) {
-          clearInterval(intervalId);
-          timersRef.current.delete(key);
-          const { [key]: _removed, ...rest } = updated;
-          return rest;
-        }
-        return updated;
-      });
-    }, 1000);
-    timersRef.current.set(key, intervalId);
-  }, []);
+  // (Removed duplicate startCountdown function)
 
   const startCountdown = useCallback(
     (key: string, seconds: number) => {
@@ -405,25 +343,7 @@ const hasActiveFilters = useMemo(() => {
     return { ...basePayload, ...extras };
   };
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setErr(null);
-      const data = await api.listUsers({
-        page: Math.max(filters.page - 1, 0),
-        size: filters.size,
-      });
-      setPageData(data);
-    } catch (e: any) {
-      setErr(e?.message || "No se pudo cargar usuarios.");
-    } finally {
-      setLoading(false);
-    }
-  }, [api, filters.page, filters.size]);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  // (Removed duplicate fetchUsers and related useEffect)
 
   useEffect(() => {
     let active = true;

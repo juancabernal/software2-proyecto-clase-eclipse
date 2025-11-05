@@ -31,11 +31,13 @@ public class RegisterUserInteractorImpl implements RegisterUserInteractor {
         @Override
         @CachePut(
                 value = USERS_BY_ID_CACHE,
-                key = "#result.userId()",              // usa el ID del usuario recién creado
+                key = "#result.userId()",
+                condition = "@cacheFlags.enabled()",// usa el ID del usuario recién creado
                 unless = "#result == null"             // no cachear si hubo algo raro
         )
         @CacheEvict(
                 value = USERS_PAGES_CACHE,
+                condition = "@cacheFlags.enabled()",
                 allEntries = true                      // invalidar todas las páginas
         )
         public RegisterUserOutputDTO execute(final RegisterUserInputDTO dto) {

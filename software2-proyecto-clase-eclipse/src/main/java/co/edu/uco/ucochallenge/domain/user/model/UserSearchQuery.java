@@ -14,6 +14,7 @@ public record UserSearchQuery(UserFilter filter, PageCriteria pagination) {
             TextHelper.getDefault(),
             UUIDHelper.getDefault(),
             TextHelper.getDefault(),
+            TextHelper.getDefault(),
             TextHelper.getDefault());
 
     private static final PageCriteria DEFAULT_PAGINATION = PageCriteria.of(0, 20);

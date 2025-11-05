@@ -24,7 +24,7 @@ public class GetUserInteractorImpl implements GetUserInteractor {
         }
 
         @Override
-        @Cacheable(value = "users.byId", key = "#dto")
+        @Cacheable(value = "users.byId", key = "#dto", condition = "@cacheFlags.enabled()")
         public GetUserOutputDTO execute(final UUID dto) {
                 return mapper.toOutput(useCase.execute(dto));
         }

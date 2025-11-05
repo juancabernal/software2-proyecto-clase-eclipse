@@ -45,6 +45,6 @@ public final class CacheKeyUtil {
     }
 
     private static String safe(UUID u) {
-        return TextHelper.getDefaultWithTrim(u.toString());
+        return UUIDHelper.getDefault(u).toString();
     }
 }
