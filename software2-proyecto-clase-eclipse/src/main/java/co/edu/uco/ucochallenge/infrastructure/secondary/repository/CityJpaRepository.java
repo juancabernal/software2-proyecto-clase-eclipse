@@ -11,4 +11,5 @@ import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.CityEn
 @Repository
 public interface CityJpaRepository extends JpaRepository<CityEntity, UUID> {
     List<CityEntity> findAllByOrderByNameAsc();
+    List<CityEntity> findAllByStateIdOrderByNameAsc(UUID stateId);
 }
