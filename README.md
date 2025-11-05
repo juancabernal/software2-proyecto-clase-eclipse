@@ -8,6 +8,16 @@ El objetivo es demostrar la implementación de un entorno **escalable, seguro y 
 
 El proyecto se estructura con un enfoque **Hexagonal / DDD (Domain-Driven Design)**, permitiendo una clara separación entre capas de dominio, aplicación e infraestructura.
 
+### 🔔 Módulo de notificaciones (estructura hexagonal)
+
+- **Puerto de dominio:** `NotificationSenderPort` expone el contrato agnóstico para el envío de notificaciones.
+- **Aplicación:** `DuplicateRegistrationNotificationService` orquesta los mensajes de verificación, resuelve destinatarios a través de `NotificationRecipientsProvider` y delega el envío únicamente al puerto.
+- **Adaptadores secundarios:**
+  - `NotificationApiAdapter` (HTTP) transforma el `NotificationMessage` en el payload externo y reutiliza la configuración `NotificationApiProperties`.
+  - `NotificationRecipientsPropertiesAdapter` expone los destinatarios configurados hacia la capa de aplicación.
+- **Adaptador primario de pruebas:** `NotificationTestController` ahora vive en `infrastructure/primary/notification` para mantener la dirección de dependencias `domain ← application ← infrastructure`.
+- **Pruebas de regresión:** `NotificationApiAdapterTest` valida la serialización del mensaje y la construcción del endpoint antes de invocar el cliente HTTP.
+
 ---
 
 ## 🧩 Modelo de Clases

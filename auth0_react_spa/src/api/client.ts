@@ -13,6 +13,8 @@ export type VerificationAttemptResponse = {
   contactConfirmed: boolean;
   allContactsConfirmed: boolean;
   message: string;
+};
+
 export type SearchUsersFilters = {
   idType?: string;        // UUID
   idNumber?: string;
@@ -260,8 +262,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw error;
       }
     },
-<<<<<<< HEAD
-        async validateEmailConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateEmailConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");

@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.application.notification;
+package co.edu.uco.ucochallenge.infrastructure.secondary.notification.config;
 
 import java.time.Duration;
 
@@ -10,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @EnableConfigurationProperties(NotificationApiProperties.class)
-public class NotificationConfiguration {
+public class NotificationApiConfiguration {
 
     @Bean
     RestTemplate notificationRestTemplate(final RestTemplateBuilder builder,

@@ -84,6 +84,40 @@ const emptyForm = (): UserFormState => ({
 });
 
 export default function UsersAdmin() {
+
+  function extractBackendMessage(error: any): string {
+    const FALLBACK = "No se pudo crear el usuario.";
+
+    // 1️⃣ Si viene del backend con userMessage directo
+    const data = error?.response?.data ?? error?.data ?? error;
+
+    if (data?.userMessage && data.userMessage !== "UPSTREAM_ERROR") {
+      return data.userMessage;
+    }
+
+    // 2️⃣ Si el mensaje real viene embebido en technicalMessage
+    const rawTech = data?.technicalMessage ?? error?.technicalMessage;
+    if (rawTech && typeof rawTech === "string" && rawTech.includes("{")) {
+      try {
+        const start = rawTech.indexOf("{");
+        const end = rawTech.lastIndexOf("}") + 1;
+        const jsonPart = rawTech.substring(start, end);
+        const parsed = JSON.parse(jsonPart);
+        if (parsed?.userMessage) return parsed.userMessage;
+        if (parsed?.technicalMessage) return parsed.technicalMessage;
+      } catch (e) {
+        console.warn("No se pudo parsear el technicalMessage:", e);
+      }
+    }
+
+    // 3️⃣ Si viene como string o genérico
+    if (typeof error?.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+
+    return FALLBACK;
+  }
+
   const { getAccessTokenSilently } = useAuth0();
 
   const baseURL = import.meta.env.VITE_API_SERVER_URL as string;
@@ -140,24 +174,24 @@ export default function UsersAdmin() {
   // (Eliminado: función duplicada buildPayload)
 
   // 🔎 helper: ¿hay filtros activos?
- const ENABLE_TEXT_FILTERS = false;
+  const ENABLE_TEXT_FILTERS = false;
 
-const hasActiveFilters = useMemo(() => {
-  const nz = (s?: string) => !!(s && s.trim() !== "");
-  return (
-    // seguros
-    nz(filters.idType) ||
-    nz(filters.homeCity) ||
-    nz(filters.mobileNumber) ||
-    // texto sólo si está habilitado
-    (ENABLE_TEXT_FILTERS && (
-      nz(filters.idNumber) ||
-      nz(filters.firstName) ||
-      nz(filters.firstSurname) ||
-      nz(filters.email)
-    ))
-  );
-}, [filters]);
+  const hasActiveFilters = useMemo(() => {
+    const nz = (s?: string) => !!(s && s.trim() !== "");
+    return (
+      // seguros
+      nz(filters.idType) ||
+      nz(filters.homeCity) ||
+      nz(filters.mobileNumber) ||
+      // texto sólo si está habilitado
+      (ENABLE_TEXT_FILTERS && (
+        nz(filters.idNumber) ||
+        nz(filters.firstName) ||
+        nz(filters.firstSurname) ||
+        nz(filters.email)
+      ))
+    );
+  }, [filters]);
 
   // 🔁 carga de usuarios (usa /search si hay filtros, sino /users)
   const fetchUsers = useCallback(async () => {
@@ -263,7 +297,7 @@ const hasActiveFilters = useMemo(() => {
       if (sanitizedSeconds === 0) {
         return;
       }
-            setCountdown((current) => ({ ...current, [key]: sanitizedSeconds }));
+      setCountdown((current) => ({ ...current, [key]: sanitizedSeconds }));
 
       const intervalId = window.setInterval(() => {
         setCountdown((current) => {
@@ -289,7 +323,7 @@ const hasActiveFilters = useMemo(() => {
     setVerificationModal(emptyVerificationModal());
   }, []);
 
-  
+
 
   useEffect(() => {
     return () => {
@@ -308,7 +342,7 @@ const hasActiveFilters = useMemo(() => {
     setFormErr(null);
   };
 
-    const verificationCountdown = verificationModal.open
+  const verificationCountdown = verificationModal.open
     ? countdown[countdownKeyFor(verificationModal.userId, verificationModal.type)] ?? 0
     : 0;
   const isResendingCode = verificationModal.open
@@ -453,7 +487,7 @@ const hasActiveFilters = useMemo(() => {
     } catch (error: any) {
       const message = error?.message || errorFallback;
       updateFeedback(userId, { variant: "error", message });
-      
+
       console.error(`Error solicitando validación de ${type}:`, error);
       closeVerificationModal();
 
@@ -534,6 +568,7 @@ const hasActiveFilters = useMemo(() => {
       setFormErr(validation);
       return;
     }
+
     try {
       setFormErr(null);
       setCreating(true);
@@ -544,15 +579,13 @@ const hasActiveFilters = useMemo(() => {
       resetForm();
       setFilters((f) => ({ ...f, page: 1 }));
     } catch (error: any) {
-      const backendMsg =
-        error?.response?.data?.userMessage ||
-        error?.response?.data?.technicalMessage ||
-        error?.message ||
-        "No se pudo crear el usuario.";
+      console.error("Error al crear usuario:", error);
+      const backendMsg = extractBackendMessage(error);
       setFormErr(backendMsg);
     } finally {
       setCreating(false);
     }
+
   };
 
   return (
@@ -784,7 +817,6 @@ const hasActiveFilters = useMemo(() => {
                           )}
                         </div>
                       )}
-=======
                     </div>
                   </td>
                 </tr>
@@ -793,103 +825,103 @@ const hasActiveFilters = useMemo(() => {
           </table>
         </div>
 
-       {verificationModal.open && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-[#141418] p-6 shadow-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-white">
-                  {verificationModal.type === "email"
-                    ? "Validar correo electrónico"
-                    : "Validar teléfono móvil"}
-                </h2>
-                <p className="mt-1 text-sm text-gray-300">
-                  Ingresa el código enviado a
-                  <span className="ml-1 font-medium text-white">
-                    {verificationModal.contact || "el contacto registrado"}
-                  </span>
-                  .
-                </p>
-                {verificationCountdown > 0 && (
-                  <p className="mt-2 text-xs text-indigo-300">
-                    El código vence en {verificationCountdown}s.
+        {verificationModal.open && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
+            <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-[#141418] p-6 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    {verificationModal.type === "email"
+                      ? "Validar correo electrónico"
+                      : "Validar teléfono móvil"}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-300">
+                    Ingresa el código enviado a
+                    <span className="ml-1 font-medium text-white">
+                      {verificationModal.contact || "el contacto registrado"}
+                    </span>
+                    .
                   </p>
+                  {verificationCountdown > 0 && (
+                    <p className="mt-2 text-xs text-indigo-300">
+                      El código vence en {verificationCountdown}s.
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={closeVerificationModal}
+                  className="rounded-full border border-gray-700 p-2 text-gray-400 transition hover:border-gray-500 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  autoFocus
+                  value={verificationModal.code}
+                  onChange={(event) => handleVerificationCodeChange(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleVerifyCode();
+                    }
+                  }}
+                  className="w-full rounded-lg border border-gray-700 bg-[#0d0d11] px-3 py-2 text-sm text-gray-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  placeholder="Código de 6 dígitos"
+                />
+
+                {verificationModal.error && (
+                  <p className="text-sm text-rose-400">{verificationModal.error}</p>
+                )}
+
+                {verificationModal.status && (
+                  <div
+                    className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}
+                  >
+                    {verificationModal.status.message}
+                    {!verificationModal.status.success &&
+                      verificationModal.status.attemptsRemaining > 0 && (
+                        <span className="ml-2 text-xs text-gray-400">
+                          Intentos restantes: {verificationModal.status.attemptsRemaining}
+                        </span>
+                      )}
+                  </div>
                 )}
               </div>
-              <button
-                type="button"
-                onClick={closeVerificationModal}
-                className="rounded-full border border-gray-700 p-2 text-gray-400 transition hover:border-gray-500 hover:text-white"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div className="mt-4 space-y-3">
-              <input
-                type="text"
-                inputMode="numeric"
-                maxLength={6}
-                autoFocus
-                value={verificationModal.code}
-                onChange={(event) => handleVerificationCodeChange(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleVerifyCode();
-                  }
-                }}
-                className="w-full rounded-lg border border-gray-700 bg-[#0d0d11] px-3 py-2 text-sm text-gray-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                placeholder="Código de 6 dígitos"
-              />
-
-              {verificationModal.error && (
-                <p className="text-sm text-rose-400">{verificationModal.error}</p>
-              )}
-
-              {verificationModal.status && (
-                <div
-                  className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={verificationModal.loading}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {verificationModal.status.message}
-                  {!verificationModal.status.success &&
-                    verificationModal.status.attemptsRemaining > 0 && (
-                      <span className="ml-2 text-xs text-gray-400">
-                        Intentos restantes: {verificationModal.status.attemptsRemaining}
-                      </span>
-                    )}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={handleVerifyCode}
-                disabled={verificationModal.loading}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {verificationModal.loading ? "Validando…" : "Validar código"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRequestConfirmation(verificationModal.userId, verificationModal.type)}
-                disabled={verificationModal.loading || isResendingCode}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isResendingCode ? "Reenviando…" : "Reenviar código"}
-              </button>
-              <button
-                type="button"
-                onClick={closeVerificationModal}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
-              >
-                Cerrar
-              </button>
+                  {verificationModal.loading ? "Validando…" : "Validar código"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleRequestConfirmation(verificationModal.userId, verificationModal.type)}
+                  disabled={verificationModal.loading || isResendingCode}
+                  className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isResendingCode ? "Reenviando…" : "Reenviar código"}
+                </button>
+                <button
+                  type="button"
+                  onClick={closeVerificationModal}
+                  className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
 
         <div className="flex items-center justify-between bg-[#141418] px-4 py-3">
@@ -933,7 +965,112 @@ const hasActiveFilters = useMemo(() => {
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              {/* ... campos del formulario de creación (igual que tu versión) ... */}
+              {/* 📄 Campos del formulario de creación */}
+              <label className="flex flex-col text-sm text-gray-300">
+                Tipo de identificación *
+                <select
+                  value={form.idType}
+                  disabled={catalogLoading}
+                  onChange={(e) => setForm((f) => ({ ...f, idType: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                >
+                  <option value="">Selecciona…</option>
+                  {idTypes.map((opt, idx) => (
+                    <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>
+                      {opt.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Número de identificación *
+                <input
+                  value={form.idNumber}
+                  onChange={(e) => setForm((f) => ({ ...f, idNumber: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="Ej: 1234567890"
+                />
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Primer nombre *
+                <input
+                  value={form.firstName}
+                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="Ej: Ana"
+                />
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Segundo nombre
+                <input
+                  value={form.secondName}
+                  onChange={(e) => setForm((f) => ({ ...f, secondName: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="(opcional)"
+                />
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Primer apellido *
+                <input
+                  value={form.firstSurname}
+                  onChange={(e) => setForm((f) => ({ ...f, firstSurname: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="Ej: Pérez"
+                />
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Segundo apellido
+                <input
+                  value={form.secondSurname}
+                  onChange={(e) => setForm((f) => ({ ...f, secondSurname: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="(opcional)"
+                />
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Ciudad de residencia *
+                <select
+                  value={form.homeCity}
+                  disabled={catalogLoading}
+                  onChange={(e) => setForm((f) => ({ ...f, homeCity: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                >
+                  <option value="">Selecciona…</option>
+                  {cities.map((opt, idx) => (
+                    <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>
+                      {opt.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Correo electrónico *
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="nombre@dominio.com"
+                />
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
+                Teléfono móvil
+                <input
+                  value={form.mobileNumber}
+                  onChange={(e) => setForm((f) => ({ ...f, mobileNumber: e.target.value }))}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  placeholder="Ej: 3001234567"
+                />
+              </label>
+
             </div>
 
             {formErr && <p className="mt-3 text-sm text-red-300">{formErr}</p>}
@@ -964,5 +1101,5 @@ const hasActiveFilters = useMemo(() => {
       )}
     </section>
   );
-}       
+}
 

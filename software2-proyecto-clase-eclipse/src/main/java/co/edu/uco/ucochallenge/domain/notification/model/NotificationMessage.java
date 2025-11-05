@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.application.notification;
+package co.edu.uco.ucochallenge.domain.notification.model;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -7,7 +7,7 @@ import java.util.List;
 
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 
-public record DuplicateRegistrationNotificationRequest(
+public record NotificationMessage(
         NotificationEvent type,
         String subject,
         String message,
@@ -18,7 +18,7 @@ public record DuplicateRegistrationNotificationRequest(
         String notificationType,
         String forceChannel) {
 
-    public DuplicateRegistrationNotificationRequest {
+    public NotificationMessage {
         type = type == null ? NotificationEvent.DUPLICATE_EMAIL : type;
         subject = TextHelper.getDefaultWithTrim(subject);
         message = TextHelper.getDefault(message);
@@ -31,7 +31,7 @@ public record DuplicateRegistrationNotificationRequest(
         forceChannel = TextHelper.getDefaultWithTrim(forceChannel);
     }
 
-    public DuplicateRegistrationNotificationRequest(final NotificationEvent type,
+    public NotificationMessage(final NotificationEvent type,
             final String subject,
             final String message,
             final Instant detectedAt,
