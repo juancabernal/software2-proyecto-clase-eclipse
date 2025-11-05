@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.impl;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -30,13 +31,16 @@ public class ValidateMobileConfirmationUseCaseImpl implements ValidateMobileConf
     }
 
     @Override
-    public VerificationAttemptResponseDTO execute(final UUID userId, final UUID tokenId, final String code) {
+    public VerificationAttemptResponseDTO execute(final UUID userId,
+            final UUID tokenId,
+            final String code,
+            final LocalDateTime verificationDate) {
         final User user = repository.findById(userId)
                 .orElseThrow(() -> DomainException.buildFromCatalog(
                         MessageCodes.Domain.User.NOT_FOUND_TECHNICAL,
                         MessageCodes.Domain.User.NOT_FOUND_USER));
 
         LOGGER.info("Validating mobile confirmation token for user {}", user.id());
-        return verificationTokenService.validateToken(user, VerificationChannel.MOBILE, tokenId, code);
+        return verificationTokenService.validateToken(user, VerificationChannel.MOBILE, tokenId, code, verificationDate);
     }
 }

@@ -28,6 +28,7 @@ import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
 import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
+import co.edu.uco.api_gateway.dto.VerificationCodeRequest;
 import co.edu.uco.api_gateway.services.CatalogServiceProxy;
 import co.edu.uco.api_gateway.services.UserServiceProxy;
 
@@ -153,15 +154,20 @@ public class AdminController {
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
             @PathVariable("id") final UUID id,
-            @RequestBody final Map<String, String> requestBody,
+            @RequestBody final VerificationCodeRequest request,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final String resolvedToken = resolveToken(requestBody.get("token"), requestBody.get("code"));
+        final String resolvedToken = resolveToken(request.token(), request.code());
         if (!StringUtils.hasText(resolvedToken)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El token de verificación es obligatorio.");
         }
 
+        final VerificationCodeRequest sanitized = new VerificationCodeRequest(
+                resolvedToken.trim(),
+                request.code(),
+                request.verifiedAt());
+
         final ApiSuccessResponse<Void> response =
-                userServiceProxy.verifyEmail(id, resolvedToken, authorizationHeader);
+                userServiceProxy.verifyEmail(id, sanitized, authorizationHeader);
         return ResponseEntity.ok(response);
     }
 

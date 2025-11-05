@@ -67,7 +67,7 @@ public class ContactValidationController {
             @PathVariable UUID userId,
             @RequestBody VerificationCodeRequestDTO request) {
         final VerificationAttemptResponseDTO response = validateEmailInteractor
-                .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
+                .execute(userId, request.sanitizedTokenId(), request.sanitizedCode(), request.sanitizedVerificationDate());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
@@ -76,7 +76,7 @@ public class ContactValidationController {
             @PathVariable UUID userId,
             @RequestBody VerificationCodeRequestDTO request) {
         final VerificationAttemptResponseDTO response = validateMobileInteractor
-                .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
+                .execute(userId, request.sanitizedTokenId(), request.sanitizedCode(), request.sanitizedVerificationDate());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 

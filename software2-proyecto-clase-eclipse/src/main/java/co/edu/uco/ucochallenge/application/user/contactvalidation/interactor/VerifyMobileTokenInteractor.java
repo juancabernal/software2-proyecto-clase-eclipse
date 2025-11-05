@@ -1,10 +1,11 @@
 package co.edu.uco.ucochallenge.application.user.contactvalidation.interactor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import co.edu.uco.ucochallenge.application.Void;
 
 public interface VerifyMobileTokenInteractor {
 
-    Void execute(UUID userId, UUID tokenId, String code);
+    Void execute(UUID userId, UUID tokenId, String code, LocalDateTime verificationDate);
 }

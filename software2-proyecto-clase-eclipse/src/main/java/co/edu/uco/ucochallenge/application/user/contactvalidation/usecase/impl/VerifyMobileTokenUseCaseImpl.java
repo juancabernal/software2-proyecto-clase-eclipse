@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.VerifyMobileTokenUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
+import co.edu.uco.ucochallenge.crosscuting.helper.ObjectHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
@@ -31,13 +32,15 @@ public class VerifyMobileTokenUseCaseImpl implements VerifyMobileTokenUseCase {
     }
 
     @Override
-    public void execute(final UUID userId, final UUID tokenId, final String rawCode) {
+    public void execute(final UUID userId, final UUID tokenId, final String rawCode, final LocalDateTime verificationDate) {
         final String code = TextHelper.getDefaultWithTrim(rawCode);
         if (TextHelper.isEmpty(code)) {
             throw DomainException.buildFromCatalog(
                     MessageCodes.Domain.Verification.TOKEN_INVALID_TECHNICAL,
                     MessageCodes.Domain.Verification.TOKEN_INVALID_USER);
         }
+
+        final LocalDateTime referenceDate = ObjectHelper.getDefault(verificationDate, LocalDateTime.now());
 
         final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId);
         if (UUIDHelper.getDefault().equals(normalizedTokenId)) {
@@ -69,7 +72,7 @@ public class VerifyMobileTokenUseCaseImpl implements VerifyMobileTokenUseCase {
                     MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
         }
 
-        if (verificationToken.isExpired(LocalDateTime.now())) {
+        if (verificationToken.isExpired(referenceDate)) {
             tokenRepository.deleteById(verificationToken.id());
             throw DomainException.buildFromCatalog(
                     MessageCodes.Domain.Verification.TOKEN_EXPIRED_TECHNICAL,

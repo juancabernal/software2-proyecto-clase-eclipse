@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
+import co.edu.uco.ucochallenge.crosscuting.helper.ObjectHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
@@ -76,7 +77,8 @@ public class VerificationTokenService {
     public VerificationAttemptResponseDTO validateToken(final User user,
             final VerificationChannel channel,
             final UUID tokenId,
-            final String providedCode) {
+            final String providedCode,
+            final LocalDateTime verificationDate) {
         final String sanitizedCode = TextHelper.getDefaultWithTrim(providedCode);
         if (TextHelper.isEmpty(sanitizedCode)) {
             final String message = MessageProvider
@@ -87,6 +89,8 @@ public class VerificationTokenService {
                     message,
                     null); // ✅ FIX: Propagate null verification identifier on empty code rejection
         }
+
+        final LocalDateTime referenceDate = ObjectHelper.getDefault(verificationDate, LocalDateTime.now());
 
         final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId);
         if (UUIDHelper.getDefault().equals(normalizedTokenId)) {
@@ -123,7 +127,7 @@ public class VerificationTokenService {
                     token.id()); // ✅ FIX: Surface identifier when contact mismatch occurs
         }
 
-        if (token.isExpired(LocalDateTime.now())) {
+        if (token.isExpired(referenceDate)) {
             repository.deleteById(token.id());
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_EXPIRED_USER);
@@ -221,7 +225,7 @@ public class VerificationTokenService {
                     token.id()); // ✅ FIX: Return identifier bound to orphaned token for auditing
         }
 
-        return validateToken(user, channel, token.id(), token.code()); // ✅ FIX: Reuse existing validation logic with stored code
+        return validateToken(user, channel, token.id(), token.code(), LocalDateTime.now()); // ✅ FIX: Reuse existing validation logic with stored code
     }
 
     private VerificationChannel inferChannel(final String contact) { // ✅ FIX: Determine verification channel from contact format

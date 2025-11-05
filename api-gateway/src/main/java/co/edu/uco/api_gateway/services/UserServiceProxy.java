@@ -21,8 +21,9 @@ import co.edu.uco.api_gateway.dto.ListUsersResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.PaginationMetadataDto;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
-import co.edu.uco.api_gateway.dto.UserCreateRequest;
 import co.edu.uco.api_gateway.dto.UserDto;
+import co.edu.uco.api_gateway.dto.UserCreateRequest;
+import co.edu.uco.api_gateway.dto.VerificationCodeRequest;
 import co.edu.uco.api_gateway.exception.DownstreamException;
 import reactor.core.publisher.Mono;
 
@@ -219,16 +220,20 @@ public class UserServiceProxy {
 
     public ApiSuccessResponse<Void> verifyEmail(
             final UUID id,
-            final String token,
+            final VerificationCodeRequest request,
             final String authorizationHeader) {
-        final String sanitizedToken = requireToken(token);
+        final String sanitizedToken = requireToken(request.token());
+        final VerificationCodeRequest payload = new VerificationCodeRequest(
+                sanitizedToken,
+                request.code(),
+                request.verifiedAt());
         final ApiSuccessResponse<Void> response = webClient.post()
                 .uri("/{id}/confirmations/email/verify", id)
                 .headers(httpHeaders -> {
                     setAuthorization(httpHeaders, authorizationHeader);
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
                 })
-                .bodyValue(Map.of("token", sanitizedToken))
+                .bodyValue(payload)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
                 .bodyToMono(VOID_RESPONSE)
