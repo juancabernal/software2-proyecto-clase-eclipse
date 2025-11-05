@@ -122,7 +122,6 @@ export default function UsersAdmin() {
   const [feedbackMessages, setFeedbackMessages] = useState<
     Record<string, { variant: "success" | "error"; message: string }>
   >({});
-  const [verificationTokens, setVerificationTokens] = useState<Record<string, string>>({});
   // Catálogos y estados relacionados
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
   const [departments, setDepartments] = useState<CatalogItem[]>([]);
@@ -157,13 +156,6 @@ export default function UsersAdmin() {
         return current;
       }
       const { [key]: _removed, ...rest } = current;
-      return rest;
-    });
-    setVerificationTokens((current) => {
-      if (!(key in current)) {
-        return current;
-      }
-      const { [key]: _ignored, ...rest } = current;
       return rest;
     });
   }, []);
@@ -449,7 +441,6 @@ export default function UsersAdmin() {
           ? await api.requestEmailConfirmation(userId)
           : await api.requestMobileConfirmation(userId);
       startCountdown(key, response.remainingSeconds);
-      setVerificationTokens((prev) => ({ ...prev, [key]: response.tokenId }));
       updateFeedback(userId, { variant: "success", message: successMessage });
       setVerificationModal({
         open: true,
@@ -494,27 +485,18 @@ export default function UsersAdmin() {
     }
 
     const key = countdownKeyFor(verificationModal.userId, verificationModal.type);
-    const tokenId = verificationModal.tokenId || verificationTokens[key];
-    if (!tokenId) {
-      setVerificationModal((prev) => ({
-        ...prev,
-        error: "El identificador del token no está disponible. Solicita un nuevo código.",
-      }));
-      return;
-    }
     setVerificationModal((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const response =
         verificationModal.type === "email"
-          ? await api.validateEmailConfirmation(verificationModal.userId, tokenId, trimmedCode)
-          : await api.validateMobileConfirmation(verificationModal.userId, tokenId, trimmedCode);
+          ? await api.validateEmailConfirmationWithLatest(verificationModal.userId, trimmedCode)
+          : await api.validateMobileConfirmationWithLatest(verificationModal.userId, trimmedCode);
 
       setVerificationModal((prev) => ({
         ...prev,
         loading: false,
         status: response,
-        tokenId: response.success ? "" : prev.tokenId,
         code: response.success ? "" : prev.code,
         error: null,
       }));
@@ -526,17 +508,9 @@ export default function UsersAdmin() {
 
       if (response.success) {
         clearCountdown(key);
-        setVerificationTokens((prev) => {
-          const { [key]: _removed, ...rest } = prev;
-          return rest;
-        });
         await fetchUsers();
       } else if (response.expired || response.attemptsRemaining <= 0) {
         clearCountdown(key);
-        setVerificationTokens((prev) => {
-          const { [key]: _removed, ...rest } = prev;
-          return rest;
-        });
       }
     } catch (error: any) {
       const message = error?.message || "No fue posible validar el código.";

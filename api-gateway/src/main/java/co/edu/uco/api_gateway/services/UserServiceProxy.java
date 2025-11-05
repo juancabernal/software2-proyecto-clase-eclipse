@@ -268,6 +268,36 @@ public class UserServiceProxy {
         return nonNullResponse;
     }
 
+    public ApiSuccessResponse<VerificationAttemptResponseDto> verifyEmailConfirmationWithLatest(
+            final UUID id,
+            final VerificationCodeRequestDto request,
+            final String authorizationHeader) {
+        LOGGER.info("🔄 Enviando validación de correo con el último token al backend para el usuario {}", id);
+        LOGGER.debug("🔄 Código enviado al backend para validar el correo del usuario {} contra el último token: {}", id,
+                request.code());
+        final VerificationCodeRequestDto payload = new VerificationCodeRequestDto(null, request.code());
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
+                .uri("/{id}/confirmations/email/verify/latest", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(payload)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
+                .block();
+
+        final ApiSuccessResponse<VerificationAttemptResponseDto> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de validación de correo contra el último token no puede ser nula");
+        final VerificationAttemptResponseDto data = nonNullResponse.data();
+        if (data != null) {
+            LOGGER.info("🔄 Resultado de validación de correo contra el último token para el usuario {}: éxito={}, expirado={}",
+                    id, data.success(), data.expired());
+        }
+        return nonNullResponse;
+    }
+
     public ApiSuccessResponse<VerificationAttemptResponseDto> verifyMobileConfirmation(
             final UUID id,
             final VerificationCodeRequestDto request,
@@ -293,6 +323,36 @@ public class UserServiceProxy {
         if (data != null) {
             LOGGER.info("📱 Resultado de validación de teléfono para el usuario {}: éxito={}, expirado={}", id,
                     data.success(), data.expired());
+        }
+        return nonNullResponse;
+    }
+
+    public ApiSuccessResponse<VerificationAttemptResponseDto> verifyMobileConfirmationWithLatest(
+            final UUID id,
+            final VerificationCodeRequestDto request,
+            final String authorizationHeader) {
+        LOGGER.info("🔄 Enviando validación de teléfono con el último token al backend para el usuario {}", id);
+        LOGGER.debug("🔄 Código enviado al backend para validar el teléfono del usuario {} contra el último token: {}", id,
+                request.code());
+        final VerificationCodeRequestDto payload = new VerificationCodeRequestDto(null, request.code());
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = webClient.post()
+                .uri("/{id}/confirmations/mobile/verify/latest", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(payload)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
+                .block();
+
+        final ApiSuccessResponse<VerificationAttemptResponseDto> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de validación de teléfono contra el último token no puede ser nula");
+        final VerificationAttemptResponseDto data = nonNullResponse.data();
+        if (data != null) {
+            LOGGER.info("🔄 Resultado de validación de teléfono contra el último token para el usuario {}: éxito={}, expirado={}",
+                    id, data.success(), data.expired());
         }
         return nonNullResponse;
     }

@@ -17,7 +17,9 @@ import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.Verificati
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateEmailConfirmationInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateEmailLatestConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateMobileConfirmationInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateMobileLatestConfirmationInteractor;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 
 @RestController
@@ -29,17 +31,23 @@ public class ContactValidationController {
     private final RequestEmailConfirmationInteractor emailInteractor;
     private final RequestMobileConfirmationInteractor mobileInteractor;
     private final ValidateEmailConfirmationInteractor validateEmailInteractor;
+    private final ValidateEmailLatestConfirmationInteractor validateEmailLatestInteractor;
     private final ValidateMobileConfirmationInteractor validateMobileInteractor;
+    private final ValidateMobileLatestConfirmationInteractor validateMobileLatestInteractor;
 
     public ContactValidationController(
             final RequestEmailConfirmationInteractor emailInteractor,
             final RequestMobileConfirmationInteractor mobileInteractor,
             final ValidateEmailConfirmationInteractor validateEmailInteractor,
-            final ValidateMobileConfirmationInteractor validateMobileInteractor) {
+            final ValidateEmailLatestConfirmationInteractor validateEmailLatestInteractor,
+            final ValidateMobileConfirmationInteractor validateMobileInteractor,
+            final ValidateMobileLatestConfirmationInteractor validateMobileLatestInteractor) {
         this.emailInteractor = emailInteractor;
         this.mobileInteractor = mobileInteractor;
         this.validateEmailInteractor = validateEmailInteractor;
+        this.validateEmailLatestInteractor = validateEmailLatestInteractor;
         this.validateMobileInteractor = validateMobileInteractor;
+        this.validateMobileLatestInteractor = validateMobileLatestInteractor;
     }
 
     @PostMapping("/{userId}/confirm-email")
@@ -74,6 +82,18 @@ public class ContactValidationController {
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
+    @PostMapping("/{userId}/confirm-email/verify/latest")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmationWithLatest(
+            @PathVariable UUID userId,
+            @RequestBody VerificationCodeRequestDTO request) {
+        LOGGER.info("🔄 Solicitud pública de validación de correo usando el último token para el usuario {}", userId);
+        LOGGER.debug("🔄 Código recibido para validación pública de correo del usuario {} contra el último token: {}", userId,
+                request.sanitizedCode());
+        final VerificationAttemptResponseDTO response = validateEmailLatestInteractor
+                .execute(userId, request.sanitizedCode());
+        return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
+    }
+
     @PostMapping("/{userId}/confirm-mobile/verify")
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmation(
             @PathVariable UUID userId,
@@ -84,6 +104,18 @@ public class ContactValidationController {
                 request.sanitizedCode());
         final VerificationAttemptResponseDTO response = validateMobileInteractor
                 .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
+        return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
+    }
+
+    @PostMapping("/{userId}/confirm-mobile/verify/latest")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmationWithLatest(
+            @PathVariable UUID userId,
+            @RequestBody VerificationCodeRequestDTO request) {
+        LOGGER.info("🔄 Solicitud pública de validación de teléfono usando el último token para el usuario {}", userId);
+        LOGGER.debug("🔄 Código recibido para validación pública de teléfono del usuario {} contra el último token: {}", userId,
+                request.sanitizedCode());
+        final VerificationAttemptResponseDTO response = validateMobileLatestInteractor
+                .execute(userId, request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 }

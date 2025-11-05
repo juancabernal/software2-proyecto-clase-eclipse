@@ -49,12 +49,15 @@ const postAndReturnTTL = async (
 const postVerificationCode = async (
   api: AxiosInstance,
   endpoint: string,
-  payload: { tokenId: string; code: string },
+  payload: { tokenId?: string; code: string },
   failureMessage: string
 ): Promise<VerificationAttemptResponse> => {
+  const body = payload.tokenId && payload.tokenId.trim()
+    ? { code: payload.code, tokenId: payload.tokenId.trim() }
+    : { code: payload.code };
   const res = await api.post(
     endpoint,
-    payload,
+    body,
     { validateStatus: () => true }
   );
   if (res.status >= 200 && res.status < 300) {
@@ -231,19 +234,16 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw error;
       }
     },
-    async validateEmailConfirmation(userId: string, tokenId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateEmailConfirmation(userId: string, code: string, tokenId?: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
-      }
-      const sanitizedTokenId = tokenId?.trim();
-      if (!sanitizedTokenId) {
-        throw new Error("No se recibió el identificador del token de verificación.");
       }
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
         throw new Error("Debes ingresar el código de verificación.");
       }
+      const sanitizedTokenId = tokenId?.trim();
 
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email/verify`;
@@ -269,19 +269,50 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
     },
 
-    async validateMobileConfirmation(userId: string, tokenId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateEmailConfirmationWithLatest(userId: string, code: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
-      }
-      const sanitizedTokenId = tokenId?.trim();
-      if (!sanitizedTokenId) {
-        throw new Error("No se recibió el identificador del token de verificación.");
       }
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
         throw new Error("Debes ingresar el código de verificación.");
       }
+
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email/verify/latest`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email/verify/latest`;
+
+      try {
+        return await postVerificationCode(
+          api,
+          adminEndpoint,
+          { code: sanitizedCode },
+          "No fue posible validar el código del correo electrónico."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postVerificationCode(
+            api,
+            fallbackEndpoint,
+            { code: sanitizedCode },
+            "No fue posible validar el código del correo electrónico."
+          );
+        }
+        throw error;
+      }
+    },
+
+    async validateMobileConfirmation(userId: string, code: string, tokenId?: string): Promise<VerificationAttemptResponse> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedCode = code?.trim();
+      if (!sanitizedCode) {
+        throw new Error("Debes ingresar el código de verificación.");
+      }
+      const sanitizedTokenId = tokenId?.trim();
 
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile/verify`;
@@ -300,6 +331,40 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
             api,
             fallbackEndpoint,
             { tokenId: sanitizedTokenId, code: sanitizedCode },
+            "No fue posible validar el código del teléfono móvil."
+          );
+        }
+        throw error;
+      }
+    },
+
+    async validateMobileConfirmationWithLatest(userId: string, code: string): Promise<VerificationAttemptResponse> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedCode = code?.trim();
+      if (!sanitizedCode) {
+        throw new Error("Debes ingresar el código de verificación.");
+      }
+
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile/verify/latest`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile/verify/latest`;
+
+      try {
+        return await postVerificationCode(
+          api,
+          adminEndpoint,
+          { code: sanitizedCode },
+          "No fue posible validar el código del teléfono móvil."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postVerificationCode(
+            api,
+            fallbackEndpoint,
+            { code: sanitizedCode },
             "No fue posible validar el código del teléfono móvil."
           );
         }

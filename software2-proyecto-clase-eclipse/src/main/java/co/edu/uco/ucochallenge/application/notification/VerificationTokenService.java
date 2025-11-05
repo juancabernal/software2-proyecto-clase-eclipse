@@ -1,7 +1,6 @@
 package co.edu.uco.ucochallenge.application.notification;
 
 import java.security.SecureRandom;
-import java.time.Instant;
 import java.time.LocalDateTime;  // Se añade esta importación
 import java.util.Locale;
 import java.util.Map;
@@ -81,11 +80,9 @@ public class VerificationTokenService {
         LOGGER.info("🔍 Intento de validación recibido para el usuario {} a través de {} con token {}",
                 user.id(), channel.name(), tokenId);
         if (UUIDHelper.getDefault().equals(tokenId)) {
-            LOGGER.warn("❌ No se recibió un identificador de token válido para el usuario {} en el canal {}",
+            LOGGER.info(
+                    "ℹ️ No se recibió un identificador de token válido para el usuario {} en el canal {}. Se consultará el último token registrado.",
                     user.id(), channel.name());
-            final String message = MessageProvider
-                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
-            return buildFailureResponse(user, channel, message, false, 0);
         }
 
         final String sanitizedCode = TextHelper.getDefaultWithTrim(providedCode);
@@ -100,24 +97,17 @@ public class VerificationTokenService {
         }
 
         final String contact = resolveContact(user, channel);
-        final VerificationToken token = repository.findById(tokenId)
-                .orElse(null);
+        final VerificationToken token = findTokenForValidation(contact, tokenId);
 
         if (token == null) {
-            LOGGER.warn("❌ No se encontró el token {} para el contacto {}", tokenId, contact);
+            LOGGER.warn("❌ No se encontró un token vigente para el contacto {}", contact);
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
             return buildFailureResponse(user, channel, message, false, 0);
         }
 
-        if (!token.contact().equalsIgnoreCase(contact)) {
-            LOGGER.warn("❌ El token {} no pertenece al contacto {}", tokenId, contact);
-            final String message = MessageProvider
-                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
-            return buildFailureResponse(user, channel, message, false, 0);
-        }
-
-        if (token.isExpired(LocalDateTime.now())) {
+        final LocalDateTime now = LocalDateTime.now();
+        if (token.isExpired(now)) {
             LOGGER.warn("⌛ El token {} expiró antes de completar la validación para el contacto {}", token.id(),
                     contact);
             repository.deleteById(token.id());
@@ -171,6 +161,14 @@ public class VerificationTokenService {
                 message);
     }
 
+    public VerificationAttemptResponseDTO validateLatestToken(final User user,
+            final VerificationChannel channel,
+            final String providedCode) {
+        LOGGER.debug("🔄 Solicitando validación contra el token más reciente para el usuario {} y canal {}",
+                user.id(), channel.name());
+        return validateToken(user, channel, UUIDHelper.getDefault(), providedCode);
+    }
+
     private VerificationAttemptResponseDTO buildFailureResponse(final User user,
             final VerificationChannel channel,
             final String message,
@@ -180,6 +178,45 @@ public class VerificationTokenService {
                 isContactConfirmed(user, channel),
                 user.emailConfirmed() && user.mobileNumberConfirmed(),
                 message);
+    }
+
+    private VerificationToken findTokenForValidation(final String contact, final UUID providedTokenId) {
+        final UUID tokenId = UUIDHelper.getDefault(providedTokenId);
+
+        final VerificationToken latest = repository.findByContact(contact)
+                .orElse(null);
+
+        if (latest == null) {
+            LOGGER.debug("🔍 No se encontraron tokens activos registrados para el contacto {}", contact);
+            return null;
+        }
+
+        if (UUIDHelper.getDefault().equals(tokenId)) {
+            LOGGER.debug("🔎 Se usará el token {} como el último generado para el contacto {}", latest.id(), contact);
+            return latest;
+        }
+
+        if (latest.id().equals(tokenId)) {
+            LOGGER.debug("🔎 El token {} proporcionado coincide con el último generado para el contacto {}", tokenId, contact);
+            return latest;
+        }
+
+        repository.findById(tokenId)
+                .ifPresentOrElse(byId -> {
+                    if (!byId.contact().equalsIgnoreCase(contact)) {
+                        LOGGER.warn(
+                                "⚠️ El token {} proporcionado pertenece al contacto {}. Se utilizará el último token {} registrado para {}.",
+                                tokenId, byId.contact(), latest.id(), contact);
+                    } else if (!byId.id().equals(latest.id())) {
+                        LOGGER.info(
+                                "ℹ️ Se recibió el token {} para el contacto {}, pero existe un token más reciente {}. Se validará contra el más reciente.",
+                                tokenId, contact, latest.id());
+                    }
+                }, () -> LOGGER.warn(
+                        "⚠️ No se encontró el token {} proporcionado. Se validará contra el token más reciente {} del contacto {}.",
+                        tokenId, latest.id(), contact));
+
+        return latest;
     }
 
     private void notifyUser(final User user,

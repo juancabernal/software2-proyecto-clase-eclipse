@@ -180,6 +180,20 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/users/{id}/confirmations/email/verify/latest")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDto>> verifyEmailConfirmationWithLatest(
+            @PathVariable("id") final UUID id,
+            @RequestBody final VerificationCodeRequestDto request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        LOGGER.info("🔄 Gateway validando correo con el último token para el usuario {}", id);
+        LOGGER.debug("🔄 Código recibido en el gateway para validar correo del usuario {} contra el último token: {}", id,
+                request.code());
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
+                .verifyEmailConfirmationWithLatest(id, request, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/mobile/verify}.
      */
@@ -195,6 +209,20 @@ public class AdminController {
                 request.code());
         final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
                 .verifyMobileConfirmation(id, request, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/users/{id}/confirmations/mobile/verify/latest")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDto>> verifyMobileConfirmationWithLatest(
+            @PathVariable("id") final UUID id,
+            @RequestBody final VerificationCodeRequestDto request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        LOGGER.info("🔄 Gateway validando teléfono con el último token para el usuario {}", id);
+        LOGGER.debug("🔄 Código recibido en el gateway para validar teléfono del usuario {} contra el último token: {}", id,
+                request.code());
+        final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
+                .verifyMobileConfirmationWithLatest(id, request, authorizationHeader);
         return ResponseEntity.ok(response);
     }
 
