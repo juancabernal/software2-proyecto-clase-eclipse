@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.sheduler;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +22,7 @@ public class VerificationTokenCleanupScheduler {
 
     @Scheduled(fixedDelayString = "PT5M")
     public void purgeExpiredTokens() {
-        final int removed = repository.deleteExpired(Instant.now());
+    	final int removed = repository.deleteExpired(LocalDateTime.now());
         if (removed > 0) {
             LOGGER.info("Removed {} expired verification tokens", removed);
         }

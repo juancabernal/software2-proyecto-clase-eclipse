@@ -87,7 +87,7 @@ public class ReactiveParameterCatalog {
         register("user.idNumber.minLength", "5");
         register("user.idNumber.maxLength", "20");
         register("user.name.minLength", "2");
-        register("user.name.maxLength", "40");
+        register("usesr.name.maxLength", "40");
         register("user.email.minLength", "10");
         register("user.email.maxLength", "100");
         register("user.mobile.length", "10");
@@ -95,5 +95,6 @@ public class ReactiveParameterCatalog {
         register("user.idNumber.pattern", "^\\d+$");
         register("user.email.pattern", "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
         register("user.mobile.pattern", "^\\d{10}$");
+        register("validation.code.maxAttempts", "3");
     }
 }

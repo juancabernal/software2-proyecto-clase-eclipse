@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.repository;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,5 +23,4 @@ public interface VerificationTokenJpaRepository extends JpaRepository<Verificati
 
     @Modifying
     @Query("DELETE FROM VerificationTokenEntity v WHERE v.expiration <= :reference")
-    int deleteExpired(@Param("reference") Instant reference);
-}
+    int deleteExpired(@Param("reference") LocalDateTime reference);}

@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.domain.verification.port.out;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import co.edu.uco.ucochallenge.domain.verification.model.VerificationToken;
@@ -13,5 +13,5 @@ public interface VerificationTokenRepository {
 
     void deleteByContact(String contact);
 
-    int deleteExpired(Instant reference);
+    int deleteExpired(LocalDateTime reference);
 }

@@ -1,6 +1,7 @@
 package co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import co.edu.uco.ucochallenge.crosscuting.helper.ObjectHelper;
@@ -27,27 +28,27 @@ public class VerificationTokenEntity {
     private String code;
 
     @Column(name = "expiration", nullable = false)
-    private Instant expiration;
+    private LocalDateTime expiration;
 
     @Column(name = "attempts", nullable = false)
     private int attempts;
 
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     public VerificationTokenEntity() {
         this.id = UUIDHelper.getDefault();
         this.contact = TextHelper.getDefault();
         this.code = TextHelper.getDefault();
-        this.expiration = Instant.now();
+        this.expiration = LocalDateTime.now();
         this.attempts = 0;
-        this.createdAt = Instant.now();
+        this.createdAt = LocalDateTime.now();
     }
 
     @PrePersist
     void prePersist() {
         if (createdAt == null) {
-            createdAt = Instant.now();
+            createdAt = LocalDateTime.now();
         }
         if (id == null || UUIDHelper.getDefault().equals(id)) {
             id = UUID.randomUUID();
@@ -78,12 +79,12 @@ public class VerificationTokenEntity {
         this.code = TextHelper.getDefaultWithTrim(code);
     }
 
-    public Instant getExpiration() {
+    public LocalDateTime getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(final Instant expiration) {
-        this.expiration = ObjectHelper.getDefault(expiration, Instant.now());
+    public void setExpiration(final LocalDateTime expiration) {
+        this.expiration = ObjectHelper.getDefault(expiration, LocalDateTime.now());
     }
 
     public int getAttempts() {
@@ -94,11 +95,11 @@ public class VerificationTokenEntity {
         this.attempts = Math.max(attempts, 0);
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(final Instant createdAt) {
-        this.createdAt = ObjectHelper.getDefault(createdAt, Instant.now());
+    public void setCreatedAt(final LocalDateTime createdAt) {
+        this.createdAt = ObjectHelper.getDefault(createdAt, LocalDateTime.now());
     }
 }

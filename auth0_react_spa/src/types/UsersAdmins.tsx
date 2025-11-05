@@ -160,7 +160,7 @@ export default function UsersAdmin() {
 
 
 
-// 🔁 carga de usuarios paginada contra el backend (sin filtros locales)
+  // 🔁 carga de usuarios paginada contra el backend (sin filtros locales)
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -752,247 +752,247 @@ export default function UsersAdmin() {
                 )}
 
                 {verificationModal.status && (
-                  <div
-                    className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}
-                  >
+                  <div className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}>
                     {verificationModal.status.message}
-                    {!verificationModal.status.success &&
-                      verificationModal.status.attemptsRemaining > 0 && (
-                        <span className="ml-2 text-xs text-gray-400">
-                          Intentos restantes: {verificationModal.status.attemptsRemaining}
-                        </span>
-                      )}
+                    {!verificationModal.status.success && verificationModal.status.attemptsRemaining > 0 && (
+                      <span className="ml-2 text-xs text-gray-400">
+                        Intentos restantes: {verificationModal.status.attemptsRemaining}
+                      </span>
+                    )}
                   </div>
                 )}
-              </div>
-
-              <div className="mt-6 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleVerifyCode}
-                  disabled={verificationModal.loading}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {verificationModal.loading ? "Validando…" : "Validar código"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRequestConfirmation(verificationModal.userId, verificationModal.type)}
-                  disabled={verificationModal.loading || isResendingCode}
-                  className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isResendingCode ? "Reenviando…" : "Reenviar código"}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeVerificationModal}
-                  className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
-                >
-                  Cerrar
-                </button>
-              </div>
             </div>
-          </div>
-        )}
 
-
-        <div className="flex items-center justify-between bg-[#141418] px-4 py-3">
-          <div className="text-xs text-gray-400">
-            {pageData ? `Mostrando página ${filters.page} de ${pageData.totalPages}` : "—"}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={prevPage}
-              disabled={!pageData || filters.page <= 1}
-              className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 disabled:opacity-40 hover:text-white hover:border-gray-500"
-            >
-              ← Anterior
-            </button>
-            <button
-              onClick={nextPage}
-              disabled={!pageData || filters.page >= (pageData?.totalPages || 1)}
-              className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 disabled:opacity-40 hover:text-white hover:border-gray-500"
-            >
-              Siguiente →
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal de creación */}
-      {openNew && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 px-4">
-          <div className="w-full max-w-3xl rounded-2xl border border-gray-800 bg-[#141418] p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-white">Registrar nuevo usuario</h3>
-                {catalogErr && <p className="mt-1 text-sm text-yellow-400">{catalogErr}</p>}
-              </div>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               <button
-                onClick={() => { setOpenNew(false); resetForm(); setCreationResult(null); }}
-                className="rounded-lg border border-gray-700 px-2 py-1 text-sm text-gray-200 hover:text-white hover:border-gray-500"
+                type="button"
+                onClick={handleVerifyCode}
+                disabled={verificationModal.loading}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {verificationModal.loading ? "Validando…" : "Validar código"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRequestConfirmation(verificationModal.userId, verificationModal.type)}
+                disabled={verificationModal.loading || isResendingCode}
+                className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isResendingCode ? "Reenviando…" : "Reenviar código"}
+              </button>
+              <button
+                type="button"
+                onClick={closeVerificationModal}
+                className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
               >
                 Cerrar
               </button>
             </div>
-
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
-              {/* 📄 Campos del formulario de creación */}
-              <label className="flex flex-col text-sm text-gray-300">
-                Tipo de identificación *
-                <select
-                  value={form.idType}
-                  disabled={catalogLoading}
-                  onChange={(e) => setForm((f) => ({ ...f, idType: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                >
-                  <option value="">Selecciona…</option>
-                  {idTypes.map((opt, idx) => (
-                    <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>
-                      {opt.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Número de identificación *
-                <input
-                  value={form.idNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, idNumber: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="Ej: 1234567890"
-                />
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Primer nombre *
-                <input
-                  value={form.firstName}
-                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="Ej: Ana"
-                />
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Segundo nombre
-                <input
-                  value={form.secondName}
-                  onChange={(e) => setForm((f) => ({ ...f, secondName: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="(opcional)"
-                />
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Primer apellido *
-                <input
-                  value={form.firstSurname}
-                  onChange={(e) => setForm((f) => ({ ...f, firstSurname: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="Ej: Pérez"
-                />
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Segundo apellido
-                <input
-                  value={form.secondSurname}
-                  onChange={(e) => setForm((f) => ({ ...f, secondSurname: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="(opcional)"
-                />
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Departamento *
-                <select
-                  value={selectedDepartment}
-                  disabled={catalogLoading}
-                  onChange={(e) => {
-                    const dept = e.target.value;
-                    setSelectedDepartment(dept);
-                    setForm((f) => ({ ...f, homeCity: "" }));
-                  }}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                >
-                  <option value="">Selecciona…</option>
-                  {departments.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Ciudad de residencia *
-                <select
-                  value={form.homeCity}
-                  disabled={catalogLoading || !selectedDepartment}
-                  onChange={(e) => setForm((f) => ({ ...f, homeCity: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                >
-                  <option value="">Selecciona…</option>
-                  {cities.map((opt) => (
-                    <option key={opt.id} value={opt.id}>
-                      {opt.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Correo electrónico *
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="nombre@dominio.com"
-                />
-              </label>
-
-              <label className="flex flex-col text-sm text-gray-300">
-                Teléfono móvil
-                <input
-                  value={form.mobileNumber}
-                  onChange={(e) => setForm((f) => ({ ...f, mobileNumber: e.target.value }))}
-                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-                  placeholder="Ej: 3001234567"
-                />
-              </label>
-
-            </div>
-
-            {formErr && <p className="mt-3 text-sm text-red-300">{formErr}</p>}
-
-            <div className="mt-5 flex items-center justify-end gap-3">
-              <button
-                onClick={() => { setOpenNew(false); resetForm(); }}
-                className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 hover:text-white hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={createUser}
-                disabled={creating}
-                className="rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-              >
-                {creating ? "Creando…" : "Crear usuario"}
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
 
-      {creationResult && (
-        <div className="rounded-xl border border-emerald-800 bg-emerald-900/30 px-4 py-3 text-sm text-emerald-200">
-          Usuario <strong>{creationResult.fullName}</strong> registrado con ID {creationResult.userId}.
+
+      <div className="flex items-center justify-between bg-[#141418] px-4 py-3">
+        <div className="text-xs text-gray-400">
+          {pageData ? `Mostrando página ${filters.page} de ${pageData.totalPages}` : "—"}
         </div>
-      )}
-    </section>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={prevPage}
+            disabled={!pageData || filters.page <= 1}
+            className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 disabled:opacity-40 hover:text-white hover:border-gray-500"
+          >
+            ← Anterior
+          </button>
+          <button
+            onClick={nextPage}
+            disabled={!pageData || filters.page >= (pageData?.totalPages || 1)}
+            className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 disabled:opacity-40 hover:text-white hover:border-gray-500"
+          >
+            Siguiente →
+          </button>
+        </div>
+      </div>
+    </div>
+
+      {/* Modal de creación */ }
+  {
+    openNew && (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 px-4">
+        <div className="w-full max-w-3xl rounded-2xl border border-gray-800 bg-[#141418] p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Registrar nuevo usuario</h3>
+              {catalogErr && <p className="mt-1 text-sm text-yellow-400">{catalogErr}</p>}
+            </div>
+            <button
+              onClick={() => { setOpenNew(false); resetForm(); setCreationResult(null); }}
+              className="rounded-lg border border-gray-700 px-2 py-1 text-sm text-gray-200 hover:text-white hover:border-gray-500"
+            >
+              Cerrar
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {/* 📄 Campos del formulario de creación */}
+            <label className="flex flex-col text-sm text-gray-300">
+              Tipo de identificación *
+              <select
+                value={form.idType}
+                disabled={catalogLoading}
+                onChange={(e) => setForm((f) => ({ ...f, idType: e.target.value }))}
+                className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              >
+                <option value="">Selecciona…</option>
+                {idTypes.map((opt, idx) => (
+                  <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>
+                    {opt.name}
+                  </option>
+                ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Número de identificación *
+            <input
+              value={form.idNumber}
+              onChange={(e) => setForm((f) => ({ ...f, idNumber: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="Ej: 1234567890"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Primer nombre *
+            <input
+              value={form.firstName}
+              onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="Ej: Ana"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Segundo nombre
+            <input
+              value={form.secondName}
+              onChange={(e) => setForm((f) => ({ ...f, secondName: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="(opcional)"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Primer apellido *
+            <input
+              value={form.firstSurname}
+              onChange={(e) => setForm((f) => ({ ...f, firstSurname: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="Ej: Pérez"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Segundo apellido
+            <input
+              value={form.secondSurname}
+              onChange={(e) => setForm((f) => ({ ...f, secondSurname: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="(opcional)"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Departamento *
+            <select
+              value={selectedDepartment}
+              disabled={catalogLoading}
+              onChange={(e) => {
+                const dept = e.target.value;
+                setSelectedDepartment(dept);
+                setForm((f) => ({ ...f, homeCity: "" }));
+              }}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+            >
+              <option value="">Selecciona…</option>
+              {departments.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Ciudad de residencia *
+            <select
+              value={form.homeCity}
+              disabled={catalogLoading || !selectedDepartment}
+              onChange={(e) => setForm((f) => ({ ...f, homeCity: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+            >
+              <option value="">Selecciona…</option>
+              {cities.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Correo electrónico *
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="nombre@dominio.com"
+            />
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
+            Teléfono móvil
+            <input
+              value={form.mobileNumber}
+              onChange={(e) => setForm((f) => ({ ...f, mobileNumber: e.target.value }))}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+              placeholder="Ej: 3001234567"
+            />
+          </label>
+
+        </div>
+
+        {formErr && <p className="mt-3 text-sm text-red-300">{formErr}</p>}
+
+        <div className="mt-5 flex items-center justify-end gap-3">
+          <button
+            onClick={() => { setOpenNew(false); resetForm(); }}
+            className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 hover:text-white hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={createUser}
+            disabled={creating}
+            className="rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {creating ? "Creando…" : "Crear usuario"}
+          </button>
+        </div>
+      </div>
+        </div >
+      )
+  }
+
+  {
+    creationResult && (
+      <div className="rounded-xl border border-emerald-800 bg-emerald-900/30 px-4 py-3 text-sm text-emerald-200">
+        Usuario <strong>{creationResult.fullName}</strong> registrado con ID {creationResult.userId}.
+      </div>
+    )
+  }
+    </section >
   );
 }
-

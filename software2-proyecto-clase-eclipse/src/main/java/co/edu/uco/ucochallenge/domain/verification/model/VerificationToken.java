@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.domain.verification.model;
 
-import java.time.Instant;
+import java.time.LocalDateTime;  // Cambiar de Instant a LocalDateTime
 import java.util.UUID;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
@@ -13,16 +13,16 @@ public record VerificationToken(
         UUID id,
         String contact,
         String code,
-        Instant expiration,
+        LocalDateTime expiration,  // Cambiar Instant por LocalDateTime
         int attempts,
-        Instant createdAt) {
+        LocalDateTime createdAt) {  // Cambiar Instant por LocalDateTime
 
     public VerificationToken {
         id = normalizeId(id);
         contact = normalizeContact(contact);
         code = normalizeCode(code);
-        expiration = ObjectHelper.getDefault(expiration, Instant.now());
-        createdAt = ObjectHelper.getDefault(createdAt, Instant.now());
+        expiration = ObjectHelper.getDefault(expiration, LocalDateTime.now());
+        createdAt = ObjectHelper.getDefault(createdAt, LocalDateTime.now());
         attempts = Math.max(attempts, 0);
     }
 
@@ -54,9 +54,9 @@ public record VerificationToken(
         return normalized;
     }
 
-    public boolean isExpired(final Instant reference) {
-        final Instant instant = ObjectHelper.getDefault(reference, Instant.now());
-        return expiration.isBefore(instant) || expiration.equals(instant);
+    public boolean isExpired(final LocalDateTime reference) {  // Cambiar Instant por LocalDateTime
+        final LocalDateTime localReference = ObjectHelper.getDefault(reference, LocalDateTime.now());
+        return expiration.isBefore(localReference) || expiration.equals(localReference);
     }
 
     public VerificationToken decrementAttempts() {
