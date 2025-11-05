@@ -81,11 +81,9 @@ public class VerificationTokenService {
         LOGGER.info("🔍 Intento de validación recibido para el usuario {} a través de {} con token {}",
                 user.id(), channel.name(), tokenId);
         if (UUIDHelper.getDefault().equals(tokenId)) {
-            LOGGER.warn("❌ No se recibió un identificador de token válido para el usuario {} en el canal {}",
+            LOGGER.info(
+                    "ℹ️ No se recibió un identificador de token válido para el usuario {} en el canal {}. Se consultará el último token registrado.",
                     user.id(), channel.name());
-            final String message = MessageProvider
-                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
-            return buildFailureResponse(user, channel, message, false, 0);
         }
 
         final String sanitizedCode = TextHelper.getDefaultWithTrim(providedCode);
@@ -100,18 +98,10 @@ public class VerificationTokenService {
         }
 
         final String contact = resolveContact(user, channel);
-        final VerificationToken token = repository.findById(tokenId)
-                .orElse(null);
+        final VerificationToken token = findTokenForValidation(contact, tokenId);
 
         if (token == null) {
-            LOGGER.warn("❌ No se encontró el token {} para el contacto {}", tokenId, contact);
-            final String message = MessageProvider
-                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
-            return buildFailureResponse(user, channel, message, false, 0);
-        }
-
-        if (!token.contact().equalsIgnoreCase(contact)) {
-            LOGGER.warn("❌ El token {} no pertenece al contacto {}", tokenId, contact);
+            LOGGER.warn("❌ No se encontró un token vigente para el contacto {}", contact);
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
             return buildFailureResponse(user, channel, message, false, 0);
@@ -180,6 +170,39 @@ public class VerificationTokenService {
                 isContactConfirmed(user, channel),
                 user.emailConfirmed() && user.mobileNumberConfirmed(),
                 message);
+    }
+
+    private VerificationToken findTokenForValidation(final String contact, final UUID providedTokenId) {
+        final UUID tokenId = UUIDHelper.getDefault(providedTokenId);
+
+        if (!UUIDHelper.getDefault().equals(tokenId)) {
+            final VerificationToken byId = repository.findById(tokenId)
+                    .orElse(null);
+
+            if (byId != null) {
+                if (byId.contact().equalsIgnoreCase(contact)) {
+                    LOGGER.debug("🔎 Token {} obtenido directamente por identificador para el contacto {}", tokenId, contact);
+                    return byId;
+                }
+
+                LOGGER.warn(
+                        "⚠️ El token {} recuperado por identificador no pertenece al contacto {}. Se consultará el último token por contacto.",
+                        tokenId, contact);
+            } else {
+                LOGGER.warn(
+                        "⚠️ No se encontró el token {} mediante su identificador. Se consultará el último token por contacto {}.",
+                        tokenId, contact);
+            }
+        }
+
+        final VerificationToken latest = repository.findByContact(contact)
+                .orElse(null);
+
+        if (latest != null) {
+            LOGGER.debug("🔎 Token {} obtenido como el último registrado para el contacto {}", latest.id(), contact);
+        }
+
+        return latest;
     }
 
     private void notifyUser(final User user,
