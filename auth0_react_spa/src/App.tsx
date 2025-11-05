@@ -9,6 +9,7 @@ import CallbackPage from "./components/auth0/CallbackPage";
 import { AuthenticationGuard } from "./components/auth0/AuthenticationGuard";
 import DashboardPage from "./views/DashBoardPage";
 import AuthGate from "./views/AuthGate";
+import VerifyAccount from "./views/VerifyAccount"; // ✅ FIX: Register public verification view
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
           element={<AuthenticationGuard component={ClientProfilePage} />}
         />
         <Route path="/callback" element={<CallbackPage />} />
+        <Route path="/verify" element={<VerifyAccount />} /> {/* ✅ FIX: Expose verification route for token links */}
         <Route path="*" element={<ErrorPage />} />
       </Routes>
     </>

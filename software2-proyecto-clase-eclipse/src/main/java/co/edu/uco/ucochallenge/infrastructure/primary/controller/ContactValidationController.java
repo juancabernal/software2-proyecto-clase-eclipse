@@ -14,10 +14,12 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.notification.VerificationAttemptResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationCodeRequestDTO;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationLinkRequestDTO; // ✅ FIX: Accept token-only verification requests
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateMobileConfirmationInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateTokenViaPublicIdInteractor; // ✅ FIX: Wire new interactor for link verification
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 
 @RestController
@@ -30,16 +32,19 @@ public class ContactValidationController {
     private final RequestMobileConfirmationInteractor mobileInteractor;
     private final ValidateEmailConfirmationInteractor validateEmailInteractor;
     private final ValidateMobileConfirmationInteractor validateMobileInteractor;
+    private final ValidateTokenViaPublicIdInteractor validatePublicTokenInteractor; // ✅ FIX: Store dependency for public verification flow
 
     public ContactValidationController(
             final RequestEmailConfirmationInteractor emailInteractor,
             final RequestMobileConfirmationInteractor mobileInteractor,
             final ValidateEmailConfirmationInteractor validateEmailInteractor,
-            final ValidateMobileConfirmationInteractor validateMobileInteractor) {
+            final ValidateMobileConfirmationInteractor validateMobileInteractor,
+            final ValidateTokenViaPublicIdInteractor validatePublicTokenInteractor) { // ✅ FIX: Inject new interactor for link verification
         this.emailInteractor = emailInteractor;
         this.mobileInteractor = mobileInteractor;
         this.validateEmailInteractor = validateEmailInteractor;
         this.validateMobileInteractor = validateMobileInteractor;
+        this.validatePublicTokenInteractor = validatePublicTokenInteractor; // ✅ FIX: Assign new interactor for link verification
     }
 
     @PostMapping("/{userId}/confirm-email")
@@ -73,5 +78,14 @@ public class ContactValidationController {
         final VerificationAttemptResponseDTO response = validateMobileInteractor
                 .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> verifyContactViaLink(
+            @RequestBody VerificationLinkRequestDTO request) {
+        LOGGER.info("🔗 Solicitud de verificación pública para token {}", request.token()); // ✅ FIX: Trace link-based verification attempts
+        final VerificationAttemptResponseDTO response = validatePublicTokenInteractor
+                .execute(request.sanitizedTokenId()); // ✅ FIX: Delegate to interactor using sanitized token identifier
+        return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response)); // ✅ FIX: Return unified API response with verification result
     }
 }
