@@ -7,9 +7,11 @@ import static co.edu.uco.ucochallenge.domain.notification.model.NotificationMess
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -104,6 +106,15 @@ public class DuplicateRegistrationNotificationService {
             final String message = template.resolve(parameterServicePort, templateArguments);
             final List<Recipient> recipients = resolveRecipients(attemptedPerson, includeAdminRecipients);
 
+         // 🔹 Crear un mapa con datos adicionales
+            final Map<String, Object> extraData = new HashMap<>();
+            if (extraTemplateArguments != null && extraTemplateArguments.length >= 3) {
+                extraData.put("code", extraTemplateArguments[0]);
+                extraData.put("ttlMinutes", extraTemplateArguments[1]);
+                extraData.put("maxAttempts", extraTemplateArguments[2]);
+            }
+
+            // 🔹 Crear mensaje con data adicional
             final NotificationMessage notificationMessage = new NotificationMessage(
                     event,
                     subject,
@@ -113,7 +124,10 @@ public class DuplicateRegistrationNotificationService {
                     attemptedPerson,
                     recipients,
                     notificationType,
-                    forceChannel);
+                    forceChannel,
+                    extraData // 👈 nuevo parámetro
+            );
+
 
             notificationSenderPort.send(notificationMessage);
         } catch (final Exception exception) {

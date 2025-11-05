@@ -7,6 +7,8 @@ import java.util.List;
 
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 
+import java.util.Map;
+
 public record NotificationMessage(
         NotificationEvent type,
         String subject,
@@ -16,7 +18,9 @@ public record NotificationMessage(
         Person attemptedUser,
         List<Recipient> recipients,
         String notificationType,
-        String forceChannel) {
+        String forceChannel,
+        Map<String, Object> extraData) {
+
 
     public NotificationMessage {
         type = type == null ? NotificationEvent.DUPLICATE_EMAIL : type;
@@ -29,6 +33,8 @@ public record NotificationMessage(
                 : Collections.unmodifiableList(new ArrayList<>(recipients));
         notificationType = TextHelper.isEmpty(notificationType) ? "duplicate_alert" : notificationType;
         forceChannel = TextHelper.getDefaultWithTrim(forceChannel);
+        extraData = extraData == null ? Map.of() : Map.copyOf(extraData);
+
     }
 
     public NotificationMessage(final NotificationEvent type,
@@ -40,6 +46,19 @@ public record NotificationMessage(
             final List<Recipient> recipients) {
         this(type, subject, message, detectedAt, existingUser, attemptedUser, recipients, "duplicate_alert", "");
     }
+    
+    public NotificationMessage(final NotificationEvent type,
+            final String subject,
+            final String message,
+            final Instant detectedAt,
+            final Person existingUser,
+            final Person attemptedUser,
+            final List<Recipient> recipients,
+            final String notificationType,
+            final String forceChannel) {
+        this(type, subject, message, detectedAt, existingUser, attemptedUser, recipients, notificationType, forceChannel, Map.of());
+    }
+
 
     public enum NotificationEvent {
         DUPLICATE_EMAIL("REGISTER_DUPLICATE_EMAIL", "EMAIL"),
