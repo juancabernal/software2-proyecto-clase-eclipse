@@ -269,40 +269,6 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
     },
 
-    async validateEmailConfirmationWithLatest(userId: string, code: string): Promise<VerificationAttemptResponse> {
-      const trimmedId = userId?.trim();
-      if (!trimmedId) {
-        throw new Error("Es necesario proporcionar el identificador del usuario.");
-      }
-      const sanitizedCode = code?.trim();
-      if (!sanitizedCode) {
-        throw new Error("Debes ingresar el código de verificación.");
-      }
-
-      const encodedId = encodeURIComponent(trimmedId);
-      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email/verify/latest`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email/verify/latest`;
-
-      try {
-        return await postVerificationCode(
-          api,
-          adminEndpoint,
-          { code: sanitizedCode },
-          "No fue posible validar el código del correo electrónico."
-        );
-      } catch (error: any) {
-        if (error?.response?.status === 404) {
-          return await postVerificationCode(
-            api,
-            fallbackEndpoint,
-            { code: sanitizedCode },
-            "No fue posible validar el código del correo electrónico."
-          );
-        }
-        throw error;
-      }
-    },
-
     async validateMobileConfirmation(userId: string, code: string, tokenId?: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {

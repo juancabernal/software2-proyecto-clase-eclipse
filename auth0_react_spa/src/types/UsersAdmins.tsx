@@ -485,13 +485,14 @@ export default function UsersAdmin() {
     }
 
     const key = countdownKeyFor(verificationModal.userId, verificationModal.type);
+    const sanitizedTokenId = verificationModal.tokenId.trim();
     setVerificationModal((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
       const response =
         verificationModal.type === "email"
-          ? await api.validateEmailConfirmationWithLatest(verificationModal.userId, trimmedCode)
-          : await api.validateMobileConfirmationWithLatest(verificationModal.userId, trimmedCode);
+          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode, sanitizedTokenId || undefined)
+          : await api.validateMobileConfirmation(verificationModal.userId, trimmedCode, sanitizedTokenId || undefined);
 
       setVerificationModal((prev) => ({
         ...prev,
