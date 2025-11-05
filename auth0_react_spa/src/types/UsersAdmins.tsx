@@ -249,7 +249,7 @@ export default function UsersAdmin() {
 
   useEffect(() => {
     if (!selectedDepartment) {
-      setCities([]);
+      setFormCities([]);
       return;
     }
     let active = true;
@@ -258,7 +258,7 @@ export default function UsersAdmin() {
         setCatalogLoading(true);
         setCatalogErr(null);
         const cityOptions = await api.listCitiesByDepartment(selectedDepartment);
-        if (active) setCities(cityOptions);
+        if (active) setFormCities(cityOptions);
       } catch (error: any) {
         if (active) setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
       } finally {
@@ -269,6 +269,29 @@ export default function UsersAdmin() {
       active = false;
     };
   }, [selectedDepartment, api]);
+
+  useEffect(() => {
+    if (!selectedFilterDepartment) {
+      setFilterCities([]);
+      return;
+    }
+    let active = true;
+    (async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const cityOptions = await api.listCitiesByDepartment(selectedFilterDepartment);
+        if (active) setFilterCities(cityOptions);
+      } catch (error: any) {
+        if (active) setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
+      } finally {
+        if (active) setCatalogLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [selectedFilterDepartment, api]);
 
   // tamaño de página
   // (Eliminado: declaración duplicada de onChangePageSize)
@@ -282,6 +305,8 @@ export default function UsersAdmin() {
   };
 
   const clearFilters = () => {
+    setSelectedFilterDepartment("");
+    setFilterCities([]);
     setFilters((f) => ({
       ...f,
       page: 1,
@@ -343,7 +368,9 @@ export default function UsersAdmin() {
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
   const [departments, setDepartments] = useState<CatalogItem[]>([]);
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
-  const [cities, setCities] = useState<CatalogItem[]>([]);
+  const [formCities, setFormCities] = useState<CatalogItem[]>([]);
+  const [selectedFilterDepartment, setSelectedFilterDepartment] = useState<string>("");
+  const [filterCities, setFilterCities] = useState<CatalogItem[]>([]);
   const [catalogErr, setCatalogErr] = useState<string | null>(null);
   const [catalogLoading, setCatalogLoading] = useState(false);
 
@@ -360,13 +387,13 @@ export default function UsersAdmin() {
     ? Boolean(actionLoading[countdownKeyFor(verificationModal.userId, verificationModal.type)])
     : false;
 
-  // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y cities
+  // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y formCities
   const buildPayload = (form: UserFormState): UserCreateInput => {
     const sanitize = (value: string) => value.trim();
 
     // Buscar el UUID correspondiente al idType y homeCity
     const idTypeItem = idTypes.find((t) => t.name === form.idType || t.id === form.idType);
-    const cityItem = cities.find((c) => c.name === form.homeCity || c.id === form.homeCity);
+    const cityItem = formCities.find((c) => c.name === form.homeCity || c.id === form.homeCity);
 
     const basePayload: UserCreateInput = {
       idType: sanitize(idTypeItem?.id || form.idType),
@@ -660,11 +687,11 @@ export default function UsersAdmin() {
           <label className="flex flex-col text-sm text-gray-300">
             Departamento
             <select
-              value={selectedDepartment}
+              value={selectedFilterDepartment}
               disabled={catalogLoading}
               onChange={(e) => {
                 const dept = e.target.value;
-                setSelectedDepartment(dept);
+                setSelectedFilterDepartment(dept);
                 setFilter("homeCity", "" as Filters["homeCity"]);
               }}
               className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
@@ -680,12 +707,12 @@ export default function UsersAdmin() {
             Ciudad de residencia
             <select
               value={filters.homeCity ?? ""}
-              disabled={catalogLoading || !selectedDepartment}
+              disabled={catalogLoading || !selectedFilterDepartment}
               onChange={(e) => setFilter("homeCity", e.target.value)}
               className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
             >
               <option value="">Todas</option>
-              {cities.map((opt) => (
+              {filterCities.map((opt) => (
                 <option key={opt.id} value={opt.id}>{opt.name}</option>
               ))}
             </select>
@@ -1060,7 +1087,7 @@ export default function UsersAdmin() {
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 >
                   <option value="">Selecciona…</option>
-                  {cities.map((opt) => (
+                  {formCities.map((opt) => (
                     <option key={opt.id} value={opt.id}>{opt.name}</option>
                   ))}
                 </select>
