@@ -39,7 +39,7 @@ import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuc
 @RequestMapping("/uco-challenge/api/v1/users")
 public class UserController {
 
-<<<<<<< HEAD
+
         private final RegisterUserInteractor registerUserInteractor;
         private final ListUsersInteractor listUsersInteractor;
         private final GetUserInteractor getUserInteractor;
@@ -76,38 +76,10 @@ public class UserController {
                 this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
 				/* this.updateUserInteractor = updateUserInteractor; */
         }
-=======
-    private final RegisterUserInteractor registerUserInteractor;
-    private final ListUsersInteractor listUsersInteractor;
-    private final GetUserInteractor getUserInteractor;
-    private final SearchUsersInteractor searchUsersInteractor;
-    private final DeleteUserInteractor deleteUserInteractor;
-    private final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor;
-    private final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor;
+
 
     /* private final UpdateUserInteractor updateUserInteractor; */
->>>>>>> 9b0495701d8dcef2175a4781f511b1764596bf19
 
-    public UserController(
-            final RegisterUserInteractor registerUserInteractor,
-            final ListUsersInteractor listUsersInteractor,
-            final GetUserInteractor getUserInteractor,
-            final SearchUsersInteractor searchUsersInteractor,
-            final DeleteUserInteractor deleteUserInteractor,
-            final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor,
-            final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor
-            /*
-             * , final UpdateUserInteractor updateUserInteractor
-             */) {
-        this.registerUserInteractor = registerUserInteractor;
-        this.listUsersInteractor = listUsersInteractor;
-        this.getUserInteractor = getUserInteractor;
-        this.searchUsersInteractor = searchUsersInteractor;
-        this.deleteUserInteractor = deleteUserInteractor;
-        this.requestEmailConfirmationInteractor = requestEmailConfirmationInteractor;
-        this.requestMobileConfirmationInteractor = requestMobileConfirmationInteractor;
-        /* this.updateUserInteractor = updateUserInteractor; */
-    }
 
     @PostMapping
     public ResponseEntity<ApiSuccessResponse<RegisterUserOutputDTO>> registerUser(
@@ -160,15 +132,7 @@ public class UserController {
         return ResponseEntity.ok(ApiSuccessResponse.of("Usuarios filtrados exitosamente.", response));
     }
 
-<<<<<<< HEAD
-        @PostMapping("/{id}/confirmations/mobile")
-        public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestMobileConfirmation(
-                        @PathVariable("id") final UUID id) {
-                final ConfirmationResponseDTO response = requestMobileConfirmationInteractor.execute(id);
-                return ResponseEntity.ok(ApiSuccessResponse.of(
-                                "Se envió la solicitud de validación del teléfono móvil.",
-                                response));
-        }
+
         
         @PostMapping("/{id}/confirmations/email/verify")
         public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
@@ -188,7 +152,6 @@ public class UserController {
                 return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
         }
 
-=======
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiSuccessResponse<Void>> deleteUser(@PathVariable("id") final UUID id) {
         deleteUserInteractor.execute(id);
@@ -212,7 +175,6 @@ public class UserController {
                 "Se envió la solicitud de validación del teléfono móvil.",
                 response));
     }
->>>>>>> 9b0495701d8dcef2175a4781f511b1764596bf19
 
 
     /*
