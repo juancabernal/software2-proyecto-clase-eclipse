@@ -206,9 +206,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     async createUser(payload: UserCreateInput): Promise<RegisterUserResponse> {
       const res = await api.post("/api/admin/users", payload, { validateStatus: () => true });
       if (res.status !== 201) {
-        const msg = (res.data && (res.data.message || res.data.error)) || "No se pudo crear el usuario";
-        throw new Error(msg);
+        // 🔹 Aquí está la diferencia: lanzamos un objeto con 'response' al estilo Axios
+        const data = res.data ?? {};
+        const msg = data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
+        const error: any = new Error(msg);
+        error.response = { data };
+        throw error;
       }
+
       const payloadResponse = res.data as ApiSuccessResponse<RegisterUserResponse>;
       return payloadResponse.data;
     },

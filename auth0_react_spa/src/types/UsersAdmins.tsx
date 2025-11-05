@@ -88,34 +88,19 @@ export default function UsersAdmin() {
   function extractBackendMessage(error: any): string {
     const FALLBACK = "No se pudo crear el usuario.";
 
-    // 1️⃣ Si viene del backend con userMessage directo
-    const data = error?.response?.data ?? error?.data ?? error;
-
-    if (data?.userMessage && data.userMessage !== "UPSTREAM_ERROR") {
-      return data.userMessage;
+    // ✅ Si el Gateway ya envía JSON, solo tomamos el userMessage
+    if (error?.response?.data) {
+      const data = error.response.data;
+      return (
+        data.userMessage ||
+        data.technicalMessage ||
+        data.message ||
+        FALLBACK
+      );
     }
 
-    // 2️⃣ Si el mensaje real viene embebido en technicalMessage
-    const rawTech = data?.technicalMessage ?? error?.technicalMessage;
-    if (rawTech && typeof rawTech === "string" && rawTech.includes("{")) {
-      try {
-        const start = rawTech.indexOf("{");
-        const end = rawTech.lastIndexOf("}") + 1;
-        const jsonPart = rawTech.substring(start, end);
-        const parsed = JSON.parse(jsonPart);
-        if (parsed?.userMessage) return parsed.userMessage;
-        if (parsed?.technicalMessage) return parsed.technicalMessage;
-      } catch (e) {
-        console.warn("No se pudo parsear el technicalMessage:", e);
-      }
-    }
-
-    // 3️⃣ Si viene como string o genérico
-    if (typeof error?.message === "string" && error.message.trim()) {
-      return error.message;
-    }
-
-    return FALLBACK;
+    // fallback por si algo viene roto
+    return error?.message || FALLBACK;
   }
 
   const { getAccessTokenSilently } = useAuth0();
@@ -580,12 +565,12 @@ export default function UsersAdmin() {
       setFilters((f) => ({ ...f, page: 1 }));
     } catch (error: any) {
       console.error("Error al crear usuario:", error);
+      console.log("👉 error.response?.data:", error?.response?.data);
       const backendMsg = extractBackendMessage(error);
       setFormErr(backendMsg);
     } finally {
       setCreating(false);
     }
-
   };
 
   return (
