@@ -102,28 +102,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Proxy de {@code GET /uco-challenge/api/v1/users/search}.
-     *
-     * <p>Ejemplo:
-     * <pre>{@code
-     * GET /api/admin/users/search?email=juan@example.com&page=0
-     * Authorization: Bearer <token>
-     * }</pre>
-     */
-    @GetMapping("/users/search")
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<PageResponse<UserDto>>> searchUsers(
-            @RequestParam final Map<String, String> filters,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<PageResponse<UserDto>> response =
-                userServiceProxy.searchUsers(filters, authorizationHeader);
-        return ResponseEntity.ok(response);
-    }
 
-    /**
-     * Proxy de {@code DELETE /uco-challenge/api/v1/users/{id}}.
-     */
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<ApiSuccessResponse<Void>> deleteUser(
