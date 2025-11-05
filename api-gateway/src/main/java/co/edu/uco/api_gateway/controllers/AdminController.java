@@ -180,5 +180,26 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listCities(authorizationHeader));
     }
-    
+
+    /**
+     * Proxy de {@code GET /uco-challenge/api/v1/catalogs/departments}.
+     */
+    @GetMapping("/catalogs/departments")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listDepartments(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        return ResponseEntity.ok(catalogServiceProxy.listDepartments(authorizationHeader));
+    }
+
+    /**
+     * Proxy de {@code GET /uco-challenge/api/v1/catalogs/departments/{departmentId}/cities}.
+     */
+    @GetMapping("/catalogs/departments/{departmentId}/cities")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listCitiesByDepartment(
+            @PathVariable final String departmentId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        return ResponseEntity.ok(catalogServiceProxy.listCitiesByDepartment(authorizationHeader, departmentId));
+    }
+
 }
