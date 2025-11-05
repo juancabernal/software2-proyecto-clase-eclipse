@@ -31,4 +31,5 @@ public class CatalogsController {
         var data = service.listCities();
         return ResponseEntity.ok(ApiSuccessResponse.of("Ciudades obtenidas exitosamente.", data));
     }
+    //Falta lógica para ciudad POR departamento
 }
