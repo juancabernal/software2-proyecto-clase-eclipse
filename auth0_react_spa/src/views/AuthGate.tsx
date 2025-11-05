@@ -24,16 +24,13 @@ export default function AuthGate() {
     (async () => {
       if (isLoading) return;
 
-      console.log("🔹 Auth0:", { isAuthenticated, isLoading });
 
       if (!isAuthenticated) {
-        console.warn("⚠️ No autenticado. Enviando a inicio.");
         navigate("/", { replace: true });
         return;
       }
 
       if (fetchedOnce) {
-        console.log("⏭️ Evitando doble ejecución en StrictMode");
         return;
       }
       fetchedOnce = true;
@@ -46,10 +43,7 @@ export default function AuthGate() {
           // cacheMode: "off",     // ← si notas que se cachea mal
         });
 
-        console.log("✅ Token (recortado):", token.substring(0, 30) + "...");
         const url = "/api/admin/users";
-        console.log("🌐 Llamando gateway:", baseURL + url);
-
         setStatusMsg("Validando autorización…");
 
         // 🔸 No esperamos body → pedimos texto plano
@@ -59,23 +53,19 @@ export default function AuthGate() {
           responseType: "text",
         });
 
-        console.log("📊 Status:", res.status, "🧾 Body:", res.data);
 
         if (res.status === 200) {
-          console.log("✅ Autorizado. Navegando a /dashboard");
           navigate("/dashboard", { replace: true });
           return;
         }
 
         if (res.status === 401) {
-          console.warn("🔑 Sesión inválida o expirada (401)");
           setErrorMsg("Tu sesión no es válida o expiró.");
           navigate("/", { replace: true });
           return;
         }
 
         if (res.status === 403) {
-          console.warn("🚫 Acceso denegado (403)");
           setDenied(true);
           setErrorMsg("No tienes permisos para acceder a esta sección.");
           setStatusMsg("Cerrando sesión…");
@@ -89,7 +79,6 @@ export default function AuthGate() {
         setErrorMsg(`Respuesta inesperada del servidor: ${res.status}`);
         setStatusMsg("Error inesperado");
       } catch (e) {
-        console.error("🔥 Error contactando al gateway:", e);
         if (!active) return;
         setErrorMsg("No se pudo contactar al servidor.");
         setStatusMsg("Error de red");

@@ -19,4 +19,6 @@ public record PaginationMetadataDTO(
                 result.hasNext(),
                 result.hasPrevious());
     }
+
+
 }

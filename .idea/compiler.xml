@@ -8,7 +8,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="api-gateway" />
-        <module name="observability-confi" />
         <module name="eureka-server" />
         <module name="message-service" />
         <module name="parameters-service" />
@@ -26,6 +25,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="client-app" target="21" />
+      <module name="observability-confi" target="21" />
       <module name="observability-config" target="21" />
       <module name="prueba" target="21" />
     </bytecodeTargetLevel>

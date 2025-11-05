@@ -1,5 +1,7 @@
 package co.edu.uco.ucochallenge.application.user.listUsers.interactor.impl;
 
+import co.edu.uco.ucochallenge.infrastructure.cache.UserPrefetchService;
+import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.CachedListUsersPort;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,23 +17,26 @@ import co.edu.uco.ucochallenge.application.user.listUsers.usecase.ListUsersUseCa
 @Transactional(readOnly = true)
 public class ListUsersInteractorImpl implements ListUsersInteractor {
 
-        private final ListUsersUseCase useCase;
-        private final ListUsersMapper mapper;
-        public ListUsersInteractorImpl(final ListUsersUseCase useCase, final ListUsersMapper mapper) {
-                this.useCase = useCase;
-                this.mapper = mapper;
+        private final CachedListUsersPort cachedListUsersPort;
+        private final UserPrefetchService prefetchService;
+
+        public ListUsersInteractorImpl(CachedListUsersPort cachedListUsersPort, UserPrefetchService prefetchService) {
+                this.cachedListUsersPort = cachedListUsersPort;
+                this.prefetchService = prefetchService;
         }
 
         @Override
-        @Cacheable(
-                value = "users.pages",
-                key = "'page=' + #dto.pagination().page() + ',size=' + #dto.pagination().size()",
-                unless = "#result == null || #result.users().isEmpty()"
-        )
         public ListUsersResponseDTO execute(final ListUsersRequestDTO dto) {
-                final PaginationRequestDTO pagination = dto == null || dto.pagination() == null
-                                ? PaginationRequestDTO.normalize(null, null)
-                                : dto.pagination();
-                return mapper.toResponse(useCase.execute(pagination.toDomain()));
+                var pagination = dto == null || dto.pagination() == null
+                        ? PaginationRequestDTO.normalize(null, null)
+                        : dto.pagination();
+
+                var response = cachedListUsersPort.getPage(pagination);
+
+                if (pagination.page() == 1) {
+                        prefetchService.prefetchNextPages(2, pagination.size(), 100);
+                }
+                return response;
         }
 }
+

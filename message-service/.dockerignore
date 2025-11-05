@@ -1,0 +1,11 @@
+# Ignorar artefactos y ficheros locales al enviar contexto de build
+target/
+build/
+.idea/
+*.iml
+.git/
+.DS_Store
+logs/
+tmp/
+node_modules/
+
