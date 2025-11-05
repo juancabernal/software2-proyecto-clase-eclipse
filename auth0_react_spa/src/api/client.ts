@@ -1,11 +1,15 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from "axios";
 import { User } from "../types/users";
 
-export type ApiSuccessResponse<T> = { userMessage: string; data: T; };
-export type Page<T> = { items: T[]; page: number; size: number; totalItems: number; totalPages: number; };
-export type RegisterUserResponse = { userId: string; fullName: string; email: string; };
-export type CatalogItem = { id: string; name: string; };
-type ConfirmationResponse = { remainingSeconds: number };
+export type ApiSuccessResponse<T> = { userMessage: string; data: T; }; // ✅ FIX: Preserve shared API response typing
+export type Page<T> = { items: T[]; page: number; size: number; totalItems: number; totalPages: number; }; // ✅ FIX: Maintain pagination typing
+export type RegisterUserResponse = { userId: string; fullName: string; email: string; }; // ✅ FIX: Keep register response contract
+export type CatalogItem = { id: string; name: string; }; // ✅ FIX: Preserve catalog item typing
+type ConfirmationResponse = { // ✅ FIX: Extend confirmation payload with verification identifiers
+  remainingSeconds: number; // ✅ FIX: Keep countdown seconds for UI timers
+  tokenId?: string; // ✅ FIX: Surface legacy token identifier for compatibility
+  verificationId?: string; // ✅ FIX: Expose public verification identifier for link validation
+};
 export type VerificationAttemptResponse = {
   success: boolean;
   expired: boolean;
@@ -13,6 +17,7 @@ export type VerificationAttemptResponse = {
   contactConfirmed: boolean;
   allContactsConfirmed: boolean;
   message: string;
+  verificationId?: string; // ✅ FIX: Capture verification identifier returned by backend
 };
 
 
@@ -28,7 +33,17 @@ const postAndReturnTTL = async (
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
     const seconds = Number(data?.remainingSeconds ?? 0);
-    return { remainingSeconds: Number.isFinite(seconds) ? seconds : 0 };
+    const rawTokenId = data?.tokenId ?? null; // ✅ FIX: Capture token identifier from backend response
+    const rawVerificationId = data?.verificationId ?? null; // ✅ FIX: Capture verification identifier when provided
+    const sanitizedTokenId = typeof rawTokenId === "string" && rawTokenId ? rawTokenId : undefined; // ✅ FIX: Normalize token identifier value
+    const sanitizedVerificationId = typeof rawVerificationId === "string" && rawVerificationId
+      ? rawVerificationId
+      : sanitizedTokenId; // ✅ FIX: Fallback to token identifier when verification id missing
+    return {
+      remainingSeconds: Number.isFinite(seconds) ? seconds : 0,
+      tokenId: sanitizedTokenId,
+      verificationId: sanitizedVerificationId,
+    }; // ✅ FIX: Return identifiers alongside TTL for frontend storage
   }
   const msg =
     (res.data && (res.data.message || res.data.error)) || failureMessage || DEFAULT_FAILURE_MESSAGE;
@@ -39,13 +54,14 @@ const postAndReturnTTL = async (
 const postVerificationCode = async (
   api: AxiosInstance,
   endpoint: string,
+  token: string,
   code: string,
   failureMessage: string
-): Promise<VerificationAttemptResponse> => {
+): Promise<VerificationAttemptResponse> => { // ✅ FIX: Submit verification code alongside token identifier
   // Debug logging removed to avoid exposing sensitive information in the browser console
   const res = await api.post(
     endpoint,
-    { code },
+    { code, token },
     { validateStatus: () => true }
   );
   // Response logging removed to avoid exposing sensitive information in the browser console
@@ -58,6 +74,9 @@ const postVerificationCode = async (
       contactConfirmed: Boolean(data?.contactConfirmed),
       allContactsConfirmed: Boolean(data?.allContactsConfirmed),
       message: String(data?.message ?? "") || failureMessage,
+      verificationId: typeof data?.verificationId === "string" && data?.verificationId
+        ? data.verificationId
+        : (typeof data?.tokenId === "string" && data?.tokenId ? data.tokenId : undefined),
     };
   }
   const msg =
@@ -224,10 +243,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw error;
       }
     },
-    async validateEmailConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateEmailConfirmation(userId: string, token: string, code: string): Promise<VerificationAttemptResponse> { // ✅ FIX: Require token identifier for email confirmation
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedToken = token?.trim(); // ✅ FIX: Normalize token identifier before submission
+      if (!sanitizedToken) { // ✅ FIX: Ensure token identifier is present
+        throw new Error("El identificador del token es obligatorio para validar el código.");
       }
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
@@ -242,6 +265,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postVerificationCode(
           api,
           adminEndpoint,
+          sanitizedToken,
           sanitizedCode,
           "No fue posible validar el código del correo electrónico."
         );
@@ -250,6 +274,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           return await postVerificationCode(
             api,
             fallbackEndpoint,
+            sanitizedToken,
             sanitizedCode,
             "No fue posible validar el código del correo electrónico."
           );
@@ -258,10 +283,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
     },
 
-    async validateMobileConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateMobileConfirmation(userId: string, token: string, code: string): Promise<VerificationAttemptResponse> { // ✅ FIX: Require token identifier for mobile confirmation
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedToken = token?.trim(); // ✅ FIX: Normalize token identifier before submission
+      if (!sanitizedToken) { // ✅ FIX: Ensure token identifier is present for validation
+        throw new Error("El identificador del token es obligatorio para validar el código.");
       }
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
@@ -276,6 +305,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postVerificationCode(
           api,
           adminEndpoint,
+          sanitizedToken,
           sanitizedCode,
           "No fue posible validar el código del teléfono móvil."
         );
@@ -284,12 +314,41 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           return await postVerificationCode(
             api,
             fallbackEndpoint,
+            sanitizedToken,
             sanitizedCode,
             "No fue posible validar el código del teléfono móvil."
           );
         }
         throw error;
       }
+    },
+
+    async verifyUserToken(token: string): Promise<VerificationAttemptResponse> { // ✅ FIX: Expose helper for public verification endpoint
+      const sanitizedToken = token?.trim(); // ✅ FIX: Normalize public token identifier from verification link
+      if (!sanitizedToken) { // ✅ FIX: Ensure token presence before requesting backend
+        throw new Error("El token de verificación es obligatorio.");
+      }
+
+      const endpoint = `/api/v1/users/verify`; // ✅ FIX: Target new verification endpoint
+      const res = await api.post(endpoint, { token: sanitizedToken }, { validateStatus: () => true }); // ✅ FIX: Submit token for backend validation
+      if (res.status >= 200 && res.status < 300) { // ✅ FIX: Accept success HTTP codes
+        const data = (res.data as any)?.data ?? res.data; // ✅ FIX: Support wrapped responses from API
+        return {
+          success: Boolean(data?.success), // ✅ FIX: Surface backend success status
+          expired: Boolean(data?.expired), // ✅ FIX: Communicate expiration state
+          attemptsRemaining: Number(data?.attemptsRemaining ?? 0), // ✅ FIX: Maintain attempt counter information
+          contactConfirmed: Boolean(data?.contactConfirmed), // ✅ FIX: Signal contact confirmation status
+          allContactsConfirmed: Boolean(data?.allContactsConfirmed), // ✅ FIX: Propagate global confirmation state
+          message: String(data?.message ?? "") || "", // ✅ FIX: Preserve backend message for UI display
+          verificationId: typeof data?.verificationId === "string" && data?.verificationId
+            ? data.verificationId
+            : (typeof data?.tokenId === "string" && data?.tokenId ? data.tokenId : undefined),
+        }; // ✅ FIX: Return normalized verification response structure
+      }
+      const msg = (res.data && (res.data.message || res.data.error)) || "No fue posible validar el token."; // ✅ FIX: Provide descriptive fallback message
+      const error: any = new Error(msg); // ✅ FIX: Raise error with backend message context
+      error.response = res; // ✅ FIX: Attach response details for upstream handling
+      throw error; // ✅ FIX: Propagate failure to calling component
     },
 
 

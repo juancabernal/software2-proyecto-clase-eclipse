@@ -35,6 +35,7 @@ type VerificationModalState = {
   type: "email" | "mobile";
   contact: string;
   code: string;
+  tokenId: string; // ✅ FIX: Store verification identifier returned by backend
   loading: boolean;
   status: VerificationAttemptResponse | null;
   error: string | null;
@@ -53,6 +54,7 @@ const emptyVerificationModal = (): VerificationModalState => ({
   type: "email",
   contact: "",
   code: "",
+  tokenId: "", // ✅ FIX: Reset stored verification identifier when closing modal
   loading: false,
   status: null,
   error: null,
@@ -446,6 +448,7 @@ export default function UsersAdmin() {
         type,
         contact: type === "email" ? targetUser.email : targetUser.mobileNumber || "",
         code: "",
+        tokenId: response.verificationId || response.tokenId || "", // ✅ FIX: Keep verification identifier for subsequent code validation
         loading: false,
         status: null,
         error: null,
@@ -475,6 +478,11 @@ export default function UsersAdmin() {
     if (!verificationModal.open || !verificationModal.userId) {
       return;
     }
+    const sanitizedTokenId = verificationModal.tokenId.trim(); // ✅ FIX: Prepare token identifier for validation request
+    if (!sanitizedTokenId) { // ✅ FIX: Prevent validation without associated token
+      setVerificationModal((prev) => ({ ...prev, error: "No se pudo identificar el token. Solicita un nuevo código." }));
+      return;
+    }
     const trimmedCode = verificationModal.code.trim();
     if (!trimmedCode) {
       setVerificationModal((prev) => ({ ...prev, error: "Ingresa el código enviado." }));
@@ -487,14 +495,15 @@ export default function UsersAdmin() {
     try {
       const response =
         verificationModal.type === "email"
-          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode)
-          : await api.validateMobileConfirmation(verificationModal.userId, trimmedCode);
+          ? await api.validateEmailConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode)
+          : await api.validateMobileConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode);
 
       setVerificationModal((prev) => ({
         ...prev,
         loading: false,
         status: response,
         code: response.success ? "" : prev.code,
+        tokenId: response.verificationId || prev.tokenId, // ✅ FIX: Refresh token identifier if backend returns a new value
         error: null,
       }));
 
