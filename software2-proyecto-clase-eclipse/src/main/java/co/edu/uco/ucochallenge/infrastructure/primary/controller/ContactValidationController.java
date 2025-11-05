@@ -46,6 +46,8 @@ public class ContactValidationController {
     public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestEmailConfirmation(@PathVariable UUID userId) {
         LOGGER.info("📧 Solicitud de confirmación de correo para el usuario {}", userId);
         final ConfirmationResponseDTO response = emailInteractor.execute(userId);
+        LOGGER.info("📧 Token {} generado para el usuario {} con TTL de {} segundos", response.tokenId(), userId,
+                response.remainingSeconds());
         return ResponseEntity.ok(ApiSuccessResponse.of("Correo de confirmación enviado exitosamente.", response));
     }
 
@@ -54,6 +56,8 @@ public class ContactValidationController {
         LOGGER.info("📱 Solicitud de confirmación de número móvil para el usuario {}", userId);
 
         final ConfirmationResponseDTO response = mobileInteractor.execute(userId);
+        LOGGER.info("📱 Token {} generado para el usuario {} con TTL de {} segundos", response.tokenId(), userId,
+                response.remainingSeconds());
         return ResponseEntity.ok(ApiSuccessResponse.of("SMS de confirmación enviado exitosamente.", response));
     }
 
@@ -61,6 +65,10 @@ public class ContactValidationController {
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
             @PathVariable UUID userId,
             @RequestBody VerificationCodeRequestDTO request) {
+        LOGGER.info("🔐 Solicitud pública de validación de correo para el usuario {} con token {}", userId,
+                request.sanitizedTokenId());
+        LOGGER.debug("🔐 Código recibido para la validación pública de correo del usuario {}: {}", userId,
+                request.sanitizedCode());
         final VerificationAttemptResponseDTO response = validateEmailInteractor
                 .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
@@ -70,6 +78,10 @@ public class ContactValidationController {
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmation(
             @PathVariable UUID userId,
             @RequestBody VerificationCodeRequestDTO request) {
+        LOGGER.info("📱 Solicitud pública de validación de teléfono para el usuario {} con token {}", userId,
+                request.sanitizedTokenId());
+        LOGGER.debug("📱 Código recibido para la validación pública de teléfono del usuario {}: {}", userId,
+                request.sanitizedCode());
         final VerificationAttemptResponseDTO response = validateMobileInteractor
                 .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));

@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -39,6 +41,8 @@ import co.edu.uco.api_gateway.services.UserServiceProxy;
 @RestController
 @RequestMapping(path = "/api/admin", produces = MediaType.APPLICATION_JSON_VALUE)
 public class AdminController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminController.class);
 
     private final UserServiceProxy userServiceProxy;
     private final CatalogServiceProxy catalogServiceProxy;
@@ -126,6 +130,14 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         final ApiSuccessResponse<ConfirmationRequestResponseDto> response =
                 userServiceProxy.requestEmailConfirmation(id, authorizationHeader);
+        final ConfirmationRequestResponseDto data = response.data();
+        if (data != null) {
+            LOGGER.info("📧 Token {} reenviado por el gateway para el usuario {} con TTL de {} segundos",
+                    data.tokenId(), id, data.remainingSeconds());
+        } else {
+            LOGGER.warn("⚠️ El backend no retornó información de token para el usuario {} al solicitar la confirmación de correo",
+                    id);
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -139,6 +151,14 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         final ApiSuccessResponse<ConfirmationRequestResponseDto> response =
                 userServiceProxy.requestMobileConfirmation(id, authorizationHeader);
+        final ConfirmationRequestResponseDto data = response.data();
+        if (data != null) {
+            LOGGER.info("📱 Token {} reenviado por el gateway para el usuario {} con TTL de {} segundos",
+                    data.tokenId(), id, data.remainingSeconds());
+        } else {
+            LOGGER.warn("⚠️ El backend no retornó información de token para el usuario {} al solicitar la confirmación de móvil",
+                    id);
+        }
         return ResponseEntity.ok(response);
     }
 
@@ -151,6 +171,10 @@ public class AdminController {
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDto request,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        LOGGER.info("🔐 Gateway recibiendo validación de correo para el usuario {} con token {}", id,
+                request.tokenId());
+        LOGGER.debug("🔐 Código recibido en el gateway para validación de correo del usuario {}: {}", id,
+                request.code());
         final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
                 .verifyEmailConfirmation(id, request, authorizationHeader);
         return ResponseEntity.ok(response);
@@ -165,6 +189,10 @@ public class AdminController {
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDto request,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        LOGGER.info("📱 Gateway recibiendo validación de teléfono para el usuario {} con token {}", id,
+                request.tokenId());
+        LOGGER.debug("📱 Código recibido en el gateway para validación de teléfono del usuario {}: {}", id,
+                request.code());
         final ApiSuccessResponse<VerificationAttemptResponseDto> response = userServiceProxy
                 .verifyMobileConfirmation(id, request, authorizationHeader);
         return ResponseEntity.ok(response);

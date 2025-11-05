@@ -2,6 +2,8 @@ package co.edu.uco.ucochallenge.infrastructure.primary.controller;
 
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,6 +40,9 @@ import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuc
 @RestController
 @RequestMapping("/uco-challenge/api/v1/users")
 public class UserController {
+
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
 
     private final RegisterUserInteractor registerUserInteractor;
@@ -104,6 +109,10 @@ public class UserController {
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
+        LOGGER.info("🔐 Solicitud de validación de correo para el usuario {} con token {}", id,
+                request.sanitizedTokenId());
+        LOGGER.debug("🔐 Código recibido para validación de correo del usuario {}: {}", id,
+                request.sanitizedCode());
         final VerificationAttemptResponseDTO response = validateEmailConfirmationInteractor
                 .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
@@ -113,6 +122,10 @@ public class UserController {
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmation(
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
+        LOGGER.info("📱 Solicitud de validación de teléfono para el usuario {} con token {}", id,
+                request.sanitizedTokenId());
+        LOGGER.debug("📱 Código recibido para validación de teléfono del usuario {}: {}", id,
+                request.sanitizedCode());
         final VerificationAttemptResponseDTO response = validateMobileConfirmationInteractor
                 .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
@@ -128,6 +141,8 @@ public class UserController {
     public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestEmailConfirmation(
             @PathVariable("id") final UUID id) {
         final ConfirmationResponseDTO response = requestEmailConfirmationInteractor.execute(id);
+        LOGGER.info("📧 Token {} generado para el usuario {} con TTL de {} segundos", response.tokenId(), id,
+                response.remainingSeconds());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Se envió la solicitud de validación del correo electrónico.",
                 response));
@@ -137,6 +152,8 @@ public class UserController {
     public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestMobileConfirmation(
             @PathVariable("id") final UUID id) {
         final ConfirmationResponseDTO response = requestMobileConfirmationInteractor.execute(id);
+        LOGGER.info("📱 Token {} generado para el usuario {} con TTL de {} segundos", response.tokenId(), id,
+                response.remainingSeconds());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Se envió la solicitud de validación del teléfono móvil.",
                 response));

@@ -78,14 +78,22 @@ public class VerificationTokenService {
             final UUID providedTokenId,
             final String providedCode) {
         final UUID tokenId = UUIDHelper.getDefault(providedTokenId);
+        LOGGER.info("🔍 Intento de validación recibido para el usuario {} a través de {} con token {}",
+                user.id(), channel.name(), tokenId);
         if (UUIDHelper.getDefault().equals(tokenId)) {
+            LOGGER.warn("❌ No se recibió un identificador de token válido para el usuario {} en el canal {}",
+                    user.id(), channel.name());
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
             return buildFailureResponse(user, channel, message, false, 0);
         }
 
         final String sanitizedCode = TextHelper.getDefaultWithTrim(providedCode);
+        LOGGER.debug("🔍 Código recibido para el usuario {} en el canal {}: {}", user.id(), channel.name(),
+                sanitizedCode);
         if (TextHelper.isEmpty(sanitizedCode)) {
+            LOGGER.warn("❌ Se recibió un código vacío para la validación del usuario {} en el canal {}", user.id(),
+                    channel.name());
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_INVALID_USER);
             return buildFailureResponse(user, channel, message, false, 0);
@@ -96,18 +104,22 @@ public class VerificationTokenService {
                 .orElse(null);
 
         if (token == null) {
+            LOGGER.warn("❌ No se encontró el token {} para el contacto {}", tokenId, contact);
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
             return buildFailureResponse(user, channel, message, false, 0);
         }
 
         if (!token.contact().equalsIgnoreCase(contact)) {
+            LOGGER.warn("❌ El token {} no pertenece al contacto {}", tokenId, contact);
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
             return buildFailureResponse(user, channel, message, false, 0);
         }
 
         if (token.isExpired(LocalDateTime.now())) {
+            LOGGER.warn("⌛ El token {} expiró antes de completar la validación para el contacto {}", token.id(),
+                    contact);
             repository.deleteById(token.id());
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_EXPIRED_USER);
@@ -115,8 +127,11 @@ public class VerificationTokenService {
         }
 
         if (!token.code().equalsIgnoreCase(sanitizedCode)) {
+            LOGGER.warn("❌ Código inválido para el token {}. Intentos restantes antes de decrementar: {}", token.id(),
+                    token.attempts());
             final VerificationToken decremented = token.decrementAttempts();
             if (decremented.attempts() <= 0) {
+                LOGGER.warn("⛔ Se agotaron los intentos para el token {} del contacto {}", token.id(), contact);
                 repository.deleteById(token.id());
                 final String message = MessageProvider
                         .getMessage(MessageCodes.Domain.Verification.TOKEN_ATTEMPTS_EXHAUSTED_USER);
@@ -131,6 +146,7 @@ public class VerificationTokenService {
         }
 
         repository.deleteById(token.id());
+        LOGGER.info("✅ Token {} validado correctamente para el contacto {}", token.id(), contact);
 
         if (isContactConfirmed(user, channel)) {
             final String message = MessageProvider
