@@ -1,8 +1,8 @@
-package co.edu.uco.ucochallenge.infrastructure.secondary.ports.service;
+package co.edu.uco.ucochallenge.domain.shared.message.port.out;
 
 import java.util.Map;
 
-public interface MessageServicePort {
+public interface MessageProviderPort {
 
     String getMessage(String key);
 

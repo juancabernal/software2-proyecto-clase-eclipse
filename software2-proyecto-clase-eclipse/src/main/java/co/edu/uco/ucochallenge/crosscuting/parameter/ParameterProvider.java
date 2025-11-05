@@ -13,7 +13,7 @@ public final class ParameterProvider {
     }
 
     public static String getString(final String key) {
-        return ParameterServicePortHolder.getService().getParameter(key);
+        return ParameterProviderPortHolder.getService().getParameter(key);
     }
 
     public static int getInteger(final String key) {
