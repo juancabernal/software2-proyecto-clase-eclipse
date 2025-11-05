@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.impl;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -18,7 +19,10 @@ public class ValidateMobileConfirmationInteractorImpl implements ValidateMobileC
     }
 
     @Override
-    public VerificationAttemptResponseDTO execute(final UUID userId, final UUID tokenId, final String code) {
-        return useCase.execute(userId, tokenId, code);
+    public VerificationAttemptResponseDTO execute(final UUID userId,
+            final UUID tokenId,
+            final String code,
+            final LocalDateTime verificationDate) {
+        return useCase.execute(userId, tokenId, code, verificationDate);
     }
 }

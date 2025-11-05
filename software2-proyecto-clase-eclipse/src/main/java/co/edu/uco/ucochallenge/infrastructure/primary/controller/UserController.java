@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.infrastructure.primary.controller;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -109,7 +110,10 @@ public class UserController {
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
-        verifyEmailTokenInteractor.execute(id, request.sanitizedTokenId(), request.sanitizedCode());
+        verifyEmailTokenInteractor.execute(id,
+                request.sanitizedTokenId(),
+                request.sanitizedCode(),
+                request.sanitizedVerificationDate());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Correo verificado correctamente.",
                 Void.returnVoid()));
@@ -120,7 +124,10 @@ public class UserController {
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
         final VerificationAttemptResponseDTO response = validateMobileConfirmationInteractor
-                .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
+                .execute(id,
+                        request.sanitizedTokenId(),
+                        request.sanitizedCode(),
+                        request.sanitizedVerificationDate());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
@@ -145,7 +152,7 @@ public class UserController {
             @RequestParam(name = "tokenId", required = false) final UUID tokenId,
             @RequestParam(name = "token", required = false) final String token,
             @RequestParam(name = "code", required = false) final String code) {
-        verifyEmailTokenInteractor.execute(id, tokenId, resolveToken(token, code));
+        verifyEmailTokenInteractor.execute(id, tokenId, resolveToken(token, code), LocalDateTime.now());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Correo verificado correctamente.",
                 Void.returnVoid()));
@@ -166,7 +173,7 @@ public class UserController {
             @RequestParam(name = "tokenId", required = false) final UUID tokenId,
             @RequestParam(name = "token", required = false) final String token,
             @RequestParam(name = "code", required = false) final String code) {
-        verifyMobileTokenInteractor.execute(id, tokenId, resolveToken(token, code));
+        verifyMobileTokenInteractor.execute(id, tokenId, resolveToken(token, code), LocalDateTime.now());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Teléfono móvil verificado correctamente.",
                 Void.returnVoid()));

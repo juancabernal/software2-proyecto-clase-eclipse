@@ -59,21 +59,29 @@ const postVerificationCode = async (
   failureMessage: string
 ): Promise<VerificationAttemptResponse> => { // ✅ FIX: Submit verification code alongside token identifier
   // Debug logging removed to avoid exposing sensitive information in the browser console
+  const verifiedAt = new Date().toISOString();
   const res = await api.post(
     endpoint,
-    { code, token },
+    { code, token, verifiedAt },
     { validateStatus: () => true }
   );
   // Response logging removed to avoid exposing sensitive information in the browser console
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
+    const userMessage = typeof (res.data as any)?.userMessage === "string"
+      ? String((res.data as any).userMessage)
+      : "";
+    const normalizedSuccess = typeof data?.success === "boolean"
+      ? Boolean(data.success)
+      : true;
+    const normalizedMessage = String(data?.message ?? userMessage ?? "");
     return {
-      success: Boolean(data?.success),
+      success: normalizedSuccess,
       expired: Boolean(data?.expired),
       attemptsRemaining: Number(data?.attemptsRemaining ?? 0),
       contactConfirmed: Boolean(data?.contactConfirmed),
       allContactsConfirmed: Boolean(data?.allContactsConfirmed),
-      message: String(data?.message ?? "") || failureMessage,
+      message: normalizedMessage || (normalizedSuccess ? userMessage || "" : failureMessage) || failureMessage,
       verificationId: typeof data?.verificationId === "string" && data?.verificationId
         ? data.verificationId
         : (typeof data?.tokenId === "string" && data?.tokenId ? data.tokenId : undefined),
