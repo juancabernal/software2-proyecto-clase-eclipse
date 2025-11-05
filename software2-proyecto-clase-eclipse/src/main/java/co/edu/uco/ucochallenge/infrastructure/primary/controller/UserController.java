@@ -39,6 +39,7 @@ import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuc
 @RequestMapping("/uco-challenge/api/v1/users")
 public class UserController {
 
+
         private final RegisterUserInteractor registerUserInteractor;
         private final ListUsersInteractor listUsersInteractor;
         private final GetUserInteractor getUserInteractor;
@@ -75,8 +76,6 @@ public class UserController {
                 this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
 				/* this.updateUserInteractor = updateUserInteractor; */
         }
-
-    /* private final UpdateUserInteractor updateUserInteractor; */
 
   
     @PostMapping
