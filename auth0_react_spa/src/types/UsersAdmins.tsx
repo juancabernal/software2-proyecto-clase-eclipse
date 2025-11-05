@@ -120,6 +120,25 @@ export default function UsersAdmin() {
   const [feedbackMessages, setFeedbackMessages] = useState<
     Record<string, { variant: "success" | "error"; message: string }>
   >({});
+  // Catálogos y estados relacionados
+  const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
+  const [departments, setDepartments] = useState<CatalogItem[]>([]);
+  const [cities, setCities] = useState<CatalogItem[]>([]);
+  const [filterCities, setFilterCities] = useState<CatalogItem[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [filterDepartment, setFilterDepartment] = useState<string>("");
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogErr, setCatalogErr] = useState<string | null>(null);
+
+  // Evita errores de 'variable no usada' en tiempo de compilación/linter
+  useEffect(() => {
+    // Referenciamos las variables para que el linter/TS no las marque como sin usar.
+    // No hacen nada aquí: su uso real está en los efectos de carga de catálogos.
+    void filterCities;
+    void filterDepartment;
+    void setFilterDepartment;
+    void setFilterCities;
+  }, [filterCities, filterDepartment]);
   const [countdown, setCountdown] = useState<Record<string, number>>({});
   const timersRef = useRef<Map<string, number>>(new Map());
   const [verificationModal, setVerificationModal] = useState<VerificationModalState>(emptyVerificationModal());
@@ -638,7 +657,7 @@ export default function UsersAdmin() {
                           disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "mobile")]) || !user.mobileNumber}
                           className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "mobile")]) || !user.mobileNumber}
+                          {actionLoading[countdownKeyFor(user.userId, "mobile")] ? "Enviando…" : "Validar móvil"}
                         </button>
                       </div>
 

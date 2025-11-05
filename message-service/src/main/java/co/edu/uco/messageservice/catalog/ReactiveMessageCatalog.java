@@ -173,9 +173,9 @@ public class ReactiveMessageCatalog {
         register("domain.user.mobile.empty.technical", "El número de teléfono móvil del usuario es obligatorio.");
         register("domain.user.mobile.empty.user", "Debe ingresar un número de teléfono móvil.");
         register("domain.user.mobile.invalidFormat.technical",
-                "El número de teléfono móvil debe tener exactamente {expectedLength} dígitos.");
+                "El número de teléfono móvil debe tener exactamente 10 dígitos.");
         register("domain.user.mobile.invalidFormat.user",
-                "El número de celular debe tener {expectedLength} dígitos.");
+                "El número de celular debe tener 10 dígitos.");
         register("domain.user.notFound.technical", "El usuario solicitado no existe en el sistema.");
         register("domain.user.notFound.user", "No encontramos un usuario con la información suministrada.");
         register("domain.user.email.alreadyRegistered.user", "El correo ya se encuentra registrado.");
