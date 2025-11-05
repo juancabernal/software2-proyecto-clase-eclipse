@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.application.notification;
+package co.edu.uco.ucochallenge.infrastructure.primary.notification;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.annotation.PostConstruct;
+
+import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
+import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
 
 @RestController
 @RequestMapping("/notifications/test")
