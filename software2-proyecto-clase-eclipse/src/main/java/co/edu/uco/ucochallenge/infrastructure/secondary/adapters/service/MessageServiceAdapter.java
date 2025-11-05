@@ -14,14 +14,14 @@ import co.edu.uco.ucochallenge.crosscuting.exception.InfrastructureException;
 import co.edu.uco.ucochallenge.crosscuting.helper.ObjectHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
-import co.edu.uco.ucochallenge.crosscuting.messages.MessageServicePortHolder;
+import co.edu.uco.ucochallenge.crosscuting.messages.MessageProviderPortHolder;
+import co.edu.uco.ucochallenge.domain.shared.message.port.out.MessageProviderPort;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.service.orchestration.CatalogService;
-import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.MessageServicePort;
 import jakarta.annotation.PostConstruct;
 
 @Primary
 @Component("catalogMessageServiceAdapter")
-public class MessageServiceAdapter implements MessageServicePort {
+public class MessageServiceAdapter implements MessageProviderPort {
 
     private static final Logger log = LoggerFactory.getLogger(MessageServiceAdapter.class);
 
@@ -33,7 +33,7 @@ public class MessageServiceAdapter implements MessageServicePort {
 
     @PostConstruct
     void configureHolder() {
-        MessageServicePortHolder.configure(this);
+        MessageProviderPortHolder.configure(this);
     }
 
     @Override

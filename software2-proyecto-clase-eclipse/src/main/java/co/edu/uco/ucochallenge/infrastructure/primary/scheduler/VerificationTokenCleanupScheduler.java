@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.infrastructure.secondary.sheduler;
+package co.edu.uco.ucochallenge.infrastructure.primary.scheduler;
 
 import java.time.Instant;
 

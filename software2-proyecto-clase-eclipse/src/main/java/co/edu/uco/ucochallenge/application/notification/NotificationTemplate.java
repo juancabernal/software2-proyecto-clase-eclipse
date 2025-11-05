@@ -4,7 +4,7 @@ import java.util.IllegalFormatException;
 import java.util.Locale;
 
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
-import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.ParameterServicePort;
+import co.edu.uco.ucochallenge.domain.shared.parameter.port.out.ParameterProviderPort;
 
 public record NotificationTemplate(String parameterKey, String fallback) {
 
@@ -13,7 +13,7 @@ public record NotificationTemplate(String parameterKey, String fallback) {
         fallback = TextHelper.getDefault(fallback, "");
     }
 
-    public String resolve(final ParameterServicePort parameterServicePort, final Object... arguments) {
+    public String resolve(final ParameterProviderPort parameterServicePort, final Object... arguments) {
         final String template = parameterServicePort != null
                 ? TextHelper.getDefault(parameterServicePort.getParameter(parameterKey))
                 : TextHelper.getDefault();

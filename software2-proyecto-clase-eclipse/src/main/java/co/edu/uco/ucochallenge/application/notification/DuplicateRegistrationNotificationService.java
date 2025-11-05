@@ -25,7 +25,7 @@ import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.Not
 import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.Person;
 import co.edu.uco.ucochallenge.domain.notification.model.NotificationMessage.Recipient;
 import co.edu.uco.ucochallenge.domain.notification.port.out.NotificationSenderPort;
-import co.edu.uco.ucochallenge.infrastructure.secondary.ports.service.ParameterServicePort;
+import co.edu.uco.ucochallenge.domain.shared.parameter.port.out.ParameterProviderPort;
 
 @Component
 public class DuplicateRegistrationNotificationService {
@@ -47,11 +47,11 @@ public class DuplicateRegistrationNotificationService {
 
     private final NotificationSenderPort notificationSenderPort;
     private final NotificationRecipientsProvider recipientsProvider;
-    private final ParameterServicePort parameterServicePort;
+    private final ParameterProviderPort parameterServicePort;
 
     public DuplicateRegistrationNotificationService(final NotificationSenderPort notificationSenderPort,
             final NotificationRecipientsProvider recipientsProvider,
-            final ParameterServicePort parameterServicePort) {
+            final ParameterProviderPort parameterServicePort) {
         this.notificationSenderPort = notificationSenderPort;
         this.recipientsProvider = recipientsProvider;
         this.parameterServicePort = parameterServicePort;
@@ -71,7 +71,7 @@ public class DuplicateRegistrationNotificationService {
             final String verificationCode,
             final int ttlMinutes,
             final int maxAttempts){
-    	sendNotification(EMAIL_CONFIRMATION, attempt, EMAIL_CONFIRMATION_TEMPLATE,
+        sendNotification(EMAIL_CONFIRMATION, attempt, EMAIL_CONFIRMATION_TEMPLATE,
                 "Confirma tu correo electrónico", "confirmar_datos", "EMAIL", false,
                 verificationCode, ttlMinutes, maxAttempts);
     }
@@ -83,8 +83,8 @@ public class DuplicateRegistrationNotificationService {
         sendNotification(MOBILE_CONFIRMATION, attempt, MOBILE_CONFIRMATION_TEMPLATE,
                 "Confirma tu número de teléfono", "confirmar_datos", "SMS", false,
                 verificationCode, ttlMinutes, maxAttempts);
-	}
-        
+        }
+
 
     private void sendNotification(final NotificationEvent event,
             final RegistrationAttempt attempt,
@@ -205,6 +205,7 @@ public class DuplicateRegistrationNotificationService {
         }
         recipients.add(recipient);
     }
+
     private Object[] mergeTemplateArguments(final Object first, final Object... others) {
         if (others == null || others.length == 0) {
             return new Object[] { first };
