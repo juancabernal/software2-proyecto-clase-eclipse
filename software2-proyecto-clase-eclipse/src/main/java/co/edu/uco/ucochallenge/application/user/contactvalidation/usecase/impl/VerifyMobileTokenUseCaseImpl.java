@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.VerifyMobileTokenUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.domain.user.model.User;
 import co.edu.uco.ucochallenge.domain.user.port.out.UserRepository;
@@ -30,12 +31,19 @@ public class VerifyMobileTokenUseCaseImpl implements VerifyMobileTokenUseCase {
     }
 
     @Override
-    public void execute(final UUID userId, final String rawToken) {
-        final String token = TextHelper.getDefaultWithTrim(rawToken);
-        if (TextHelper.isEmpty(token)) {
+    public void execute(final UUID userId, final UUID tokenId, final String rawCode) {
+        final String code = TextHelper.getDefaultWithTrim(rawCode);
+        if (TextHelper.isEmpty(code)) {
             throw DomainException.buildFromCatalog(
                     MessageCodes.Domain.Verification.TOKEN_INVALID_TECHNICAL,
                     MessageCodes.Domain.Verification.TOKEN_INVALID_USER);
+        }
+
+        final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId);
+        if (UUIDHelper.getDefault().equals(normalizedTokenId)) {
+            throw DomainException.buildFromCatalog(
+                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
+                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
         }
 
         final User user = userRepository.findById(userId)
@@ -50,19 +58,25 @@ public class VerifyMobileTokenUseCaseImpl implements VerifyMobileTokenUseCase {
         }
 
         final String contact = TextHelper.getDefaultWithTrim(user.mobileNumber());
-        final VerificationToken verificationToken = tokenRepository.findByContact(contact)
+        final VerificationToken verificationToken = tokenRepository.findById(normalizedTokenId)
                 .orElseThrow(() -> DomainException.buildFromCatalog(
                         MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
                         MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER));
 
+        if (!contact.equalsIgnoreCase(verificationToken.contact())) {
+            throw DomainException.buildFromCatalog(
+                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
+                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
+        }
+
         if (verificationToken.isExpired(LocalDateTime.now())) {
-            tokenRepository.deleteByContact(contact);
+            tokenRepository.deleteById(verificationToken.id());
             throw DomainException.buildFromCatalog(
                     MessageCodes.Domain.Verification.TOKEN_EXPIRED_TECHNICAL,
                     MessageCodes.Domain.Verification.TOKEN_EXPIRED_USER);
         }
 
-        if (!verificationToken.code().equalsIgnoreCase(token)) {
+        if (!verificationToken.code().equalsIgnoreCase(code)) {
             throw DomainException.buildFromCatalog(
                     MessageCodes.Domain.Verification.TOKEN_INVALID_TECHNICAL,
                     MessageCodes.Domain.Verification.TOKEN_INVALID_USER);

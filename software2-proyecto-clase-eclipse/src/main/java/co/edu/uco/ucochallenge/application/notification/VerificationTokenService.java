@@ -1,10 +1,10 @@
 package co.edu.uco.ucochallenge.application.notification;
 
 import java.security.SecureRandom;
-import java.time.Instant;
-import java.time.LocalDateTime;  // Se añade esta importación
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageProvider;
 import co.edu.uco.ucochallenge.crosscuting.parameter.ParameterCodes;
@@ -50,14 +51,13 @@ public class VerificationTokenService {
         final int ttlSeconds = resolveTtlSeconds();
         final int maxAttempts = resolveMaxAttempts();
         
-        // Cambiar a LocalDateTime para usar la hora local
-        final LocalDateTime now = LocalDateTime.now();  // Hora local
-        // Calculamos la expiración en función de la hora local
-        final LocalDateTime expiration = now.plusSeconds(ttlSeconds);  // Expiración sumando los segundos de TTL
+        final LocalDateTime now = LocalDateTime.now();
+        final LocalDateTime expiration = now.plusSeconds(ttlSeconds);
         final String code = generateCode();
 
         repository.deleteByContact(contact);
-        repository.save(new VerificationToken(null, contact, code, expiration, maxAttempts, now));  // Guardar con la hora local
+        final VerificationToken savedToken = repository
+                .save(new VerificationToken(null, contact, code, expiration, maxAttempts, now));
 
         LOGGER.info("Generated verification token for user {} via {}", user.id(), channel.name());
         try {
@@ -66,12 +66,13 @@ public class VerificationTokenService {
             LOGGER.error("⚠️ Failed to send notification for user {} (token saved anyway): {}", user.id(), ex.getMessage());
         }
 
-        return new ConfirmationResponseDTO(ttlSeconds);
+        return new ConfirmationResponseDTO(ttlSeconds, savedToken.id());
     }
-    
+
     @Transactional
     public VerificationAttemptResponseDTO validateToken(final User user,
             final VerificationChannel channel,
+            final UUID tokenId,
             final String providedCode) {
         final String sanitizedCode = TextHelper.getDefaultWithTrim(providedCode);
         if (TextHelper.isEmpty(sanitizedCode)) {
@@ -83,8 +84,17 @@ public class VerificationTokenService {
                     message);
         }
 
-        final String contact = resolveContact(user, channel);
-        final VerificationToken token = repository.findByContact(contact)
+        final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId);
+        if (UUIDHelper.getDefault().equals(normalizedTokenId)) {
+            final String message = MessageProvider
+                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
+            return new VerificationAttemptResponseDTO(false, false, 0,
+                    isContactConfirmed(user, channel),
+                    user.emailConfirmed() && user.mobileNumberConfirmed(),
+                    message);
+        }
+
+        final VerificationToken token = repository.findById(normalizedTokenId)
                 .orElse(null);
 
         if (token == null) {
@@ -96,8 +106,18 @@ public class VerificationTokenService {
                     message);
         }
 
+        final String contact = resolveContact(user, channel);
+        if (!contact.equalsIgnoreCase(token.contact())) {
+            final String message = MessageProvider
+                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
+            return new VerificationAttemptResponseDTO(false, false, 0,
+                    isContactConfirmed(user, channel),
+                    user.emailConfirmed() && user.mobileNumberConfirmed(),
+                    message);
+        }
+
         if (token.isExpired(LocalDateTime.now())) {
-            repository.deleteByContact(contact);
+            repository.deleteById(token.id());
             final String message = MessageProvider
                     .getMessage(MessageCodes.Domain.Verification.TOKEN_EXPIRED_USER);
             return new VerificationAttemptResponseDTO(false, true, 0,
@@ -109,7 +129,7 @@ public class VerificationTokenService {
         if (!token.code().equalsIgnoreCase(sanitizedCode)) {
             final VerificationToken decremented = token.decrementAttempts();
             if (decremented.attempts() <= 0) {
-                repository.deleteByContact(contact);
+                repository.deleteById(token.id());
                 final String message = MessageProvider
                         .getMessage(MessageCodes.Domain.Verification.TOKEN_ATTEMPTS_EXHAUSTED_USER);
                 return new VerificationAttemptResponseDTO(false, false, 0,

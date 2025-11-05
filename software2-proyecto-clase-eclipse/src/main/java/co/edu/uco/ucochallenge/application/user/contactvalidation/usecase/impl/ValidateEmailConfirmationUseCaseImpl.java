@@ -30,13 +30,13 @@ public class ValidateEmailConfirmationUseCaseImpl implements ValidateEmailConfir
     }
 
     @Override
-    public VerificationAttemptResponseDTO execute(final UUID userId, final String code) {
+    public VerificationAttemptResponseDTO execute(final UUID userId, final UUID tokenId, final String code) {
         final User user = repository.findById(userId)
                 .orElseThrow(() -> DomainException.buildFromCatalog(
                         MessageCodes.Domain.User.NOT_FOUND_TECHNICAL,
                         MessageCodes.Domain.User.NOT_FOUND_USER));
 
         LOGGER.info("Validating email confirmation token for user {}", user.id());
-        return verificationTokenService.validateToken(user, VerificationChannel.EMAIL, code);
+        return verificationTokenService.validateToken(user, VerificationChannel.EMAIL, tokenId, code);
     }
 }

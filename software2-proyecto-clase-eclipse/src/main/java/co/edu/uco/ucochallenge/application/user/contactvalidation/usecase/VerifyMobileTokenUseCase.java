@@ -4,5 +4,5 @@ import java.util.UUID;
 
 public interface VerifyMobileTokenUseCase {
 
-    void execute(UUID userId, String token);
+    void execute(UUID userId, UUID tokenId, String code);
 }

@@ -18,8 +18,8 @@ public class VerifyEmailTokenInteractorImpl implements VerifyEmailTokenInteracto
     }
 
     @Override
-    public Void execute(final UUID userId, final String token) {
-        useCase.execute(userId, token);
+    public Void execute(final UUID userId, final UUID tokenId, final String code) {
+        useCase.execute(userId, tokenId, code);
         return Void.returnVoid();
     }
 }

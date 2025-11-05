@@ -109,7 +109,7 @@ public class UserController {
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
-        verifyEmailTokenInteractor.execute(id, request.sanitizedCode());
+        verifyEmailTokenInteractor.execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Correo verificado correctamente.",
                 Void.returnVoid()));
@@ -120,7 +120,7 @@ public class UserController {
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
         final VerificationAttemptResponseDTO response = validateMobileConfirmationInteractor
-                .execute(id, request.sanitizedCode());
+                .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
@@ -142,9 +142,10 @@ public class UserController {
     @GetMapping("/{id}/confirmations/email/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailConfirmation(
             @PathVariable("id") final UUID id,
+            @RequestParam(name = "tokenId", required = false) final UUID tokenId,
             @RequestParam(name = "token", required = false) final String token,
             @RequestParam(name = "code", required = false) final String code) {
-        verifyEmailTokenInteractor.execute(id, resolveToken(token, code));
+        verifyEmailTokenInteractor.execute(id, tokenId, resolveToken(token, code));
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Correo verificado correctamente.",
                 Void.returnVoid()));
@@ -162,9 +163,10 @@ public class UserController {
     @GetMapping("/{id}/confirmations/mobile/verify")
     public ResponseEntity<ApiSuccessResponse<Void>> verifyMobileConfirmation(
             @PathVariable("id") final UUID id,
+            @RequestParam(name = "tokenId", required = false) final UUID tokenId,
             @RequestParam(name = "token", required = false) final String token,
             @RequestParam(name = "code", required = false) final String code) {
-        verifyMobileTokenInteractor.execute(id, resolveToken(token, code));
+        verifyMobileTokenInteractor.execute(id, tokenId, resolveToken(token, code));
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Teléfono móvil verificado correctamente.",
                 Void.returnVoid()));
