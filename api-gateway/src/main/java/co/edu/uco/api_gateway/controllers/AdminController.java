@@ -102,28 +102,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Proxy de {@code GET /uco-challenge/api/v1/users/search}.
-     *
-     * <p>Ejemplo:
-     * <pre>{@code
-     * GET /api/admin/users/search?email=juan@example.com&page=0
-     * Authorization: Bearer <token>
-     * }</pre>
-     */
-    @GetMapping("/users/search")
-    @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<PageResponse<UserDto>>> searchUsers(
-            @RequestParam final Map<String, String> filters,
-            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<PageResponse<UserDto>> response =
-                userServiceProxy.searchUsers(filters, authorizationHeader);
-        return ResponseEntity.ok(response);
-    }
 
-    /**
-     * Proxy de {@code DELETE /uco-challenge/api/v1/users/{id}}.
-     */
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<ApiSuccessResponse<Void>> deleteUser(
@@ -180,5 +159,26 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listCities(authorizationHeader));
     }
-    
+
+    /**
+     * Proxy de {@code GET /uco-challenge/api/v1/catalogs/departments}.
+     */
+    @GetMapping("/catalogs/departments")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listDepartments(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        return ResponseEntity.ok(catalogServiceProxy.listDepartments(authorizationHeader));
+    }
+
+    /**
+     * Proxy de {@code GET /uco-challenge/api/v1/catalogs/departments/{departmentId}/cities}.
+     */
+    @GetMapping("/catalogs/departments/{departmentId}/cities")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listCitiesByDepartment(
+            @PathVariable final String departmentId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        return ResponseEntity.ok(catalogServiceProxy.listCitiesByDepartment(authorizationHeader, departmentId));
+    }
+
 }

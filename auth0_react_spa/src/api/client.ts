@@ -15,17 +15,6 @@ export type VerificationAttemptResponse = {
   message: string;
 };
 
-export type SearchUsersFilters = {
-  idType?: string;        // UUID
-  idNumber?: string;
-  firstName?: string;
-  firstSurname?: string;
-  homeCity?: string;      // UUID
-  email?: string;
-  mobileNumber?: string;
-  page?: number;
-  size?: number;
-};
 
 const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
 
@@ -151,57 +140,8 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const payload = res.data as ApiSuccessResponse<Page<User>>;
       return payload.data;
     },
-    async searchUsers(filters: SearchUsersFilters): Promise<Page<User>> {
-      const { page = 0, size = 10 } = filters;
+   
 
-      // Construimos params incluyendo todos los filtros que el backend espera.
-      // Es importante enviar los filtros de texto (idNumber, firstName, firstSurname, email)
-      // para que el endpoint /search reciba las claves correctas y la cache pueda distinguir.
-      const params: Record<string, string | number> = { page, size };
-      const setIf = (k: keyof SearchUsersFilters) => {
-        const v = filters[k];
-        if (v !== undefined && v !== null && String(v).trim() !== "") {
-          params[k] = String(v).trim();
-        }
-      };
-
-      // Enviamos todos los filtros esperados por el backend (UUIDs y textos).
-      setIf("idType");
-      setIf("homeCity");
-      setIf("mobileNumber");
-      setIf("idNumber");
-      setIf("firstName");
-      setIf("firstSurname");
-      setIf("email");
-
-      // ⬅️ Fallback: si solo hay page/size, no llames /search
-      const onlyPaging = Object.keys(params).every((k) => k === "page" || k === "size");
-      if (onlyPaging) {
-        const resList = await api.get("/api/admin/users", { params, validateStatus: () => true });
-        if (resList.status !== 200) {
-          const msg = resList.data?.userMessage || resList.data?.technicalMessage || `Listado HTTP ${resList.status}`;
-          throw new Error(msg);
-        }
-        return (resList.data as ApiSuccessResponse<Page<User>>).data;
-      }
-
-      const res = await api.get("/api/admin/users/search", {
-        params,
-        validateStatus: () => true,
-      });
-      if (res.status !== 200) {
-        // Incluimos el body en el mensaje para facilitar debugging local (si está presente).
-        const body = res.data ?? null;
-        const bodyText = typeof body === "string" ? body : JSON.stringify(body);
-        const msg = res.data?.userMessage
-          || res.data?.technicalMessage
-          || (body ? `Upstream response: ${bodyText}` : `Búsqueda HTTP ${res.status}`);
-        const error: any = new Error(msg);
-        error.response = res;
-        throw error;
-      }
-      return (res.data as ApiSuccessResponse<Page<User>>).data;
-    },
     // POST /api/admin/users
     async createUser(payload: UserCreateInput): Promise<RegisterUserResponse> {
       const res = await api.post("/api/admin/users", payload, { validateStatus: () => true });
@@ -228,6 +168,20 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     async listCities(): Promise<CatalogItem[]> {
       const res = await api.get("/api/admin/catalogs/cities", { validateStatus: () => true });
       if (res.status !== 200) throw new Error(`Catálogo ciudades HTTP ${res.status}`);
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
+    },
+
+    async listDepartments(): Promise<CatalogItem[]> {
+      const res = await api.get("/api/admin/catalogs/departments", { validateStatus: () => true });
+      if (res.status !== 200) throw new Error(`Catálogo departamentos HTTP ${res.status}`);
+      const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
+      return payload.data;
+    },
+
+    async listCitiesByDepartment(departmentId: string): Promise<CatalogItem[]> {
+      const res = await api.get(`/api/admin/catalogs/departments/${departmentId}/cities`, { validateStatus: () => true });
+      if (res.status !== 200) throw new Error(`Catálogo ciudades por departamento HTTP ${res.status}`);
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
     },

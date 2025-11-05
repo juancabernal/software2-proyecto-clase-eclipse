@@ -149,27 +149,7 @@ public class UserServiceProxy {
      *         "Bearer eyJhbGciOi...");
      * }</pre>
      */
-    public ApiSuccessResponse<PageResponse<UserDto>> searchUsers(
-            final Map<String, String> filters,
-            final String authorizationHeader) {
-        final ApiSuccessResponse<ListUsersResponse> response = webClient.get()
-                .uri(uriBuilder -> {
-                    uriBuilder.path("/search");
-                    filters.forEach((key, value) -> {
-                        if (StringUtils.hasText(value)) {
-                            uriBuilder.queryParam(key, value);
-                        }
-                    });
-                    return uriBuilder.build();
-                })
-                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
-                .retrieve()
-                .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(LIST_USERS_RESPONSE)
-                .block();
 
-        return buildPageResponse(response);
-    }
 
     /**
      * Elimina un usuario en el backend.<br>

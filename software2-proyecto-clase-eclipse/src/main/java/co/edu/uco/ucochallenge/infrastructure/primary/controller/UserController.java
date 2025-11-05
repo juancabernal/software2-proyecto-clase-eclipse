@@ -40,42 +40,39 @@ import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuc
 public class UserController {
 
 
-        private final RegisterUserInteractor registerUserInteractor;
-        private final ListUsersInteractor listUsersInteractor;
-        private final GetUserInteractor getUserInteractor;
-        private final SearchUsersInteractor searchUsersInteractor;
-        private final DeleteUserInteractor deleteUserInteractor;
-        private final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor;
-        private final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor;
-        private final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor;
-        private final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor;
- 
-		/* private final UpdateUserInteractor updateUserInteractor; */
+    private final RegisterUserInteractor registerUserInteractor;
+    private final ListUsersInteractor listUsersInteractor;
+    private final GetUserInteractor getUserInteractor;
+    private final DeleteUserInteractor deleteUserInteractor;
+    private final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor;
+    private final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor;
+    private final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor;
+    private final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor;
 
-        public UserController(
-                        final RegisterUserInteractor registerUserInteractor,
-                        final ListUsersInteractor listUsersInteractor,
-                        final GetUserInteractor getUserInteractor,
-                        final SearchUsersInteractor searchUsersInteractor,
-                        final DeleteUserInteractor deleteUserInteractor,
-                        final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor,
-                        final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor,
-                        final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor,
-                        final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor
-				/*
-																 * , final UpdateUserInteractor updateUserInteractor
-																 */) {
-                this.registerUserInteractor = registerUserInteractor;
-                this.listUsersInteractor = listUsersInteractor;
-                this.getUserInteractor = getUserInteractor;
-                this.searchUsersInteractor = searchUsersInteractor;
-                this.deleteUserInteractor = deleteUserInteractor;
-                this.requestEmailConfirmationInteractor = requestEmailConfirmationInteractor;
-                this.requestMobileConfirmationInteractor = requestMobileConfirmationInteractor;
-                this.validateEmailConfirmationInteractor = validateEmailConfirmationInteractor;
-                this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
-				/* this.updateUserInteractor = updateUserInteractor; */
-        }
+    /* private final UpdateUserInteractor updateUserInteractor; */
+
+    public UserController(
+            final RegisterUserInteractor registerUserInteractor,
+            final ListUsersInteractor listUsersInteractor,
+            final GetUserInteractor getUserInteractor,
+            final DeleteUserInteractor deleteUserInteractor,
+            final RequestEmailConfirmationInteractor requestEmailConfirmationInteractor,
+            final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor,
+            final ValidateEmailConfirmationInteractor validateEmailConfirmationInteractor,
+            final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor
+            /*
+             * , final UpdateUserInteractor updateUserInteractor
+             */) {
+        this.registerUserInteractor = registerUserInteractor;
+        this.listUsersInteractor = listUsersInteractor;
+        this.getUserInteractor = getUserInteractor;
+        this.deleteUserInteractor = deleteUserInteractor;
+        this.requestEmailConfirmationInteractor = requestEmailConfirmationInteractor;
+        this.requestMobileConfirmationInteractor = requestMobileConfirmationInteractor;
+        this.validateEmailConfirmationInteractor = validateEmailConfirmationInteractor;
+        this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
+        /* this.updateUserInteractor = updateUserInteractor; */
+    }
 
   
     @PostMapping
@@ -102,52 +99,24 @@ public class UserController {
         return ResponseEntity.ok(ApiSuccessResponse.of("Usuario obtenido exitosamente.", response));
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<ApiSuccessResponse<ListUsersResponseDTO>> searchUsers(
-            @RequestParam(name = "idType", required = false) final UUID idType,
-            @RequestParam(name = "idNumber", required = false) final String idNumber,
-            @RequestParam(name = "firstName", required = false) final String firstName,
-            @RequestParam(name = "firstSurname", required = false) final String firstSurname,
-            @RequestParam(name = "homeCity", required = false) final UUID homeCity,
-            @RequestParam(name = "email", required = false) final String email,
-            @RequestParam(name = "mobileNumber", required = false) final String mobileNumber,
-            @RequestParam(name = "q", required = false) final String q,
-            @RequestParam(name = "page", required = false) final Integer page,
-            @RequestParam(name = "size", required = false) final Integer size) {
-        final SearchUsersQueryDTO filter = SearchUsersQueryDTO.normalize(
-                idType,
-                idNumber,
-                firstName,
-                firstSurname,
-                homeCity,
-                email,
-                mobileNumber,
-                q,
-                page,
-                size);
-        final ListUsersResponseDTO response = searchUsersInteractor.execute(filter);
-        return ResponseEntity.ok(ApiSuccessResponse.of("Usuarios filtrados exitosamente.", response));
+
+    @PostMapping("/{id}/confirmations/email/verify")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestBody final VerificationCodeRequestDTO request) {
+        final VerificationAttemptResponseDTO response = validateEmailConfirmationInteractor
+                .execute(id, request.sanitizedCode());
+        return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
-
-        
-        @PostMapping("/{id}/confirmations/email/verify")
-        public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
-                        @PathVariable("id") final UUID id,
-                        @RequestBody final VerificationCodeRequestDTO request) {
-                final VerificationAttemptResponseDTO response = validateEmailConfirmationInteractor
-                                .execute(id, request.sanitizedCode());
-                return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
-        }
-
-        @PostMapping("/{id}/confirmations/mobile/verify")
-        public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmation(
-                        @PathVariable("id") final UUID id,
-                        @RequestBody final VerificationCodeRequestDTO request) {
-                final VerificationAttemptResponseDTO response = validateMobileConfirmationInteractor
-                                .execute(id, request.sanitizedCode());
-                return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
-        }
+    @PostMapping("/{id}/confirmations/mobile/verify")
+    public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmation(
+            @PathVariable("id") final UUID id,
+            @RequestBody final VerificationCodeRequestDTO request) {
+        final VerificationAttemptResponseDTO response = validateMobileConfirmationInteractor
+                .execute(id, request.sanitizedCode());
+        return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
+    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiSuccessResponse<Void>> deleteUser(@PathVariable("id") final UUID id) {

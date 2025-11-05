@@ -15,14 +15,7 @@ type Filters = {
   page: number;
   size: number;
 
-  // 🔎 filtros de búsqueda
-  idType?: string;        // UUID
-  idNumber?: string;
-  firstName?: string;
-  firstSurname?: string;
-  homeCity?: string;      // UUID
-  email?: string;
-  mobileNumber?: string;
+
 };
 
 type UserFormState = {
@@ -51,13 +44,7 @@ const initialFilters: Filters = {
   page: 1,
   size: 10,
 
-  idType: "",
-  idNumber: "",
-  firstName: "",
-  firstSurname: "",
-  homeCity: "",
-  email: "",
-  mobileNumber: "",
+
 };
 
 const emptyVerificationModal = (): VerificationModalState => ({
@@ -133,6 +120,25 @@ export default function UsersAdmin() {
   const [feedbackMessages, setFeedbackMessages] = useState<
     Record<string, { variant: "success" | "error"; message: string }>
   >({});
+  // Catálogos y estados relacionados
+  const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
+  const [departments, setDepartments] = useState<CatalogItem[]>([]);
+  const [cities, setCities] = useState<CatalogItem[]>([]);
+  const [filterCities, setFilterCities] = useState<CatalogItem[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
+  const [filterDepartment, setFilterDepartment] = useState<string>("");
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogErr, setCatalogErr] = useState<string | null>(null);
+
+  // Evita errores de 'variable no usada' en tiempo de compilación/linter
+  useEffect(() => {
+    // Referenciamos las variables para que el linter/TS no las marque como sin usar.
+    // No hacen nada aquí: su uso real está en los efectos de carga de catálogos.
+    void filterCities;
+    void filterDepartment;
+    void setFilterDepartment;
+    void setFilterCities;
+  }, [filterCities, filterDepartment]);
   const [countdown, setCountdown] = useState<Record<string, number>>({});
   const timersRef = useRef<Map<string, number>>(new Map());
   const [verificationModal, setVerificationModal] = useState<VerificationModalState>(emptyVerificationModal());
@@ -152,33 +158,9 @@ export default function UsersAdmin() {
     });
   }, []);
 
-  // Catálogos
-  // Removed duplicate resetForm declaration
 
-  // Mapea catálogo->payload para crear usuario
-  // (Eliminado: función duplicada buildPayload)
 
-  // 🔎 helper: ¿hay filtros activos?
-  const ENABLE_TEXT_FILTERS = false;
-
-  const hasActiveFilters = useMemo(() => {
-    const nz = (s?: string) => !!(s && s.trim() !== "");
-    return (
-      // seguros
-      nz(filters.idType) ||
-      nz(filters.homeCity) ||
-      nz(filters.mobileNumber) ||
-      // texto sólo si está habilitado
-      (ENABLE_TEXT_FILTERS && (
-        nz(filters.idNumber) ||
-        nz(filters.firstName) ||
-        nz(filters.firstSurname) ||
-        nz(filters.email)
-      ))
-    );
-  }, [filters]);
-
-  // 🔁 carga de usuarios (usa /search si hay filtros, sino /users)
+// 🔁 carga de usuarios paginada contra el backend (sin filtros locales)
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -186,20 +168,7 @@ export default function UsersAdmin() {
       const page0 = Math.max(filters.page - 1, 0);
       const size = filters.size;
 
-      const data = hasActiveFilters
-        ? await api.searchUsers({
-          idType: filters.idType || undefined,
-          homeCity: filters.homeCity || undefined,
-          mobileNumber: filters.mobileNumber || undefined,
-          // Activa los de texto sólo si habilitas el flag en client.ts
-          // idNumber: filters.idNumber || undefined,
-          // firstName: filters.firstName || undefined,
-          // firstSurname: filters.firstSurname || undefined,
-          // email: filters.email || undefined,
-          page: page0,
-          size,
-        })
-        : await api.listUsers({ page: page0, size });
+      const data = await api.listUsers({ page: page0, size });
 
 
       setPageData(data);
@@ -208,7 +177,7 @@ export default function UsersAdmin() {
     } finally {
       setLoading(false);
     }
-  }, [api, filters, hasActiveFilters]);
+  }, [api, filters]);
 
   // 🔔 debounce para evitar spam al backend al tipear
   const debounceRef = useRef<number | null>(null);
@@ -229,13 +198,13 @@ export default function UsersAdmin() {
       try {
         setCatalogLoading(true);
         setCatalogErr(null);
-        const [idTypeOptions, cityOptions] = await Promise.all([
+        const [idTypeOptions, departmentOptions] = await Promise.all([
           api.listIdTypes(),
-          api.listCities(),
+          api.listDepartments(),
         ]);
         if (!active) return;
         setIdTypes(idTypeOptions);
-        setCities(cityOptions);
+        setDepartments(departmentOptions);
       } catch (error: any) {
         if (active) setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
       } finally {
@@ -247,6 +216,68 @@ export default function UsersAdmin() {
     };
   }, [api]);
 
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setCities([]);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const cityOptions = await api.listCitiesByDepartment(selectedDepartment);
+        if (active) {
+          setCities(cityOptions);
+        }
+      } catch (error: any) {
+        if (active) {
+          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
+        }
+      } finally {
+        if (active) {
+          setCatalogLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedDepartment, api]);
+
+  useEffect(() => {
+    if (!filterDepartment) {
+      setFilterCities([]);
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const cityOptions = await api.listCitiesByDepartment(filterDepartment);
+        if (active) {
+          setFilterCities(cityOptions);
+        }
+      } catch (error: any) {
+        if (active) {
+          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
+        }
+      } finally {
+        if (active) {
+          setCatalogLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [filterDepartment, api]);
+
   // tamaño de página
   // (Eliminado: declaración duplicada de onChangePageSize)
 
@@ -254,23 +285,7 @@ export default function UsersAdmin() {
   // (Eliminado: declaración duplicada de nextPage y prevPage)
 
   // cambios de filtros individuales -> siempre page=1
-  const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
-    setFilters((f) => ({ ...f, [key]: value, page: 1 }));
-  };
 
-  const clearFilters = () => {
-    setFilters((f) => ({
-      ...f,
-      page: 1,
-      idType: "",
-      idNumber: "",
-      firstName: "",
-      firstSurname: "",
-      homeCity: "",
-      email: "",
-      mobileNumber: "",
-    }));
-  };
 
   // -------- resto (confirmaciones, creación) sin cambios relevantes --------
   // (Removed duplicate startCountdown function)
@@ -317,14 +332,11 @@ export default function UsersAdmin() {
     };
   }, []);
 
-  const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
-  const [cities, setCities] = useState<CatalogItem[]>([]);
-  const [catalogErr, setCatalogErr] = useState<string | null>(null);
-  const [catalogLoading, setCatalogLoading] = useState(false);
-
   const resetForm = () => {
     setForm(emptyForm());
     setFormErr(null);
+    setSelectedDepartment("");
+    setCities([]);
   };
 
   const verificationCountdown = verificationModal.open
@@ -363,37 +375,6 @@ export default function UsersAdmin() {
   };
 
   // (Removed duplicate fetchUsers and related useEffect)
-
-  useEffect(() => {
-    let active = true;
-    const loadCatalogs = async () => {
-      try {
-        setCatalogLoading(true);
-        setCatalogErr(null);
-        const [idTypeOptions, cityOptions] = await Promise.all([
-          api.listIdTypes(),
-          api.listCities(),
-        ]);
-        console.log("🪪 idTypes desde API:", idTypeOptions);
-        console.log("🏙️ cities desde API:", cityOptions);
-        if (!active) return;
-        setIdTypes(idTypeOptions);
-        setCities(cityOptions);
-      } catch (error: any) {
-        if (active) {
-          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
-        }
-      } finally {
-        if (active) {
-          setCatalogLoading(false);
-        }
-      }
-    };
-    loadCatalogs();
-    return () => {
-      active = false;
-    };
-  }, [api]);
 
   const onChangePageSize = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const value = Number(e.target.value);
@@ -607,100 +588,6 @@ export default function UsersAdmin() {
         </div>
       </div>
 
-      {/* 🔎 Filtros */}
-      <div className="rounded-2xl border border-gray-800 bg-[#141418] p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <label className="flex flex-col text-sm text-gray-300">
-            Tipo de identificación
-            <select
-              value={filters.idType ?? ""}
-              disabled={catalogLoading}
-              onChange={(e) => setFilter("idType", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            >
-              <option value="">Todos</option>
-              {idTypes.map((opt, idx) => (
-                <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>{opt.name}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Número de identificación
-            <input
-              value={filters.idNumber ?? ""}
-              onChange={(e) => setFilter("idNumber", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Correo
-            <input
-              type="email"
-              value={filters.email ?? ""}
-              onChange={(e) => setFilter("email", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Primer nombre
-            <input
-              value={filters.firstName ?? ""}
-              onChange={(e) => setFilter("firstName", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Primer apellido
-            <input
-              value={filters.firstSurname ?? ""}
-              onChange={(e) => setFilter("firstSurname", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Ciudad de residencia
-            <select
-              value={filters.homeCity ?? ""}
-              disabled={catalogLoading}
-              onChange={(e) => setFilter("homeCity", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            >
-              <option value="">Todas</option>
-              {cities.map((opt, idx) => (
-                <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>{opt.name}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Teléfono móvil
-            <input
-              value={filters.mobileNumber ?? ""}
-              onChange={(e) => setFilter("mobileNumber", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between">
-          {catalogErr && <p className="text-sm text-yellow-400">{catalogErr}</p>}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:text-white hover:border-gray-500"
-            >
-              Limpiar filtros
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Tabla de usuarios */}
       <div className="overflow-hidden rounded-2xl border border-gray-800">
         <div className="overflow-x-auto">
@@ -770,7 +657,7 @@ export default function UsersAdmin() {
                           disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "mobile")]) || !user.mobileNumber}
                           className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "mobile")]) || !user.mobileNumber}
+                          {actionLoading[countdownKeyFor(user.userId, "mobile")] ? "Enviando…" : "Validar móvil"}
                         </button>
                       </div>
 
@@ -1019,16 +906,37 @@ export default function UsersAdmin() {
               </label>
 
               <label className="flex flex-col text-sm text-gray-300">
+                Departamento *
+                <select
+                  value={selectedDepartment}
+                  disabled={catalogLoading}
+                  onChange={(e) => {
+                    const dept = e.target.value;
+                    setSelectedDepartment(dept);
+                    setForm((f) => ({ ...f, homeCity: "" }));
+                  }}
+                  className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                >
+                  <option value="">Selecciona…</option>
+                  {departments.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col text-sm text-gray-300">
                 Ciudad de residencia *
                 <select
                   value={form.homeCity}
-                  disabled={catalogLoading}
+                  disabled={catalogLoading || !selectedDepartment}
                   onChange={(e) => setForm((f) => ({ ...f, homeCity: e.target.value }))}
                   className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
                 >
                   <option value="">Selecciona…</option>
-                  {cities.map((opt, idx) => (
-                    <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>
+                  {cities.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
                       {opt.name}
                     </option>
                   ))}
