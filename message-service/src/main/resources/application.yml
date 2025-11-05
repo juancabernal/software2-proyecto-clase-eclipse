@@ -8,7 +8,8 @@ server:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+      # ✅ CORREGIDO: apunta al endpoint /eureka/ (obligatorio para registrar instancias)
+      defaultZone: ${EUREKA_SERVER_URL:https://eureka-server-eureka-server-latest.onrender.com/eureka/}
     register-with-eureka: true
     fetch-registry: true
   instance:
@@ -22,7 +23,7 @@ management:
         include: health,info,prometheus
   metrics:
     tags:
-      application: ${spring.application.name}   # <— CLAVE para el dropdown
+      application: ${spring.application.name}   # <— CLAVE para Prometheus y visualización
     distribution:
       percentiles-histogram:
         http.server.requests: true

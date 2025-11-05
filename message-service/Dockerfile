@@ -1,8 +1,11 @@
-# Dockerfile multi-stage para message-service
+# ================================
+# 🧱 Dockerfile multi-stage para message-service
+# ================================
 # - Builder: usa Maven + Eclipse Temurin 21 para compilar sin tests (cache de dependencias)
 # - Runtime: imagen ligera basada en eclipse-temurin:21-jre-alpine
 # - Incluye el agente OpenTelemetry (OTel Java Agent) en /otel/otel-javaagent.jar
-# Ajusta variables vía env / docker-compose (no modifiques application.yml)
+# - Se conecta al Eureka Server desplegado en Render
+# ================================
 
 # ---------------------------
 # Stage: builder
@@ -12,22 +15,17 @@ WORKDIR /workspace
 
 # Copiar sólo pom.xml primero para aprovechar cache de dependencias
 COPY pom.xml ./
-# Si el proyecto tiene wrapper, copiarlo también acelera builds locales en algunos casos
-# (se copia después de la fase de dependencias para no invalidar cache inicial)
-
-# Resolver dependencias en modo offline para cachear en layer
 RUN mvn -B -DskipTests dependency:go-offline
 
 # Copiar código fuente y otros ficheros necesarios para compilar
 COPY src ./src
-# Copiar wrapper si existe (no obligatorio)
 COPY mvnw ./mvnw
 COPY .mvn .mvn
 
 # Compilar el jar sin ejecutar tests
 RUN mvn -B -DskipTests -Dmaven.test.skip=true package
 
-# Preparar artefacto final en un lugar conocido
+# Preparar artefacto final
 RUN mkdir -p /workspace/app && cp target/*.jar /workspace/app/app.jar
 
 # ---------------------------
@@ -37,7 +35,7 @@ FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-# Herramientas necesarias para healthchecks / descargas
+# Instalar utilidades y preparar el usuario
 RUN apk add --no-cache curl \
     && addgroup -S app && adduser -S app -G app \
     && mkdir -p /otel \
@@ -50,26 +48,33 @@ COPY --from=builder /workspace/app/app.jar /app/app.jar
 # Ejecutar como usuario no-root
 USER app
 
-# Puerto por defecto (modificable por env)
+# Puerto por defecto
 EXPOSE 8082
 
-# Healthcheck básico (usa actuator/health)
+# Healthcheck usando Actuator
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -f http://localhost:8082/actuator/health || exit 1
 
-# Variables soportadas en runtime (valores por defecto; pueden ser sobrescritas por docker-compose/env)
+# ================================
+# Variables de entorno (modificables en Render)
+# ================================
 ENV SERVER_PORT=8082
-ENV EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-ENV EUREKA_INSTANCE_PREFER_IP_ADDRESS=false
 ENV SPRING_APPLICATION_NAME=message-service
+
+# 👇 CORREGIDO: Eureka público en Render
+ENV EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=https://eureka-server-eureka-server-latest.onrender.com/eureka/
+
+ENV EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
 ENV MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info,prometheus
 ENV MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED=true
 ENV MANAGEMENT_SERVER_PORT=8082
+
+# OpenTelemetry (monitoring opcional)
 ENV OTEL_SERVICE_NAME=message-service
 ENV OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
 ENV OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 ENV OTEL_METRICS_EXPORTER=none
 ENV OTEL_TRACES_SAMPLER=parentbased_always_on
 
-# Nota: si necesita inyectar opciones de JVM, usar la variable JAVA_OPTS al ejecutar
+# Ejecutar aplicación con el agente OTel
 ENTRYPOINT ["sh","-c","exec java $JAVA_OPTS -javaagent:/otel/otel-javaagent.jar -jar /app/app.jar"]
