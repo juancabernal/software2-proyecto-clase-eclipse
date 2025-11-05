@@ -14,7 +14,7 @@ import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.IdType
 import co.edu.uco.ucochallenge.infrastructure.secondary.repository.entity.UserEntity;
 
 @Mapper(componentModel = "spring")
-public interface UserEntityMapper {
+public interface UserEntityMapper{
 
     @Mapping(target = "idType", source = "idType.id")
     @Mapping(target = "homeCity", source = "homeCity.id")

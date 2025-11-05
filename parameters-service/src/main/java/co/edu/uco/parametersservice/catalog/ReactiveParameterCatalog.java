@@ -87,7 +87,7 @@ public class ReactiveParameterCatalog {
         register("user.idNumber.minLength", "5");
         register("user.idNumber.maxLength", "20");
         register("user.name.minLength", "2");
-        register("usesr.name.maxLength", "40");
+        register("user.name.maxLength", "40");
         register("user.email.minLength", "10");
         register("user.email.maxLength", "100");
         register("user.mobile.length", "10");

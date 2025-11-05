@@ -12,4 +12,4 @@ public interface VerificationTokenEntityMapper {
 
     VerificationTokenEntity toEntity(VerificationToken token);
 
-    }
+    } 

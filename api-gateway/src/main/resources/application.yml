@@ -23,6 +23,36 @@ spring:
       ribbon:
         enabled: false
     gateway:
+      # --- CORS GLOBAL PARA SPRING CLOUD GATEWAY ---
+      globalcors:
+        corsConfigurations:
+          "[/**]":
+            allowedOrigins:
+              - http://localhost:5174
+              - http://localhost:3000
+              - http://localhost:4200
+            allowedMethods:
+              - GET
+              - POST
+              - PATCH
+              - PUT
+              - DELETE
+              - OPTIONS
+              - HEAD
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - X-Requested-With
+              - Accept
+              - Origin
+            exposedHeaders:
+              - Authorization
+              - X-Get-Header
+            allowCredentials: true
+        add-to-simple-url-handler-mapping: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials Access-Control-Allow-Headers Access-Control-Allow-Methods RETAIN_UNIQUE
+
       metrics:
         enabled: true
       discovery:
