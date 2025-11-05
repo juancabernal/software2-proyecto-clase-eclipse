@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -69,10 +70,26 @@ public class AdminController {
         return ResponseEntity.ok(catalogServiceProxy.listIdTypes(authorizationHeader));
     }
 
+    @GetMapping("/catalogs/departments")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listDepartments(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity.ok(catalogServiceProxy.listDepartments(authorizationHeader));
+    }
+
     @GetMapping("/catalogs/cities")
     @PreAuthorize("hasAuthority('administrador')")
     public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listCities(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
         return ResponseEntity.ok(catalogServiceProxy.listCities(authorizationHeader));
+    }
+
+    @GetMapping("/catalogs/departments/{departmentId}/cities")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<List<CatalogItemDto>>> listCitiesByDepartment(
+            @PathVariable String departmentId,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authorizationHeader) {
+        return ResponseEntity
+                .ok(catalogServiceProxy.listCitiesByDepartment(authorizationHeader, departmentId));
     }
 }

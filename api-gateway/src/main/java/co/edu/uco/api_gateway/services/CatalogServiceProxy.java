@@ -32,8 +32,18 @@ public class CatalogServiceProxy {
                 return getCatalog("/uco-challenge/api/v1/catalogs/id-types", authorizationHeader);
         }
 
+        public ApiSuccessResponse<List<CatalogItemDto>> listDepartments(final String authorizationHeader) {
+                return getCatalog("/uco-challenge/api/v1/catalogs/departments", authorizationHeader);
+        }
+
         public ApiSuccessResponse<List<CatalogItemDto>> listCities(final String authorizationHeader) {
                 return getCatalog("/uco-challenge/api/v1/catalogs/cities", authorizationHeader);
+        }
+
+        public ApiSuccessResponse<List<CatalogItemDto>> listCitiesByDepartment(final String authorizationHeader,
+                        final String departmentId) {
+                return getCatalog("/uco-challenge/api/v1/catalogs/departments/" + departmentId + "/cities",
+                                authorizationHeader);
         }
 
         private ApiSuccessResponse<List<CatalogItemDto>> getCatalog(final String path, final String authorizationHeader) {

@@ -12,4 +12,6 @@ public interface CatalogQueryService {
         List<CatalogItemDTO> listDepartments();
 
         List<CatalogItemDTO> listCities(UUID departmentId);
+
+        List<CatalogItemDTO> listCitiesByDepartment(UUID departmentId);
 }
