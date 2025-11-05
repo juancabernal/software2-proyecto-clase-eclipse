@@ -23,4 +23,5 @@ public interface VerificationTokenJpaRepository extends JpaRepository<Verificati
 
     @Modifying
     @Query("DELETE FROM VerificationTokenEntity v WHERE v.expiration <= :reference")
-    int deleteExpired(@Param("reference") LocalDateTime reference);}
+    int deleteExpired(@Param("reference") LocalDateTime reference);
+}

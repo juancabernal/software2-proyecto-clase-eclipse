@@ -61,7 +61,8 @@ public class ContactValidationController {
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateEmailConfirmation(
             @PathVariable UUID userId,
             @RequestBody VerificationCodeRequestDTO request) {
-        final VerificationAttemptResponseDTO response = validateEmailInteractor.execute(userId, request.sanitizedCode());
+        final VerificationAttemptResponseDTO response = validateEmailInteractor
+                .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
@@ -69,7 +70,8 @@ public class ContactValidationController {
     public ResponseEntity<ApiSuccessResponse<VerificationAttemptResponseDTO>> validateMobileConfirmation(
             @PathVariable UUID userId,
             @RequestBody VerificationCodeRequestDTO request) {
-        final VerificationAttemptResponseDTO response = validateMobileInteractor.execute(userId, request.sanitizedCode());
+        final VerificationAttemptResponseDTO response = validateMobileInteractor
+                .execute(userId, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 }

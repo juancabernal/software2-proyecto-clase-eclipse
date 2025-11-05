@@ -6,5 +6,5 @@ import co.edu.uco.ucochallenge.application.Void;
 
 public interface VerifyEmailTokenInteractor {
 
-    Void execute(UUID userId, String token);
+    Void execute(UUID userId, UUID tokenId, String code);
 }
