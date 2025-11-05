@@ -6,10 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
-import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
-import co.edu.uco.ucochallenge.application.notification.VerificationTokenService;
 import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
+import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
+import co.edu.uco.ucochallenge.application.notification.VerificationChannel;
+import co.edu.uco.ucochallenge.application.notification.VerificationTokenService;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.RequestEmailConfirmationUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
@@ -46,11 +46,9 @@ public class RequestEmailConfirmationUseCaseImpl implements RequestEmailConfirma
                     MessageCodes.Domain.User.EMAIL_ALREADY_CONFIRMED_USER);
         }
 
-        final int remainingSeconds = verificationTokenService
-                .issueOrRefresh(user.id().toString(), "email");
+        final ConfirmationResponseDTO response = verificationTokenService.generateToken(user, VerificationChannel.EMAIL);
 
         LOGGER.info("Dispatching email confirmation request for user {}", user.id());
-        notificationService.notifyEmailConfirmation(RegistrationAttempt.fromUser(user));
-        return new ConfirmationResponseDTO(remainingSeconds);
+        return response;
     }
 }

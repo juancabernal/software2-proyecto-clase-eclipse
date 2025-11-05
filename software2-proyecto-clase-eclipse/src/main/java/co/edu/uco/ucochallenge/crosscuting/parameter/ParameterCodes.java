@@ -36,6 +36,7 @@ public final class ParameterCodes {
 
     public static final class Verification {
         public static final String VERIFICATION_CODE_EXPIRATION_MINUTES = "validation.code.timeExpiration";
+        public static final String VERIFICATION_CODE_MAX_ATTEMPTS = "validation.code.maxAttempts";
 
         private Verification() {
         }

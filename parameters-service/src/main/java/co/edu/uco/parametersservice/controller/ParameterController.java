@@ -4,7 +4,6 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,8 +23,11 @@ import reactor.core.publisher.Mono;
 public class ParameterController {
 
     private static final CacheControl NO_CACHE = CacheControl.noStore().mustRevalidate();
+    private static final String VERIFICATION_EXPIRATION_KEY = "validation.code.timeExpiration";
+    private static final String VERIFICATION_ATTEMPTS_KEY = "validation.code.maxAttempts";
 
     private final ReactiveParameterService service;
+    
 
     public ParameterController(ReactiveParameterService service) {
         this.service = service;
@@ -72,6 +74,32 @@ public class ParameterController {
                         .header("Expires", "0")
                         .body(saved));
     }
+    @PutMapping("/verification/expiration")
+    public Mono<ResponseEntity<Parameter>> updateVerificationExpiration(
+            @RequestBody VerificationExpirationRequest body) {
+        int sanitized = Math.max(body.minutes(), 1);
+        Parameter parameter = new Parameter(VERIFICATION_EXPIRATION_KEY, Integer.toString(sanitized));
+        return service.upsert(parameter)
+                .map(saved -> ResponseEntity.ok()
+                        .cacheControl(NO_CACHE)
+                        .header("Pragma", "no-cache")
+                        .header("Expires", "0")
+                        .body(saved));
+    }
+
+    @PutMapping("/verification/attempts")
+    public Mono<ResponseEntity<Parameter>> updateVerificationAttempts(
+            @RequestBody VerificationAttemptsRequest body) {
+        int sanitized = Math.max(body.attempts(), 1);
+        Parameter parameter = new Parameter(VERIFICATION_ATTEMPTS_KEY, Integer.toString(sanitized));
+        return service.upsert(parameter)
+                .map(saved -> ResponseEntity.ok()
+                        .cacheControl(NO_CACHE)
+                        .header("Pragma", "no-cache")
+                        .header("Expires", "0")
+                        .body(saved));
+    }
+
 
 	/*
 	 * @DeleteMapping("/{key}") public Mono<ResponseEntity<Void>>
@@ -88,5 +116,11 @@ public class ParameterController {
                 .map(change -> ServerSentEvent.<Parameter>builder(change.payload())
                         .event(change.type().name())
                         .build());
+    }
+    
+    public record VerificationExpirationRequest(int minutes) {
+    }
+
+    public record VerificationAttemptsRequest(int attempts) {
     }
 }

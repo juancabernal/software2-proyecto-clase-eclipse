@@ -37,13 +37,14 @@ public class NotificationTestController {
 
     @PostMapping("/confirm/email")
     public ResponseEntity<String> testConfirmEmail(@RequestBody RegistrationAttempt body) {
-        notificationService.notifyEmailConfirmation(body);
+        notificationService.notifyEmailConfirmation(body, "123456", 5, 3);
+
         return ResponseEntity.ok("✅ Email confirmation notification sent.");
     }
 
     @PostMapping("/confirm/mobile")
     public ResponseEntity<String> testConfirmMobile(@RequestBody RegistrationAttempt body) {
-        notificationService.notifyMobileConfirmation(body);
+        notificationService.notifyMobileConfirmation(body, "123456", 5, 3);
         return ResponseEntity.ok("✅ Mobile confirmation notification sent.");
     }
 }

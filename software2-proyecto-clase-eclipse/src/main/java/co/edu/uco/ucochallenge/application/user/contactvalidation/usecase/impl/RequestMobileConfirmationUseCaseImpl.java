@@ -6,10 +6,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
-import co.edu.uco.ucochallenge.application.notification.RegistrationAttempt;
-import co.edu.uco.ucochallenge.application.notification.VerificationTokenService;
 import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
+import co.edu.uco.ucochallenge.application.notification.DuplicateRegistrationNotificationService;
+import co.edu.uco.ucochallenge.application.notification.VerificationChannel;
+import co.edu.uco.ucochallenge.application.notification.VerificationTokenService;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.usecase.RequestMobileConfirmationUseCase;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.crosscuting.messages.MessageCodes;
@@ -46,11 +46,9 @@ public class RequestMobileConfirmationUseCaseImpl implements RequestMobileConfir
                     MessageCodes.Domain.User.MOBILE_ALREADY_CONFIRMED_USER);
         }
 
-        final int remainingSeconds = verificationTokenService
-                .issueOrRefresh(user.id().toString(), "mobile");
+        final ConfirmationResponseDTO response = verificationTokenService.generateToken(user, VerificationChannel.MOBILE);
 
         LOGGER.info("Dispatching mobile confirmation request for user {}", user.id());
-        notificationService.notifyMobileConfirmation(RegistrationAttempt.fromUser(user));
-        return new ConfirmationResponseDTO(remainingSeconds);
+        return response;
     }
 }

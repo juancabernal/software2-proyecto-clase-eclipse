@@ -26,6 +26,14 @@ export type CatalogItem = {
 };
 
 type ConfirmationResponse = { remainingSeconds: number };
+export type VerificationAttemptResponse = {
+  success: boolean;
+  expired: boolean;
+  attemptsRemaining: number;
+  contactConfirmed: boolean;
+  allContactsConfirmed: boolean;
+  message: string;
+};
 
 const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
 
@@ -46,6 +54,35 @@ const postAndReturnTTL = async (
   error.response = res;
   throw error;
 };
+const postVerificationCode = async (
+  api: AxiosInstance,
+  endpoint: string,
+  code: string,
+  failureMessage: string
+): Promise<VerificationAttemptResponse> => {
+  const res = await api.post(
+    endpoint,
+    { code },
+    { validateStatus: () => true }
+  );
+  if (res.status >= 200 && res.status < 300) {
+    const data = (res.data as any)?.data ?? res.data;
+    return {
+      success: Boolean(data?.success),
+      expired: Boolean(data?.expired),
+      attemptsRemaining: Number(data?.attemptsRemaining ?? 0),
+      contactConfirmed: Boolean(data?.contactConfirmed),
+      allContactsConfirmed: Boolean(data?.allContactsConfirmed),
+      message: String(data?.message ?? "") || failureMessage,
+    };
+  }
+  const msg =
+    (res.data && (res.data.message || res.data.error)) || failureMessage || DEFAULT_FAILURE_MESSAGE;
+  const error: any = new Error(msg);
+  error.response = res;
+  throw error;
+};
+
 
 export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
   const api = axios.create({ baseURL });
@@ -165,8 +202,76 @@ export const makeApi = (baseURL: string, getToken: () => Promise<string>) => {
         throw error;
       }
     },
+        async validateEmailConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedCode = code?.trim();
+      if (!sanitizedCode) {
+        throw new Error("Debes ingresar el código de verificación.");
+      }
+
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email/verify`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email/verify`;
+
+      try {
+        return await postVerificationCode(
+          api,
+          adminEndpoint,
+          sanitizedCode,
+          "No fue posible validar el código del correo electrónico."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postVerificationCode(
+            api,
+            fallbackEndpoint,
+            sanitizedCode,
+            "No fue posible validar el código del correo electrónico."
+          );
+        }
+        throw error;
+      }
+    },
+
+    async validateMobileConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+      const trimmedId = userId?.trim();
+      if (!trimmedId) {
+        throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedCode = code?.trim();
+      if (!sanitizedCode) {
+        throw new Error("Debes ingresar el código de verificación.");
+      }
+
+      const encodedId = encodeURIComponent(trimmedId);
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile/verify`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile/verify`;
+
+      try {
+        return await postVerificationCode(
+          api,
+          adminEndpoint,
+          sanitizedCode,
+          "No fue posible validar el código del teléfono móvil."
+        );
+      } catch (error: any) {
+        if (error?.response?.status === 404) {
+          return await postVerificationCode(
+            api,
+            fallbackEndpoint,
+            sanitizedCode,
+            "No fue posible validar el código del teléfono móvil."
+          );
+        }
+        throw error;
+      }
+    },
   };
 };
+
 
 // Tipos
 export type UserCreateInput = {

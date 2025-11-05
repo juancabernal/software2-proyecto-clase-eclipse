@@ -120,5 +120,28 @@ public final class MessageCodes {
             private User() {
             }
         }
+        public static final class Verification {
+            public static final String TOKEN_NOT_FOUND_TECHNICAL = "domain.verification.token.notFound.technical";
+            public static final String TOKEN_NOT_FOUND_USER = "domain.verification.token.notFound.user";
+            public static final String TOKEN_EXPIRED_TECHNICAL = "domain.verification.token.expired.technical";
+            public static final String TOKEN_EXPIRED_USER = "domain.verification.token.expired.user";
+            public static final String TOKEN_INVALID_TECHNICAL = "domain.verification.token.invalid.technical";
+            public static final String TOKEN_INVALID_USER = "domain.verification.token.invalid.user";
+            public static final String TOKEN_ATTEMPTS_EXHAUSTED_TECHNICAL =
+                    "domain.verification.token.attemptsExhausted.technical";
+            public static final String TOKEN_ATTEMPTS_EXHAUSTED_USER =
+                    "domain.verification.token.attemptsExhausted.user";
+            public static final String CONTACT_ALREADY_CONFIRMED_TECHNICAL =
+                    "domain.verification.contact.alreadyConfirmed.technical";
+            public static final String CONTACT_ALREADY_CONFIRMED_USER =
+                    "domain.verification.contact.alreadyConfirmed.user";
+            public static final String CONTACT_CONFIRMED_TECHNICAL =
+                    "domain.verification.contact.confirmed.technical";
+            public static final String CONTACT_CONFIRMED_USER =
+                    "domain.verification.contact.confirmed.user";
+
+            private Verification() {
+            }
+        }
     }
 }

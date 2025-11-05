@@ -7,6 +7,8 @@ import {
   RegisterUserResponse,
   UserCreateInput,
   makeApi,
+  VerificationAttemptResponse,
+
 } from "../api/client";
 import { User } from "./users";
 
@@ -26,11 +28,32 @@ type UserFormState = {
   email: string;
   mobileNumber: string;
 };
+type VerificationModalState = {
+  open: boolean;
+  userId: string;
+  type: "email" | "mobile";
+  contact: string;
+  code: string;
+  loading: boolean;
+  status: VerificationAttemptResponse | null;
+  error: string | null;
+};
 
 const initialFilters: Filters = {
   page: 1,
   size: 10,
 };
+
+const emptyVerificationModal = (): VerificationModalState => ({
+  open: false,
+  userId: "",
+  type: "email",
+  contact: "",
+  code: "",
+  loading: false,
+  status: null,
+  error: null,
+});
 
 const emptyForm = (): UserFormState => ({
   idType: "",
@@ -77,43 +100,57 @@ export default function UsersAdmin() {
   >({});
   const [countdown, setCountdown] = useState<Record<string, number>>({});
   const timersRef = useRef<Map<string, number>>(new Map());
-
-  const startCountdown = useCallback((key: string, seconds: number) => {
-    const sanitizedSeconds = Math.max(Number.isFinite(seconds) ? Math.floor(seconds) : 0, 0);
-
-    const previousTimer = timersRef.current.get(key);
-    if (previousTimer) {
-      clearInterval(previousTimer);
+  const [verificationModal, setVerificationModal] = useState<VerificationModalState>(emptyVerificationModal());
+  const countdownKeyFor = useCallback((userId: string, type: "email" | "mobile") => `${userId}-${type}`, []);
+  const clearCountdown = useCallback((key: string) => {
+    const existingTimer = timersRef.current.get(key);
+    if (existingTimer) {
+      clearInterval(existingTimer);
       timersRef.current.delete(key);
     }
-
-    if (sanitizedSeconds <= 0) {
-      setCountdown((current) => {
-        const { [key]: _removed, ...rest } = current;
-        return rest;
-      });
-      return;
-    }
-
-    setCountdown((current) => ({ ...current, [key]: sanitizedSeconds }));
-
-    const intervalId = window.setInterval(() => {
-      setCountdown((current) => {
-        const currentValue = current[key] ?? 0;
-        const nextValue = Math.max(currentValue - 1, 0);
-        const updated = { ...current, [key]: nextValue };
-        if (nextValue <= 0) {
-          clearInterval(intervalId);
-          timersRef.current.delete(key);
-          const { [key]: _removed, ...rest } = updated;
-          return rest;
-        }
-        return updated;
-      });
-    }, 1000);
-
-    timersRef.current.set(key, intervalId);
+    setCountdown((current) => {
+      if (!(key in current)) {
+        return current;
+      }
+      const { [key]: _removed, ...rest } = current;
+      return rest;
+    });
   }, []);
+
+  const startCountdown = useCallback(
+    (key: string, seconds: number) => {
+      const sanitizedSeconds = Math.max(Number.isFinite(seconds) ? Math.floor(seconds) : 0, 0);
+      clearCountdown(key);
+      if (sanitizedSeconds === 0) {
+        return;
+      }
+            setCountdown((current) => ({ ...current, [key]: sanitizedSeconds }));
+
+      const intervalId = window.setInterval(() => {
+        setCountdown((current) => {
+          const currentValue = current[key] ?? 0;
+          const nextValue = Math.max(currentValue - 1, 0);
+          const updated = { ...current, [key]: nextValue };
+          if (nextValue <= 0) {
+            clearInterval(intervalId);
+            timersRef.current.delete(key);
+            const { [key]: _removed, ...rest } = updated;
+            return rest;
+          }
+          return updated;
+        });
+      }, 1000);
+
+      timersRef.current.set(key, intervalId);
+    },
+    [clearCountdown]
+  );
+
+  const closeVerificationModal = useCallback(() => {
+    setVerificationModal(emptyVerificationModal());
+  }, []);
+
+  
 
   useEffect(() => {
     return () => {
@@ -131,6 +168,13 @@ export default function UsersAdmin() {
     setForm(emptyForm());
     setFormErr(null);
   };
+
+    const verificationCountdown = verificationModal.open
+    ? countdown[countdownKeyFor(verificationModal.userId, verificationModal.type)] ?? 0
+    : 0;
+  const isResendingCode = verificationModal.open
+    ? Boolean(actionLoading[countdownKeyFor(verificationModal.userId, verificationModal.type)])
+    : false;
 
   // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y cities
   const buildPayload = (form: UserFormState): UserCreateInput => {
@@ -247,7 +291,7 @@ export default function UsersAdmin() {
       return;
     }
 
-    const key = `${userId}-${type}`;
+    const key = countdownKeyFor(userId, type);
     const successMessage =
       type === "email"
         ? "Se envió la solicitud de validación del correo electrónico."
@@ -284,10 +328,23 @@ export default function UsersAdmin() {
           : await api.requestMobileConfirmation(userId);
       startCountdown(key, response.remainingSeconds);
       updateFeedback(userId, { variant: "success", message: successMessage });
+      setVerificationModal({
+        open: true,
+        userId,
+        type,
+        contact: type === "email" ? targetUser.email : targetUser.mobileNumber || "",
+        code: "",
+        loading: false,
+        status: null,
+        error: null,
+      });
     } catch (error: any) {
       const message = error?.message || errorFallback;
       updateFeedback(userId, { variant: "error", message });
+      
       console.error(`Error solicitando validación de ${type}:`, error);
+      closeVerificationModal();
+
     } finally {
       setActionLoading((prev) => {
         const { [key]: _removed, ...rest } = prev;
@@ -295,6 +352,55 @@ export default function UsersAdmin() {
       });
     }
   };
+
+  const handleVerificationCodeChange = (value: string) => {
+    setVerificationModal((prev) => ({ ...prev, code: value, error: null }));
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationModal.open || !verificationModal.userId) {
+      return;
+    }
+    const trimmedCode = verificationModal.code.trim();
+    if (!trimmedCode) {
+      setVerificationModal((prev) => ({ ...prev, error: "Ingresa el código enviado." }));
+      return;
+    }
+
+    const key = countdownKeyFor(verificationModal.userId, verificationModal.type);
+    setVerificationModal((prev) => ({ ...prev, loading: true, error: null }));
+
+    try {
+      const response =
+        verificationModal.type === "email"
+          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode)
+          : await api.validateMobileConfirmation(verificationModal.userId, trimmedCode);
+
+      setVerificationModal((prev) => ({
+        ...prev,
+        loading: false,
+        status: response,
+        code: response.success ? "" : prev.code,
+        error: null,
+      }));
+
+      updateFeedback(verificationModal.userId, {
+        variant: response.success ? "success" : "error",
+        message: response.message,
+      });
+
+      if (response.success) {
+        clearCountdown(key);
+        await fetchUsers();
+      } else if (response.expired || response.attemptsRemaining <= 0) {
+        clearCountdown(key);
+      }
+    } catch (error: any) {
+      const message = error?.message || "No fue posible validar el código.";
+      setVerificationModal((prev) => ({ ...prev, loading: false, error: message }));
+    }
+  };
+
 
   const validateForm = (state: UserFormState) => {
     if (!state.idType.trim()) return "Selecciona el tipo de identificación.";
@@ -437,18 +543,18 @@ export default function UsersAdmin() {
                         <button
                           type="button"
                           onClick={() => handleRequestConfirmation(user.userId, "email")}
-                          disabled={Boolean(actionLoading[`${user.userId}-email`]) || !user.email}
+                          disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "email")]) || !user.email}
                           className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {actionLoading[`${user.userId}-email`] ? "Enviando…" : "Validar correo"}
+                          {actionLoading[countdownKeyFor(user.userId, "email")] ? "Enviando…" : "Validar correo"}
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRequestConfirmation(user.userId, "mobile")}
-                          disabled={Boolean(actionLoading[`${user.userId}-mobile`]) || !user.mobileNumber}
+                          disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "mobile")]) || !user.mobileNumber}
                           className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs font-medium text-gray-100 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {actionLoading[`${user.userId}-mobile`] ? "Enviando…" : "Validar teléfono"}
+                          disabled={Boolean(actionLoading[countdownKeyFor(user.userId, "mobile")]) || !user.mobileNumber}
                         </button>
                       </div>
 
@@ -460,22 +566,22 @@ export default function UsersAdmin() {
                           {feedbackMessages[user.userId]?.message}
                         </p>
                       )}
-                      {(countdown[`${user.userId}-email`] || countdown[`${user.userId}-mobile`]) && (
+                      {(countdown[countdownKeyFor(user.userId, "email")] || countdown[countdownKeyFor(user.userId, "mobile")]) && (
                         <div className="text-xs text-indigo-300">
-                          {countdown[`${user.userId}-email`] && countdown[`${user.userId}-email`] > 0 && (
+                          {countdown[countdownKeyFor(user.userId, "email")] && countdown[countdownKeyFor(user.userId, "email")] > 0 && (
                             <span>
-                              Correo: tu código vence en {countdown[`${user.userId}-email`]}s
+                              Correo: tu código vence en {countdown[countdownKeyFor(user.userId, "email")]}s
                             </span>
                           )}
-                          {countdown[`${user.userId}-email`] &&
-                            countdown[`${user.userId}-email`] > 0 &&
-                            countdown[`${user.userId}-mobile`] &&
-                            countdown[`${user.userId}-mobile`] > 0 && (
+                          {countdown[countdownKeyFor(user.userId, "email")] &&
+                            countdown[countdownKeyFor(user.userId, "email")] > 0 &&
+                            countdown[countdownKeyFor(user.userId, "mobile")] &&
+                            countdown[countdownKeyFor(user.userId, "mobile")] > 0 && (
                               <span className="mx-2 text-gray-600">·</span>
                             )}
-                          {countdown[`${user.userId}-mobile`] && countdown[`${user.userId}-mobile`] > 0 && (
+                          {countdown[countdownKeyFor(user.userId, "mobile")] && countdown[countdownKeyFor(user.userId, "mobile")] > 0 && (
                             <span>
-                              Teléfono: tu código vence en {countdown[`${user.userId}-mobile`]}s
+                              Teléfono: tu código vence en {countdown[countdownKeyFor(user.userId, "mobile")]}s
                             </span>
                           )}
                         </div>
@@ -487,6 +593,105 @@ export default function UsersAdmin() {
             </tbody>
           </table>
         </div>
+
+       {verificationModal.open && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-gray-800 bg-[#141418] p-6 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  {verificationModal.type === "email"
+                    ? "Validar correo electrónico"
+                    : "Validar teléfono móvil"}
+                </h2>
+                <p className="mt-1 text-sm text-gray-300">
+                  Ingresa el código enviado a
+                  <span className="ml-1 font-medium text-white">
+                    {verificationModal.contact || "el contacto registrado"}
+                  </span>
+                  .
+                </p>
+                {verificationCountdown > 0 && (
+                  <p className="mt-2 text-xs text-indigo-300">
+                    El código vence en {verificationCountdown}s.
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={closeVerificationModal}
+                className="rounded-full border border-gray-700 p-2 text-gray-400 transition hover:border-gray-500 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                autoFocus
+                value={verificationModal.code}
+                onChange={(event) => handleVerificationCodeChange(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleVerifyCode();
+                  }
+                }}
+                className="w-full rounded-lg border border-gray-700 bg-[#0d0d11] px-3 py-2 text-sm text-gray-100 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                placeholder="Código de 6 dígitos"
+              />
+
+              {verificationModal.error && (
+                <p className="text-sm text-rose-400">{verificationModal.error}</p>
+              )}
+
+              {verificationModal.status && (
+                <div
+                  className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}
+                >
+                  {verificationModal.status.message}
+                  {!verificationModal.status.success &&
+                    verificationModal.status.attemptsRemaining > 0 && (
+                      <span className="ml-2 text-xs text-gray-400">
+                        Intentos restantes: {verificationModal.status.attemptsRemaining}
+                      </span>
+                    )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleVerifyCode}
+                disabled={verificationModal.loading}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {verificationModal.loading ? "Validando…" : "Validar código"}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRequestConfirmation(verificationModal.userId, verificationModal.type)}
+                disabled={verificationModal.loading || isResendingCode}
+                className="rounded-lg border border-gray-700 px-4 py-2 text-sm font-medium text-gray-200 transition hover:border-gray-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isResendingCode ? "Reenviando…" : "Reenviar código"}
+              </button>
+              <button
+                type="button"
+                onClick={closeVerificationModal}
+                className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-300 transition hover:border-gray-500 hover:text-white"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
         <div className="flex items-center justify-between bg-[#141418] px-4 py-3">
           <div className="text-xs text-gray-400">

@@ -64,15 +64,24 @@ public class DuplicateRegistrationNotificationService {
                 "Intento de registro con móvil existente", "duplicate_alert", "SMS", true);
     }
 
-    public void notifyEmailConfirmation(final RegistrationAttempt attempt) {
-        sendNotification(EMAIL_CONFIRMATION, attempt, EMAIL_CONFIRMATION_TEMPLATE,
-                "Confirma tu correo electrónico", "confirmar_datos", "EMAIL", false);
+    public void notifyEmailConfirmation(final RegistrationAttempt attempt,
+            final String verificationCode,
+            final int ttlMinutes,
+            final int maxAttempts){
+    	sendNotification(EMAIL_CONFIRMATION, attempt, EMAIL_CONFIRMATION_TEMPLATE,
+                "Confirma tu correo electrónico", "confirmar_datos", "EMAIL", false,
+                verificationCode, ttlMinutes, maxAttempts);
     }
 
-    public void notifyMobileConfirmation(final RegistrationAttempt attempt) {
+    public void notifyMobileConfirmation(final RegistrationAttempt attempt,
+            final String verificationCode,
+            final int ttlMinutes,
+            final int maxAttempts) {
         sendNotification(MOBILE_CONFIRMATION, attempt, MOBILE_CONFIRMATION_TEMPLATE,
-                "Confirma tu número de teléfono", "confirmar_datos", "SMS", false);
-    }
+                "Confirma tu número de teléfono", "confirmar_datos", "SMS", false,
+                verificationCode, ttlMinutes, maxAttempts);
+	}
+        
 
     private void sendNotification(final NotificationEvent event,
             final RegistrationAttempt attempt,
@@ -80,7 +89,8 @@ public class DuplicateRegistrationNotificationService {
             final String subject,
             final String notificationType,
             final String forceChannel,
-            final boolean includeAdminRecipients) {
+            final boolean includeAdminRecipients,
+            final Object... extraTemplateArguments) {
         if (attempt == null) {
             LOGGER.debug("Skipping notification '{}' because registration attempt is not available.", event);
             return;
@@ -89,7 +99,8 @@ public class DuplicateRegistrationNotificationService {
         try {
             final String displayName = resolveDisplayName(attempt);
             final Person attemptedPerson = new Person(displayName, attempt.email(), attempt.mobileNumber());
-            final String message = template.resolve(parameterServicePort, resolveGreetingName(displayName));
+            final Object[] templateArguments = mergeTemplateArguments(resolveGreetingName(displayName), extraTemplateArguments);
+            final String message = template.resolve(parameterServicePort, templateArguments);
             final List<Recipient> recipients = resolveRecipients(attemptedPerson, includeAdminRecipients);
 
             final DuplicateRegistrationNotificationRequest request = new DuplicateRegistrationNotificationRequest(
@@ -178,5 +189,14 @@ public class DuplicateRegistrationNotificationService {
             return;
         }
         recipients.add(recipient);
+    }
+    private Object[] mergeTemplateArguments(final Object first, final Object... others) {
+        if (others == null || others.length == 0) {
+            return new Object[] { first };
+        }
+        final Object[] merged = new Object[others.length + 1];
+        merged[0] = first;
+        System.arraycopy(others, 0, merged, 1, others.length);
+        return merged;
     }
 }
