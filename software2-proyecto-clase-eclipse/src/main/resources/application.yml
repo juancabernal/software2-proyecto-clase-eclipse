@@ -20,9 +20,6 @@ spring:
 server:
   port: 8081
 
-app:
-  cache:
-    enabled: false
 # =========================
 # ✅ Eureka (NO estaba en el 2do)
 # =========================

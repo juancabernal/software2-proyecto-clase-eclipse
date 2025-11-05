@@ -15,14 +15,7 @@ type Filters = {
   page: number;
   size: number;
 
-  // 🔎 filtros de búsqueda
-  idType?: string;        // UUID
-  idNumber?: string;
-  firstName?: string;
-  firstSurname?: string;
-  homeCity?: string;      // UUID
-  email?: string;
-  mobileNumber?: string;
+
 };
 
 type UserFormState = {
@@ -51,13 +44,7 @@ const initialFilters: Filters = {
   page: 1,
   size: 10,
 
-  idType: "",
-  idNumber: "",
-  firstName: "",
-  firstSurname: "",
-  homeCity: "",
-  email: "",
-  mobileNumber: "",
+
 };
 
 const emptyVerificationModal = (): VerificationModalState => ({
@@ -152,42 +139,9 @@ export default function UsersAdmin() {
     });
   }, []);
 
-  const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
-  const [departments, setDepartments] = useState<CatalogItem[]>([]);
-  const [cities, setCities] = useState<CatalogItem[]>([]);
-  const [filterCities, setFilterCities] = useState<CatalogItem[]>([]);
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("");
-  const [filterDepartment, setFilterDepartment] = useState<string>("");
-  const [catalogErr, setCatalogErr] = useState<string | null>(null);
-  const [catalogLoading, setCatalogLoading] = useState(false);
 
-  // Catálogos
-  // Removed duplicate resetForm declaration
 
-  // Mapea catálogo->payload para crear usuario
-  // (Eliminado: función duplicada buildPayload)
-
-  // 🔎 helper: ¿hay filtros activos?
-  const ENABLE_TEXT_FILTERS = false;
-
-  const hasActiveFilters = useMemo(() => {
-    const nz = (s?: string) => !!(s && s.trim() !== "");
-    return (
-      // seguros
-      nz(filters.idType) ||
-      nz(filters.homeCity) ||
-      nz(filters.mobileNumber) ||
-      // texto sólo si está habilitado
-      (ENABLE_TEXT_FILTERS && (
-        nz(filters.idNumber) ||
-        nz(filters.firstName) ||
-        nz(filters.firstSurname) ||
-        nz(filters.email)
-      ))
-    );
-  }, [filters]);
-
-  // 🔁 carga de usuarios (usa /search si hay filtros, sino /users)
+// 🔁 carga de usuarios paginada contra el backend (sin filtros locales)
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -195,20 +149,7 @@ export default function UsersAdmin() {
       const page0 = Math.max(filters.page - 1, 0);
       const size = filters.size;
 
-      const data = hasActiveFilters
-        ? await api.searchUsers({
-          idType: filters.idType || undefined,
-          homeCity: filters.homeCity || undefined,
-          mobileNumber: filters.mobileNumber || undefined,
-          // Activa los de texto sólo si habilitas el flag en client.ts
-          // idNumber: filters.idNumber || undefined,
-          // firstName: filters.firstName || undefined,
-          // firstSurname: filters.firstSurname || undefined,
-          // email: filters.email || undefined,
-          page: page0,
-          size,
-        })
-        : await api.listUsers({ page: page0, size });
+      const data = await api.listUsers({ page: page0, size });
 
 
       setPageData(data);
@@ -217,7 +158,7 @@ export default function UsersAdmin() {
     } finally {
       setLoading(false);
     }
-  }, [api, filters, hasActiveFilters]);
+  }, [api, filters]);
 
   // 🔔 debounce para evitar spam al backend al tipear
   const debounceRef = useRef<number | null>(null);
@@ -325,25 +266,7 @@ export default function UsersAdmin() {
   // (Eliminado: declaración duplicada de nextPage y prevPage)
 
   // cambios de filtros individuales -> siempre page=1
-  const setFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
-    setFilters((f) => ({ ...f, [key]: value, page: 1 }));
-  };
 
-  const clearFilters = () => {
-    setFilters((f) => ({
-      ...f,
-      page: 1,
-      idType: "",
-      idNumber: "",
-      firstName: "",
-      firstSurname: "",
-      homeCity: "",
-      email: "",
-      mobileNumber: "",
-    }));
-    setFilterDepartment("");
-    setFilterCities([]);
-  };
 
   // -------- resto (confirmaciones, creación) sin cambios relevantes --------
   // (Removed duplicate startCountdown function)
@@ -641,119 +564,6 @@ export default function UsersAdmin() {
               className="rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-purple-600"
             >
               + Nuevo usuario
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* 🔎 Filtros */}
-      <div className="rounded-2xl border border-gray-800 bg-[#141418] p-4">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <label className="flex flex-col text-sm text-gray-300">
-            Tipo de identificación
-            <select
-              value={filters.idType ?? ""}
-              disabled={catalogLoading}
-              onChange={(e) => setFilter("idType", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            >
-              <option value="">Todos</option>
-              {idTypes.map((opt, idx) => (
-                <option key={`${opt?.id ?? "null"}-${idx}`} value={opt.id}>{opt.name}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Número de identificación
-            <input
-              value={filters.idNumber ?? ""}
-              onChange={(e) => setFilter("idNumber", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Correo
-            <input
-              type="email"
-              value={filters.email ?? ""}
-              onChange={(e) => setFilter("email", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Primer nombre
-            <input
-              value={filters.firstName ?? ""}
-              onChange={(e) => setFilter("firstName", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Primer apellido
-            <input
-              value={filters.firstSurname ?? ""}
-              onChange={(e) => setFilter("firstSurname", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Departamento
-            <select
-              value={filterDepartment}
-              disabled={catalogLoading}
-              onChange={(e) => {
-                const dept = e.target.value;
-                setFilterDepartment(dept);
-                setFilter("homeCity", "");
-              }}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            >
-              <option value="">Todos</option>
-              {departments.map((opt) => (
-                <option key={opt.id} value={opt.id}>{opt.name}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Ciudad de residencia
-            <select
-              value={filters.homeCity ?? ""}
-              disabled={catalogLoading || !filterDepartment}
-              onChange={(e) => setFilter("homeCity", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            >
-              <option value="">Todas</option>
-              {filterCities.map((opt) => (
-                <option key={opt.id} value={opt.id}>{opt.name}</option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col text-sm text-gray-300">
-            Teléfono móvil
-            <input
-              value={filters.mobileNumber ?? ""}
-              onChange={(e) => setFilter("mobileNumber", e.target.value)}
-              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
-            />
-          </label>
-        </div>
-
-        <div className="mt-3 flex items-center justify-between">
-          {catalogErr && <p className="text-sm text-yellow-400">{catalogErr}</p>}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={clearFilters}
-              className="rounded-lg border border-gray-700 px-3 py-1.5 text-sm text-gray-200 hover:text-white hover:border-gray-500"
-            >
-              Limpiar filtros
             </button>
           </div>
         </div>
