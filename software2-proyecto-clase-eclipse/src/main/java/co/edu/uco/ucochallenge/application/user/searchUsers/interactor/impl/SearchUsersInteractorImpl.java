@@ -7,7 +7,8 @@ import co.edu.uco.ucochallenge.application.user.searchUsers.dto.SearchUsersQuery
 import co.edu.uco.ucochallenge.application.user.searchUsers.interactor.SearchUsersInteractor;
 import co.edu.uco.ucochallenge.application.user.searchUsers.usecase.SearchUsersUseCase;
 import co.edu.uco.ucochallenge.infrastructure.cache.SearchUsersPrefetchService;
-import co.edu.uco.ucochallenge.infrastructure.cache.UserPrefetchService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional(readOnly = true)
 public class SearchUsersInteractorImpl implements SearchUsersInteractor {
+        private static final Logger LOGGER = LoggerFactory.getLogger(SearchUsersInteractorImpl.class);
+
         private final SearchUsersUseCase useCase;
         private final ListUsersMapper mapper;
         private final SearchUsersPrefetchService prefetchService; // final
@@ -51,7 +54,9 @@ public class SearchUsersInteractorImpl implements SearchUsersInteractor {
                         && response.pagination().totalElements() > normalized.pagination().size()) {
                         try {
                                 prefetchService.prefetchNextPages(normalized, 1, normalized.pagination().size());
-                        } catch (Exception ignore) { /* nunca tumbar la request por prefetch */ }
+                        } catch (Exception exception) {
+                                LOGGER.warn("Failed to prefetch search results for page {}", 1, exception);
+                        }
                 }
                 return response;
         }

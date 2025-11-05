@@ -28,6 +28,7 @@ public record SearchUsersFilterDTO(
             final String email,
             final String mobileNumber,
             final String q) {
+        final String sanitizedQuery = TextHelper.getDefaultWithTrim(q);
         return new SearchUsersFilterDTO(
                 UUIDHelper.getDefault(idType),
                 TextHelper.getDefaultWithTrim(idNumber),
@@ -36,11 +37,12 @@ public record SearchUsersFilterDTO(
                 UUIDHelper.getDefault(homeCity),
                 TextHelper.getDefaultWithTrim(email),
                 TextHelper.getDefaultWithTrim(mobileNumber),
-                TextHelper.getDefaultWithTrim(q));
+                TextHelper.isEmpty(sanitizedQuery) ? TextHelper.getDefault() : sanitizedQuery);
     }
 
     public static SearchUsersFilterDTO normalize(final SearchUsersFilterDTO dto) {
         if (dto == null) {
+
             return normalize(
                     UUIDHelper.getDefault(),
                     TextHelper.getDefault(),
@@ -59,7 +61,7 @@ public record SearchUsersFilterDTO(
                 dto.homeCity(),
                 dto.email(),
                 dto.mobileNumber(),
-                dto.q);
+                dto.q());
     }
 
     public UserFilter toDomain() {
@@ -70,6 +72,7 @@ public record SearchUsersFilterDTO(
                 firstSurname,
                 homeCity,
                 email,
-                mobileNumber);
+                mobileNumber,
+                q);
     }
 }

@@ -15,17 +15,18 @@ public record SearchUsersQueryDTO(SearchUsersFilterDTO filter, PaginationRequest
             final UUID homeCity,
             final String email,
             final String mobileNumber,
+            final String q,
             final Integer page,
             final Integer size) {
         final SearchUsersFilterDTO normalizedFilter = SearchUsersFilterDTO.normalize(
-                idType, idNumber, firstName, firstSurname, homeCity, email, mobileNumber);
+                idType, idNumber, firstName, firstSurname, homeCity, email, mobileNumber, q);
         final PaginationRequestDTO normalizedPagination = PaginationRequestDTO.normalize(page, size);
         return new SearchUsersQueryDTO(normalizedFilter, normalizedPagination);
     }
 
     public static SearchUsersQueryDTO normalize(final SearchUsersQueryDTO dto) {
         if (dto == null) {
-            return normalize(null, null, null, null, null, null, null, null, null);
+            return normalize(null, null, null, null, null, null, null, null, null, null);
         }
         final SearchUsersFilterDTO normalizedFilter = SearchUsersFilterDTO.normalize(dto.filter());
         final PaginationRequestDTO normalizedPagination = dto.pagination() == null

@@ -25,6 +25,7 @@ public class CachedListUsersService implements CachedListUsersPort {
     @Override
     @Cacheable(
             value = "users.pages",
+            condition = "@cacheFlags.enabled()",
             key = "'page=' + #pagination.page() + ',size=' + #pagination.size()",
             unless = "#result == null || #result.users().isEmpty()"
     )
