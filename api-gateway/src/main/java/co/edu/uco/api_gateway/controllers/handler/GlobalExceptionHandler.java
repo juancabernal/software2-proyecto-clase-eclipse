@@ -22,12 +22,39 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleDownstreamException(final DownstreamException exception) {
         final HttpStatusCode status = Optional.ofNullable(exception.getStatus())
                 .orElse(HttpStatus.INTERNAL_SERVER_ERROR);
-        final ApiErrorResponse error = Optional.ofNullable(exception.getError())
-                .orElse(ApiErrorResponse.of(status.value(), status.toString(), status.toString()));
+        ApiErrorResponse error = Optional.ofNullable(exception.getError())
+                .orElse(ApiErrorResponse.of(status.value(), "UPSTREAM_ERROR", "Unknown downstream error"));
 
-        LOGGER.warn("Downstream request failed with status {} and technical message {}", status, error.technicalMessage());
+        // 🧠 Intentamos extraer un JSON embebido en el technicalMessage tipo "body: {...}"
+        final String techMsg = error.technicalMessage();
+        if (techMsg != null && techMsg.contains("body:")) {
+            try {
+                int start = techMsg.indexOf("{", techMsg.indexOf("body:"));
+                int end = techMsg.lastIndexOf("}") + 1;
+                if (start > -1 && end > start) {
+                    String jsonPart = techMsg.substring(start, end);
+                    // Parseamos el JSON interno
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(jsonPart);
+
+                    String userMessage = node.has("userMessage")
+                            ? node.get("userMessage").asText()
+                            : error.userMessage();
+                    String technicalMessage = node.has("technicalMessage")
+                            ? node.get("technicalMessage").asText()
+                            : error.technicalMessage();
+
+                    error = ApiErrorResponse.of(status.value(), userMessage, technicalMessage);
+                }
+            } catch (Exception e) {
+                LOGGER.warn("Could not parse downstream body JSON", e);
+            }
+        }
+
+        LOGGER.warn("Downstream request failed with status {} and user message {}", status, error.userMessage());
         return ResponseEntity.status(status).body(error);
     }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(final Exception exception) {
