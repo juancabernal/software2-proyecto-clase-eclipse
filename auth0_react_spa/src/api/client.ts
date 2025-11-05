@@ -5,7 +5,7 @@ export type ApiSuccessResponse<T> = { userMessage: string; data: T; };
 export type Page<T> = { items: T[]; page: number; size: number; totalItems: number; totalPages: number; };
 export type RegisterUserResponse = { userId: string; fullName: string; email: string; };
 export type CatalogItem = { id: string; name: string; };
-type ConfirmationResponse = { remainingSeconds: number };
+type ConfirmationResponse = { remainingSeconds: number; tokenId: string };
 export type VerificationAttemptResponse = {
   success: boolean;
   expired: boolean;
@@ -28,7 +28,17 @@ const postAndReturnTTL = async (
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
     const seconds = Number(data?.remainingSeconds ?? 0);
-    return { remainingSeconds: Number.isFinite(seconds) ? seconds : 0 };
+    const tokenIdRaw = data?.tokenId;
+    const tokenId = typeof tokenIdRaw === "string" ? tokenIdRaw.trim() : String(tokenIdRaw ?? "").trim();
+    if (!tokenId) {
+      const error: any = new Error("La respuesta no incluyó el identificador del token de verificación.");
+      error.response = res;
+      throw error;
+    }
+    return {
+      remainingSeconds: Number.isFinite(seconds) ? seconds : 0,
+      tokenId,
+    };
   }
   const msg =
     (res.data && (res.data.message || res.data.error)) || failureMessage || DEFAULT_FAILURE_MESSAGE;
@@ -39,12 +49,12 @@ const postAndReturnTTL = async (
 const postVerificationCode = async (
   api: AxiosInstance,
   endpoint: string,
-  code: string,
+  payload: { tokenId: string; code: string },
   failureMessage: string
 ): Promise<VerificationAttemptResponse> => {
   const res = await api.post(
     endpoint,
-    { code },
+    payload,
     { validateStatus: () => true }
   );
   if (res.status >= 200 && res.status < 300) {
@@ -221,10 +231,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw error;
       }
     },
-    async validateEmailConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateEmailConfirmation(userId: string, tokenId: string, code: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedTokenId = tokenId?.trim();
+      if (!sanitizedTokenId) {
+        throw new Error("No se recibió el identificador del token de verificación.");
       }
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
@@ -239,7 +253,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postVerificationCode(
           api,
           adminEndpoint,
-          sanitizedCode,
+          { tokenId: sanitizedTokenId, code: sanitizedCode },
           "No fue posible validar el código del correo electrónico."
         );
       } catch (error: any) {
@@ -247,7 +261,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           return await postVerificationCode(
             api,
             fallbackEndpoint,
-            sanitizedCode,
+            { tokenId: sanitizedTokenId, code: sanitizedCode },
             "No fue posible validar el código del correo electrónico."
           );
         }
@@ -255,10 +269,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
     },
 
-    async validateMobileConfirmation(userId: string, code: string): Promise<VerificationAttemptResponse> {
+    async validateMobileConfirmation(userId: string, tokenId: string, code: string): Promise<VerificationAttemptResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
+      }
+      const sanitizedTokenId = tokenId?.trim();
+      if (!sanitizedTokenId) {
+        throw new Error("No se recibió el identificador del token de verificación.");
       }
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
@@ -273,7 +291,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postVerificationCode(
           api,
           adminEndpoint,
-          sanitizedCode,
+          { tokenId: sanitizedTokenId, code: sanitizedCode },
           "No fue posible validar el código del teléfono móvil."
         );
       } catch (error: any) {
@@ -281,7 +299,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           return await postVerificationCode(
             api,
             fallbackEndpoint,
-            sanitizedCode,
+            { tokenId: sanitizedTokenId, code: sanitizedCode },
             "No fue posible validar el código del teléfono móvil."
           );
         }

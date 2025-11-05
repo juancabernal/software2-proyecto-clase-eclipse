@@ -6,5 +6,5 @@ import co.edu.uco.ucochallenge.application.notification.VerificationAttemptRespo
 
 public interface ValidateMobileConfirmationInteractor {
 
-    VerificationAttemptResponseDTO execute(UUID userId, String code);
+    VerificationAttemptResponseDTO execute(UUID userId, UUID tokenId, String code);
 }

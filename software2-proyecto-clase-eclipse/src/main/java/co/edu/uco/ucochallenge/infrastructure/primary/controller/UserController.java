@@ -105,7 +105,7 @@ public class UserController {
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
         final VerificationAttemptResponseDTO response = validateEmailConfirmationInteractor
-                .execute(id, request.sanitizedCode());
+                .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
@@ -114,7 +114,7 @@ public class UserController {
             @PathVariable("id") final UUID id,
             @RequestBody final VerificationCodeRequestDTO request) {
         final VerificationAttemptResponseDTO response = validateMobileConfirmationInteractor
-                .execute(id, request.sanitizedCode());
+                .execute(id, request.sanitizedTokenId(), request.sanitizedCode());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
     }
 
