@@ -80,6 +80,9 @@ public class ReactiveParameterCatalog {
         register("notification.confirmation.mobile.strategy", "ENVIAR_CODIGO_SMS");
         register("notification.email.maxRetries", "3");
         register("validation.code.timeExpiration", "5");
+        register("verification.code.expiration.minutes", "5");  // tiempo de vida del token
+        register("verification.code.max.attempts", "3");         // número máximo de intentos
+
 
         register("user.idNumber.minLength", "5");
         register("user.idNumber.maxLength", "20");

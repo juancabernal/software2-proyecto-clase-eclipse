@@ -74,10 +74,7 @@ public class UserController {
         /* this.updateUserInteractor = updateUserInteractor; */
     }
 
-
-    /* private final UpdateUserInteractor updateUserInteractor; */
-
-
+  
     @PostMapping
     public ResponseEntity<ApiSuccessResponse<RegisterUserOutputDTO>> registerUser(
             @RequestBody final RegisterUserInputDTO dto) {
