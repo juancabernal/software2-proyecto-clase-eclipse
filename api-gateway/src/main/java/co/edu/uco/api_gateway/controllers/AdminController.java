@@ -138,6 +138,22 @@ public class AdminController {
     }
 
     /**
+     * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/email/verify} para
+     * verificación manual desde el frontend administrativo.
+     */
+    @PostMapping("/users/{id}/confirmations/email/verify")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ApiSuccessResponse<Void>> verifyEmailManually(
+            @PathVariable("id") final UUID id,
+            @RequestBody final Map<String, String> requestBody,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final String token = requestBody.get("token");
+        final ApiSuccessResponse<Void> response =
+                userServiceProxy.verifyEmail(id, token, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/mobile}.
      */
     @PostMapping("/users/{id}/confirmations/mobile")
