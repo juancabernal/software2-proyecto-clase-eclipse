@@ -127,6 +127,17 @@ public class AdminController {
     }
 
     /**
+     * Proxy de {@code GET /uco-challenge/api/v1/users/{id}/confirmations/email/verify}.
+     */
+    @GetMapping("/users/{id}/confirmations/email/verify")
+    public ResponseEntity<ApiSuccessResponse<Void>> verifyEmail(
+            @PathVariable("id") final UUID id,
+            @RequestParam("token") final String token) {
+        final ApiSuccessResponse<Void> response = userServiceProxy.verifyEmail(id, token);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Proxy de {@code POST /uco-challenge/api/v1/users/{id}/confirmations/mobile}.
      */
     @PostMapping("/users/{id}/confirmations/mobile")
@@ -136,6 +147,17 @@ public class AdminController {
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
         final ApiSuccessResponse<Void> response =
                 userServiceProxy.requestMobileConfirmation(id, authorizationHeader);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Proxy de {@code GET /uco-challenge/api/v1/users/{id}/confirmations/mobile/verify}.
+     */
+    @GetMapping("/users/{id}/confirmations/mobile/verify")
+    public ResponseEntity<ApiSuccessResponse<Void>> verifyMobile(
+            @PathVariable("id") final UUID id,
+            @RequestParam("token") final String token) {
+        final ApiSuccessResponse<Void> response = userServiceProxy.verifyMobile(id, token);
         return ResponseEntity.ok(response);
     }
 

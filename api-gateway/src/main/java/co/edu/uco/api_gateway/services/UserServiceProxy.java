@@ -188,6 +188,19 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
     }
 
+    public ApiSuccessResponse<Void> verifyEmail(
+            final UUID id,
+            final String token) {
+        final ApiSuccessResponse<Void> response = webClient.get()
+                .uri("/{id}/confirmations/email/verify?token={token}", id, token)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VOID_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de verificación de correo no puede ser nula");
+    }
+
     public ApiSuccessResponse<Void> requestMobileConfirmation(
             final UUID id,
             final String authorizationHeader) {
@@ -200,6 +213,19 @@ public class UserServiceProxy {
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
+    }
+
+    public ApiSuccessResponse<Void> verifyMobile(
+            final UUID id,
+            final String token) {
+        final ApiSuccessResponse<Void> response = webClient.get()
+                .uri("/{id}/confirmations/mobile/verify?token={token}", id, token)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VOID_RESPONSE)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de verificación de teléfono no puede ser nula");
     }
 
 

@@ -153,6 +153,60 @@ public class VerificationTokenService {
                 message);
     }
 
+    @Transactional
+    public void confirmToken(final User user,
+            final VerificationChannel channel,
+            final String rawToken) {
+        final String sanitizedToken = TextHelper.getDefaultWithTrim(rawToken);
+        if (TextHelper.isEmpty(sanitizedToken)) {
+            throw DomainException.buildFromCatalog(
+                    MessageCodes.Domain.Verification.TOKEN_INVALID_TECHNICAL,
+                    MessageCodes.Domain.Verification.TOKEN_INVALID_USER);
+        }
+
+        final String contact = resolveContact(user, channel);
+        final VerificationToken token = repository.findByContact(contact)
+                .orElseThrow(() -> DomainException.buildFromCatalog(
+                        MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
+                        MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER));
+
+        if (token.isExpired(LocalDateTime.now())) {
+            repository.deleteByContact(contact);
+            throw DomainException.buildFromCatalog(
+                    MessageCodes.Domain.Verification.TOKEN_EXPIRED_TECHNICAL,
+                    MessageCodes.Domain.Verification.TOKEN_EXPIRED_USER);
+        }
+
+        if (!token.code().equalsIgnoreCase(sanitizedToken)) {
+            final VerificationToken decremented = token.decrementAttempts();
+            if (decremented.attempts() <= 0) {
+                repository.deleteByContact(contact);
+                throw DomainException.buildFromCatalog(
+                        MessageCodes.Domain.Verification.TOKEN_ATTEMPTS_EXHAUSTED_TECHNICAL,
+                        MessageCodes.Domain.Verification.TOKEN_ATTEMPTS_EXHAUSTED_USER);
+            }
+
+            repository.save(decremented);
+            throw DomainException.buildFromCatalog(
+                    MessageCodes.Domain.Verification.TOKEN_INVALID_TECHNICAL,
+                    MessageCodes.Domain.Verification.TOKEN_INVALID_USER,
+                    Map.of("attemptsRemaining", String.valueOf(decremented.attempts())));
+        }
+
+        repository.deleteByContact(contact);
+
+        if (isContactConfirmed(user, channel)) {
+            throw DomainException.buildFromCatalog(
+                    MessageCodes.Domain.Verification.CONTACT_ALREADY_CONFIRMED_TECHNICAL,
+                    MessageCodes.Domain.Verification.CONTACT_ALREADY_CONFIRMED_USER);
+        }
+
+        final User updatedUser = updateContactStatus(user, channel);
+        if (updatedUser.emailConfirmed() && updatedUser.mobileNumberConfirmed()) {
+            purgeRemainingTokens(updatedUser);
+        }
+    }
+
     private void notifyUser(final User user,
             final VerificationChannel channel,
             final String code,
