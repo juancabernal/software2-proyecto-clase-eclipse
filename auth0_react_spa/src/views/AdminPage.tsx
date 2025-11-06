@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuth0 } from "@auth0/auth0-react";
+import { env } from "../config/env";
 
 const AdminPage = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -8,17 +9,14 @@ const AdminPage = () => {
     try {
       const token = await getAccessTokenSilently({
         authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          audience: env.auth0.audience,
         },
       });
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_SERVER_URL}/api/admin`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${env.api.baseUrl}/api/admin`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const responseData = response.data;
 
       alert(responseData.message);

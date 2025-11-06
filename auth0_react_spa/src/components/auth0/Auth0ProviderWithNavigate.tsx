@@ -1,17 +1,16 @@
 // Auth0ProviderWithNavigate.tsx
 import { AppState, Auth0Provider } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
+import { env } from "../../config/env";
 
 type Props = { children: JSX.Element };
 
 export const Auth0ProviderWithNavigate = ({ children }: Props) => {
   const navigate = useNavigate();
 
-  const domain = import.meta.env.VITE_AUTH0_DOMAIN!;
-  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID!;
-  const redirectUri = import.meta.env.VITE_AUTH0_CALLBACK_URL!;
-  const audience = import.meta.env.VITE_AUTH0_AUDIENCE!;
-  const scope = "read:users read:settings"; // ajusta a tus scopes reales
+  const {
+    auth0: { domain, clientId, callbackUrl, audience, scope },
+  } = env;
 
   const onRedirectCallback = (appState: AppState | undefined) => {
     // Si no hay appState, por defecto vamos al dashboard (mejor UX que la raíz)
@@ -25,7 +24,7 @@ export const Auth0ProviderWithNavigate = ({ children }: Props) => {
       authorizationParams={{
         audience,
         scope,
-        redirect_uri: redirectUri,
+        redirect_uri: callbackUrl,
       }}
       cacheLocation="memory"  
       useRefreshTokens={true}   

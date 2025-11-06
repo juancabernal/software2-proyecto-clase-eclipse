@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react"; // ✅ FIX: Manage lifecyc
 import { useNavigate, useSearchParams } from "react-router-dom"; // ✅ FIX: Read query parameters and provide navigation helpers
 
 import { makeApi, VerificationAttemptResponse } from "../api/client"; // ✅ FIX: Reuse shared API client utilities
+import { env } from "../config/env";
 
 const VerifyAccount = () => { // ✅ FIX: Render standalone verification page
   const [searchParams] = useSearchParams(); // ✅ FIX: Access URL query parameters
   const navigate = useNavigate(); // ✅ FIX: Enable programmatic navigation
-  const baseURL = import.meta.env.VITE_API_SERVER_URL as string; // ✅ FIX: Resolve API base URL from environment
-  const api = useMemo(() => makeApi(baseURL, async () => ""), [baseURL]); // ✅ FIX: Create API client without requiring authentication
+  const {
+    api: { baseUrl },
+  } = env;
+  const api = useMemo(() => makeApi(baseUrl, async () => ""), [baseUrl]); // ✅ FIX: Create API client without requiring authentication
 
   const [loading, setLoading] = useState(true); // ✅ FIX: Track request progress for UI feedback
   const [result, setResult] = useState<VerificationAttemptResponse | null>(null); // ✅ FIX: Store backend verification response

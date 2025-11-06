@@ -1,5 +1,6 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import axios from "axios";
+import { env } from "../config/env";
 
 const ClientPage = () => {
   const { getAccessTokenSilently } = useAuth0();
@@ -8,20 +9,17 @@ const ClientPage = () => {
     try {
       const token = await getAccessTokenSilently({
         authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+          audience: env.auth0.audience,
         },
       });
 
       console.log("token: " + token);
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_SERVER_URL}/api/client`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${env.api.baseUrl}/api/client`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       console.log(response);
 

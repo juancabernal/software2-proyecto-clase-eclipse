@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { env } from "../config/env";
 
 let fetchedOnce = false;
 
@@ -9,10 +10,12 @@ export default function AuthGate() {
   const { isAuthenticated, isLoading, getAccessTokenSilently, logout } = useAuth0();
   const navigate = useNavigate();
 
-  const baseURL = import.meta.env.VITE_API_SERVER_URL as string;
-  const audience = import.meta.env.VITE_AUTH0_AUDIENCE as string;
+  const {
+    api: { baseUrl },
+    auth0: { audience },
+  } = env;
 
-  const api = useMemo(() => axios.create({ baseURL }), [baseURL]);
+  const api = useMemo(() => axios.create({ baseURL: baseUrl }), [baseUrl]);
 
   const [statusMsg, setStatusMsg] = useState("Verificando permisos con el gateway…");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -88,7 +91,7 @@ export default function AuthGate() {
     return () => {
       active = false;
     };
-  }, [isAuthenticated, isLoading, getAccessTokenSilently, api, audience, navigate, logout, baseURL]);
+  }, [isAuthenticated, isLoading, getAccessTokenSilently, api, audience, navigate, logout, baseUrl]);
 
   return (
     <div className="min-h-screen grid place-items-center bg-[#0f0f12] text-gray-200 px-4">

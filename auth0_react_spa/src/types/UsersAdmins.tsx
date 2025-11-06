@@ -7,9 +7,9 @@ import {
   UserCreateInput,
   makeApi,
   VerificationAttemptResponse,
-
 } from "../api/client";
 import { User } from "./users";
+import { env } from "../config/env";
 
 type Filters = {
   page: number;
@@ -94,18 +94,20 @@ export default function UsersAdmin() {
 
   const { getAccessTokenSilently } = useAuth0();
 
-  const baseURL = import.meta.env.VITE_API_SERVER_URL as string;
-  const audience = import.meta.env.VITE_AUTH0_AUDIENCE as string;
+  const {
+    api: { baseUrl },
+    auth0: { audience },
+  } = env;
 
   const api = useMemo(
     () =>
-      makeApi(baseURL, async () => {
+      makeApi(baseUrl, async () => {
         const token = await getAccessTokenSilently({
           authorizationParams: { audience },
         });
         return token;
       }),
-    [baseURL, audience, getAccessTokenSilently]
+    [baseUrl, audience, getAccessTokenSilently]
   );
 
   const [filters, setFilters] = useState<Filters>(initialFilters);

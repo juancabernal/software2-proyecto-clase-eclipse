@@ -122,8 +122,14 @@ El frontend (SPA Auth0) requiere las siguientes variables:
 
 ```bash
 VITE_API_SERVER_URL=http://localhost:8085
+VITE_AUTH0_DOMAIN=tu-dominio.us.auth0.com
+VITE_AUTH0_CLIENT_ID=tuClientId123
 VITE_AUTH0_AUDIENCE=https://uco-challenge-api
+VITE_AUTH0_CALLBACK_URL=http://localhost:5173/callback
+VITE_AUTH0_SCOPE=read:users read:settings
+```
 
+Guarda estos valores en un archivo `.env` (puedes copiar `auth0_react_spa/.env.example` como base) dentro de `auth0_react_spa/` para que Vite los cargue al iniciar la SPA.
 
 ## Registro de usuarios
 
