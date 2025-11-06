@@ -50,8 +50,13 @@ public class FindUsersByFilterOutputMapper
         private UserSearchSummaryDomainModel mapToDomain(final UserSummaryDTO dto) {
                 return UserSearchSummaryDomainModel.builder()
                                 .id(dto.getId())
+                                .idType(dto.getIdTypeId())
+                                .idNumber(dto.getIdNumber())
                                 .firstName(dto.getFirstName())
+                                .secondName(dto.getSecondName())
                                 .firstSurname(dto.getLastName())
+                                .secondSurname(dto.getSecondSurname())
+                                .homeCity(dto.getHomeCityId())
                                 .email(dto.getEmail())
                                 .mobileNumber(dto.getMobileNumber())
                                 .emailConfirmed(Boolean.TRUE.equals(dto.getEmailConfirmed()))
@@ -62,8 +67,13 @@ public class FindUsersByFilterOutputMapper
         private UserSummaryDTO mapToDto(final UserSearchSummaryDomainModel domain) {
                 final UserSummaryDTO dto = new UserSummaryDTO();
                 dto.setId(domain.getId());
+                dto.setIdTypeId(domain.getIdType());
+                dto.setIdNumber(domain.getIdNumber());
                 dto.setFirstName(domain.getFirstName());
+                dto.setSecondName(domain.getSecondName());
                 dto.setLastName(domain.getFirstSurname());
+                dto.setSecondSurname(domain.getSecondSurname());
+                dto.setHomeCityId(domain.getHomeCity());
                 dto.setEmail(domain.getEmail());
                 dto.setMobileNumber(domain.getMobileNumber());
                 dto.setEmailConfirmed(domain.isEmailConfirmed());
