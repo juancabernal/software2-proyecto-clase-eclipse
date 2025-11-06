@@ -1,45 +1,69 @@
 package co.edu.uco.apigatewayservice.debug;
 
-import org.springframework.security.core.Authentication;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.http.MediaType;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import reactor.core.publisher.Mono;
 
-import java.util.*;
-
 @RestController
-@RequestMapping("/debug")
 public class DebugController {
 
-  private static final String ROLES_CLAIM = "https://uco-challenge/roles";
-  private static final Set<String> SAFE_LIST_CLAIMS = Set.of(ROLES_CLAIM);
-
-  @GetMapping("/whoami")
-  public Mono<Map<String, Object>> whoami(@AuthenticationPrincipal Jwt jwt, Authentication auth) {
-    Map<String, Object> out = new LinkedHashMap<>();
-    out.put("authenticated", auth != null && auth.isAuthenticated());
-    out.put("name", auth != null ? auth.getName() : null);
-    out.put("authorities", auth != null ? auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList() : List.of());
-    out.put("roles_claim", safeStringListClaim(jwt, ROLES_CLAIM));
-    out.put("aud", jwt != null ? jwt.getAudience() : List.of());
-    out.put("iss", jwt != null ? String.valueOf(jwt.getIssuer()) : null);
-    return Mono.just(out);
-  }
-
-  private List<String> safeStringListClaim(Jwt jwt, String claimName) {
-    if (jwt == null || claimName == null || !SAFE_LIST_CLAIMS.contains(claimName)) {
-      return List.of();
+    /**
+     * Devuelve los claims del JWT recibido y las authorities resueltas por Spring Security.
+     * Llamar con Authorization: Bearer <TOKEN>
+     */
+    @GetMapping(path = "/debug/whoami", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<Map<String, Object>> whoami() {
+        return ReactiveSecurityContextHolder.getContext()
+            .map(ctx -> ctx.getAuthentication())
+            .flatMap(this::buildResponseFromAuth)
+            .switchIfEmpty(Mono.just(Map.of("error", "no authentication in security context")));
     }
-    List<String> claimValues = jwt.getClaimAsStringList(claimName);
-    if (claimValues == null) {
-      return List.of();
+
+    private Mono<Map<String, Object>> buildResponseFromAuth(Authentication auth) {
+        if (auth == null) {
+            return Mono.just(Map.of("error", "authentication is null"));
+        }
+
+        // Intentar obtener Jwt desde el principal; si no, intentar desde credentials
+        Object principal = auth.getPrincipal();
+        Jwt jwt = null;
+        if (principal instanceof Jwt) {
+            jwt = (Jwt) principal;
+        } else {
+            Object credentials = auth.getCredentials();
+            if (credentials instanceof Jwt) {
+                jwt = (Jwt) credentials;
+            }
+        }
+
+        List<String> authorities = auth.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
+
+        if (jwt != null) {
+            return Mono.just(Map.of(
+                    "principalName", auth.getName(),
+                    "claims", jwt.getClaims(),
+                    "authorities", authorities
+            ));
+        } else {
+            // Si no se pudo parsear Jwt, devolvemos lo que hay en Authentication
+            return Mono.just(Map.of(
+                    "principalType", principal == null ? "null" : principal.getClass().getName(),
+                    "principalToString", String.valueOf(principal),
+                    "authorities", authorities
+            ));
+        }
     }
-    return claimValues.stream()
-        .filter(Objects::nonNull)
-        .map(String::valueOf)
-        .toList();
-  }
 }
-

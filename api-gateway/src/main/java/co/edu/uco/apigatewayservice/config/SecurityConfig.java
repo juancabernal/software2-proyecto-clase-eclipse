@@ -1,5 +1,7 @@
 package co.edu.uco.apigatewayservice.config;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +15,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -20,7 +23,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoders;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -36,8 +39,9 @@ import reactor.core.publisher.Mono;
 @EnableReactiveMethodSecurity
 public class SecurityConfig {
 
-    private static final String ROLES_CLAIM = "https://uco-challenge/roles";
-    private static final String ADMIN_ROLE = "admin";
+    // ✅ Claim correcto según tu token:
+    private static final String ROLES_CLAIM = "https://uco-challenge-api/roles";
+    private static final String ADMIN_ROLE = "administrador"; // ✅ Coincide con tu JWT
     private static final String USER_ROLE = "usuario";
 
     private final String audience;
@@ -52,9 +56,7 @@ public class SecurityConfig {
         this.globalCorsProperties = globalCorsProperties;
     }
 
-    /**
-     * Cadena 0: libera /actuator/** (incluye /actuator/prometheus) sin autenticacion.
-     */
+    // ✅ Cadena 0: permite Actuator sin autenticación
     @Bean
     @Order(0)
     public SecurityWebFilterChain actuatorChain(ServerHttpSecurity http) {
@@ -66,9 +68,7 @@ public class SecurityConfig {
             .build();
     }
 
-    /**
-     * Cadena 1: resto de rutas con tu configuracion original.
-     */
+    // ✅ Cadena 1: seguridad principal
     @Bean
     @Order(1)
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -77,10 +77,9 @@ public class SecurityConfig {
             .cors(corsSpec -> corsSpec.configurationSource(corsConfigurationSource()))
             .authorizeExchange(exchange -> exchange
                 .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .pathMatchers("/actuator/health").permitAll() // opcional; ya cubierto por la cadena 0
                 .pathMatchers("/api/public/**").permitAll()
                 .pathMatchers("/debug/whoami").authenticated()
-                .pathMatchers("/api/admin/**").hasAuthority(ADMIN_ROLE)
+                .pathMatchers("/api/admin/**").hasAuthority(ADMIN_ROLE)    // ✅ admin con rol "administrador"
                 .pathMatchers("/api/user/**").hasAnyAuthority(ADMIN_ROLE, USER_ROLE)
                 .anyExchange().authenticated()
             )
@@ -93,6 +92,7 @@ public class SecurityConfig {
             .build();
     }
 
+    // ✅ CORS heredado desde application.properties
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -103,6 +103,7 @@ public class SecurityConfig {
         return source;
     }
 
+    // ✅ Valida issuer + audience
     @Bean
     public ReactiveJwtDecoder jwtDecoder() {
         NimbusJwtDecoder nimbus = (NimbusJwtDecoder) JwtDecoders.fromOidcIssuerLocation(issuer);
@@ -113,15 +114,24 @@ public class SecurityConfig {
         return token -> Mono.fromCallable(() -> nimbus.decode(token));
     }
 
+    // ✅ Extrae roles desde el claim personalizado de Auth0
     @Bean
     public Converter<Jwt, Mono<AbstractAuthenticationToken>> jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        authoritiesConverter.setAuthoritiesClaimName(ROLES_CLAIM);
-        authoritiesConverter.setAuthorityPrefix("");
+        return new ReactiveJwtAuthenticationConverterAdapter(jwt -> {
+            JwtGrantedAuthoritiesConverter converter = new JwtGrantedAuthoritiesConverter();
+            converter.setAuthoritiesClaimName(ROLES_CLAIM);
+            converter.setAuthorityPrefix(""); // sin ROLE_
+            
+            // Si el claim no existe o no es una lista, evita ClassCastException
+            Collection<GrantedAuthority> authorities = new ArrayList<>();
+            try {
+                authorities = converter.convert(jwt);
+            } catch (Exception e) {
+                System.err.println("⚠️ Error al leer roles desde el token: " + e.getMessage());
+            }
 
-        JwtAuthenticationConverter jwtConverter = new JwtAuthenticationConverter();
-        jwtConverter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
-
-        return new ReactiveJwtAuthenticationConverterAdapter(jwtConverter);
+            return new JwtAuthenticationToken(jwt, authorities);
+        });
     }
+
 }
