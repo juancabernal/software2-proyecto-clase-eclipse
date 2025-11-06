@@ -1,27 +1,14 @@
-# syntax=docker/dockerfile:1
+# Usa una imagen oficial de OpenJDK 21 como base
+FROM openjdk:21-jdk-slim
 
-FROM eclipse-temurin:21-jdk-jammy as build
-WORKDIR /build
-
-# Maven wrapper + cache
-COPY --chmod=0755 mvnw mvnw
-COPY .mvn/ .mvn/
-COPY pom.xml pom.xml
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -DskipTests dependency:go-offline
-
-# Código y build con repackage
-COPY src src
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw -DskipTests clean package spring-boot:repackage && \
-    sh -lc 'ls -1 target/*.jar | grep -v "\.original$" | head -n1 | xargs -I{} cp {} target/app.jar'
-
-FROM eclipse-temurin:21-jre-jammy as final
-ARG UID=10001
-RUN adduser --disabled-password --gecos "" --home "/nonexistent" --shell "/sbin/nologin" --no-create-home --uid "${UID}" appuser
-USER appuser
-
+# Establecer un directorio de trabajo dentro del contenedor
 WORKDIR /app
-COPY --from=build /build/target/app.jar /app/app.jar
 
-EXPOSE 8085
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# Copiar el archivo JAR desde el directorio target al contenedor
+COPY target/uco-challenge-apigateway-0.0.1-SNAPSHOT.jar /app/uco-challenge-apigateway.jar
+
+# Exponer el puerto 8082, que es el puerto donde está corriendo tu API Gateway
+EXPOSE 8082
+
+# Comando para ejecutar la aplicación dentro del contenedor
+ENTRYPOINT ["java", "-jar", "uco-challenge-apigateway.jar"]
