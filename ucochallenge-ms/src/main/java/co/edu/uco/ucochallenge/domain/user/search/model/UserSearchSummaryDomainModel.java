@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.user.findusers.application.usecase.domain;
+package co.edu.uco.ucochallenge.domain.user.search.model;
 
 import java.util.UUID;
 
@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 
-@JsonDeserialize(builder = UserSummaryDomain.Builder.class)
-public class UserSummaryDomain {
+@JsonDeserialize(builder = UserSearchSummaryDomainModel.Builder.class)
+public class UserSearchSummaryDomainModel {
 
         private final UUID id;
         private final UUID idType;
@@ -24,7 +24,7 @@ public class UserSummaryDomain {
         private final boolean emailConfirmed;
         private final boolean mobileNumberConfirmed;
 
-        private UserSummaryDomain(final Builder builder) {
+        private UserSearchSummaryDomainModel(final Builder builder) {
                 this.id = UUIDHelper.getDefault(builder.id);
                 this.idType = UUIDHelper.getDefault(builder.idType);
                 this.idNumber = TextHelper.getDefaultWithTrim(builder.idNumber);
@@ -167,8 +167,8 @@ public class UserSummaryDomain {
                         return this;
                 }
 
-                public UserSummaryDomain build() {
-                        return new UserSummaryDomain(this);
+                public UserSearchSummaryDomainModel build() {
+                        return new UserSearchSummaryDomainModel(this);
                 }
         }
 }

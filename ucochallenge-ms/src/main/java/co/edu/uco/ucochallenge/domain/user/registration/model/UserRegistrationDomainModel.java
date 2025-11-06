@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain;
+package co.edu.uco.ucochallenge.domain.user.registration.model;
 
 import java.util.UUID;
 
@@ -7,7 +7,7 @@ import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
 import co.edu.uco.ucochallenge.crosscuting.notification.SelfValidating;
 
-public class RegisterUserDomain implements SelfValidating {
+public class UserRegistrationDomainModel implements SelfValidating {
 
         private static final String ID_NUMBER_REQUIRED_CODE = "register.user.validation.idnumber.required";
         private static final String FIRST_NAME_REQUIRED_CODE = "register.user.validation.firstname.required";
@@ -33,7 +33,7 @@ public class RegisterUserDomain implements SelfValidating {
         private boolean emailConfirmed;
         private boolean mobileNumberConfirmed;
 
-        private RegisterUserDomain(final Builder builder) {
+        private UserRegistrationDomainModel(final Builder builder) {
                 setId(builder.id);
                 setIdType(builder.idType);
                 setIdTypeName(builder.idTypeName);
@@ -167,11 +167,15 @@ public class RegisterUserDomain implements SelfValidating {
         }
 
         public void markEmailConfirmed() {
-                        setEmailConfirmed(true);
+                setEmailConfirmed(true);
         }
 
         public void markMobileNumberConfirmed() {
-                        setMobileNumberConfirmed(true);
+                setMobileNumberConfirmed(true);
+        }
+
+        private boolean isMissing(final UUID value) {
+                return value == null || UUIDHelper.getDefault().equals(value);
         }
 
         private void setId(final UUID id) {
@@ -224,10 +228,6 @@ public class RegisterUserDomain implements SelfValidating {
 
         private void setMobileNumber(final String mobileNumber) {
                 this.mobileNumber = TextHelper.getDefaultWithTrim(mobileNumber);
-        }
-
-        private boolean isMissing(final UUID value) {
-                return value == null || UUIDHelper.getDefault().equals(value);
         }
 
         private void setEmailConfirmed(final boolean emailConfirmed) {
@@ -330,8 +330,8 @@ public class RegisterUserDomain implements SelfValidating {
                         return this;
                 }
 
-                public RegisterUserDomain build() {
-                        return new RegisterUserDomain(this);
+                public UserRegistrationDomainModel build() {
+                        return new UserRegistrationDomainModel(this);
                 }
         }
 }

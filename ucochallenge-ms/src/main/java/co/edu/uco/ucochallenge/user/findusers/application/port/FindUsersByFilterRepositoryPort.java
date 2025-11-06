@@ -1,8 +1,8 @@
 package co.edu.uco.ucochallenge.user.findusers.application.port;
 
-import co.edu.uco.ucochallenge.user.findusers.application.usecase.domain.FindUsersByFilterResponseDomain;
+import co.edu.uco.ucochallenge.domain.user.search.model.UserSearchResultDomainModel;
 
 public interface FindUsersByFilterRepositoryPort {
 
-        FindUsersByFilterResponseDomain findAll(int page, int size);
+        UserSearchResultDomainModel findAll(int page, int size);
 }

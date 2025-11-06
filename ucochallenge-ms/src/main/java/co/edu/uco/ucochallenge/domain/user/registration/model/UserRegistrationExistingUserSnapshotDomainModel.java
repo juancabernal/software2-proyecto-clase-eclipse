@@ -1,24 +1,24 @@
-package co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain;
+package co.edu.uco.ucochallenge.domain.user.registration.model;
 
 import java.util.UUID;
 
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 
-public class ExistingUserSnapshotDomain {
+public class UserRegistrationExistingUserSnapshotDomainModel {
 
-        private final UUID id;
-        private final String firstName;
-        private final String firstSurname;
-        private final String email;
-        private final String mobileNumber;
+        private UUID id;
+        private String firstName;
+        private String firstSurname;
+        private String email;
+        private String mobileNumber;
 
-        private ExistingUserSnapshotDomain(final Builder builder) {
-                this.id = UUIDHelper.getDefault(builder.id);
-                this.firstName = TextHelper.getDefaultWithTrim(builder.firstName);
-                this.firstSurname = TextHelper.getDefaultWithTrim(builder.firstSurname);
-                this.email = TextHelper.getDefaultWithTrim(builder.email);
-                this.mobileNumber = TextHelper.getDefaultWithTrim(builder.mobileNumber);
+        private UserRegistrationExistingUserSnapshotDomainModel(final Builder builder) {
+                setId(builder.id);
+                setFirstName(builder.firstName);
+                setFirstSurname(builder.firstSurname);
+                setEmail(builder.email);
+                setMobileNumber(builder.mobileNumber);
         }
 
         public static Builder builder() {
@@ -45,7 +45,27 @@ public class ExistingUserSnapshotDomain {
                 return mobileNumber;
         }
 
-        public static final class Builder {
+        private void setId(final UUID id) {
+                this.id = UUIDHelper.getDefault(id);
+        }
+
+        private void setFirstName(final String firstName) {
+                this.firstName = TextHelper.getDefaultWithTrim(firstName);
+        }
+
+        private void setFirstSurname(final String firstSurname) {
+                this.firstSurname = TextHelper.getDefaultWithTrim(firstSurname);
+        }
+
+        private void setEmail(final String email) {
+                this.email = TextHelper.getDefaultWithTrim(email);
+        }
+
+        private void setMobileNumber(final String mobileNumber) {
+                this.mobileNumber = TextHelper.getDefaultWithTrim(mobileNumber);
+        }
+
+        public static class Builder {
 
                 private UUID id = UUIDHelper.getDefault();
                 private String firstName = TextHelper.getDefault();
@@ -78,8 +98,8 @@ public class ExistingUserSnapshotDomain {
                         return this;
                 }
 
-                public ExistingUserSnapshotDomain build() {
-                        return new ExistingUserSnapshotDomain(this);
+                public UserRegistrationExistingUserSnapshotDomainModel build() {
+                        return new UserRegistrationExistingUserSnapshotDomainModel(this);
                 }
         }
 }

@@ -5,15 +5,15 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import co.edu.uco.ucochallenge.application.interactor.mapper.DomainMapper;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.dto.RegisterUserInputDTO;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 
 @Component
-public class RegisterUserInputMapper implements DomainMapper<RegisterUserInputDTO, RegisterUserDomain> {
+public class RegisterUserInputMapper implements DomainMapper<RegisterUserInputDTO, UserRegistrationDomainModel> {
 
         @Override
-        public RegisterUserDomain toDomain(final RegisterUserInputDTO dto) {
-                return RegisterUserDomain.builder()
+        public UserRegistrationDomainModel toDomain(final RegisterUserInputDTO dto) {
+                return UserRegistrationDomainModel.builder()
                                 .id(UUID.randomUUID())
                                 .idType(dto.idTypeId())
                                 .idTypeName(dto.idTypeName())
@@ -31,7 +31,7 @@ public class RegisterUserInputMapper implements DomainMapper<RegisterUserInputDT
         }
 
         @Override
-        public RegisterUserInputDTO toDto(final RegisterUserDomain domain) {
+        public RegisterUserInputDTO toDto(final UserRegistrationDomainModel domain) {
                 return new RegisterUserInputDTO(
                                 domain.getIdType(),
                                 domain.getIdTypeName(),

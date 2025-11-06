@@ -1,10 +1,10 @@
-package co.edu.uco.ucochallenge.user.findusers.application.usecase.domain;
+package co.edu.uco.ucochallenge.domain.user.search.model;
 
 import co.edu.uco.ucochallenge.crosscuting.helper.NumberHelper;
 import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
 import co.edu.uco.ucochallenge.crosscuting.notification.SelfValidating;
 
-public class FindUsersByFilterInputDomain implements SelfValidating {
+public class UserSearchFilterDomainModel implements SelfValidating {
 
         private static final int DEFAULT_PAGE = 0;
         private static final int DEFAULT_SIZE = 10;
@@ -14,7 +14,7 @@ public class FindUsersByFilterInputDomain implements SelfValidating {
         private final int page;
         private final int size;
 
-        private FindUsersByFilterInputDomain(final Builder builder) {
+        private UserSearchFilterDomainModel(final Builder builder) {
                 this.page = sanitizePage(builder.page);
                 this.size = sanitizeSize(builder.size);
         }
@@ -72,8 +72,8 @@ public class FindUsersByFilterInputDomain implements SelfValidating {
                         return this;
                 }
 
-                public FindUsersByFilterInputDomain build() {
-                        return new FindUsersByFilterInputDomain(this);
+                public UserSearchFilterDomainModel build() {
+                        return new UserSearchFilterDomainModel(this);
                 }
         }
 }

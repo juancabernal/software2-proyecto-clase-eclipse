@@ -14,11 +14,11 @@ import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.UserEntity;
 import co.edu.uco.ucochallenge.secondary.adapters.repository.jpa.SpringDataUserRepository;
 import co.edu.uco.ucochallenge.user.confirmcontact.application.port.ConfirmUserContactRepositoryPort;
 import co.edu.uco.ucochallenge.user.findusers.application.port.FindUsersByFilterRepositoryPort;
-import co.edu.uco.ucochallenge.user.findusers.application.usecase.domain.FindUsersByFilterResponseDomain;
-import co.edu.uco.ucochallenge.user.findusers.application.usecase.domain.UserSummaryDomain;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationExistingUserSnapshotDomainModel;
+import co.edu.uco.ucochallenge.domain.user.search.model.UserSearchResultDomainModel;
+import co.edu.uco.ucochallenge.domain.user.search.model.UserSearchSummaryDomainModel;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.RegisterUserRepositoryPort;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.ExistingUserSnapshotDomain;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.PersistenceContext;
@@ -42,38 +42,39 @@ public class UserRepositoryAdapter implements RegisterUserRepositoryPort, FindUs
         }
 
         @Override
-        public Optional<ExistingUserSnapshotDomain> findByIdentification(final UUID idType, final String idNumber) {
+        public Optional<UserRegistrationExistingUserSnapshotDomainModel> findByIdentification(final UUID idType,
+                        final String idNumber) {
                 return repository.findByIdTypeIdAndIdNumber(idType, idNumber)
                                 .map(this::mapToSnapshot);
         }
 
         @Override
-        public Optional<ExistingUserSnapshotDomain> findByEmail(final String email) {
+        public Optional<UserRegistrationExistingUserSnapshotDomainModel> findByEmail(final String email) {
                 return repository.findByEmail(email)
                                 .map(this::mapToSnapshot);
         }
 
         @Override
-        public Optional<ExistingUserSnapshotDomain> findByMobileNumber(final String mobileNumber) {
+        public Optional<UserRegistrationExistingUserSnapshotDomainModel> findByMobileNumber(final String mobileNumber) {
                 return repository.findByMobileNumber(mobileNumber)
                                 .map(this::mapToSnapshot);
         }
 
         @Override
         @CacheEvict(cacheNames = "usersByPage", allEntries = true)
-        public void save(final RegisterUserDomain domain) {
+        public void save(final UserRegistrationDomainModel domain) {
                 repository.save(mapToEntity(domain));
         }
 
         @Override
-        public FindUsersByFilterResponseDomain findAll(final int page, final int size) {
+        public UserSearchResultDomainModel findAll(final int page, final int size) {
                 final var pageResult = repository.findAll(PageRequest.of(page, size));
 
                 final var users = pageResult.getContent().stream()
                                 .map(this::mapToUserSummary)
                                 .toList();
 
-                return FindUsersByFilterResponseDomain.builder()
+                return UserSearchResultDomainModel.builder()
                                 .users(users)
                                 .page(pageResult.getNumber())
                                 .size(pageResult.getSize())
@@ -120,8 +121,8 @@ public class UserRepositoryAdapter implements RegisterUserRepositoryPort, FindUs
                 });
         }
 
-        private ExistingUserSnapshotDomain mapToSnapshot(final UserEntity entity) {
-                return ExistingUserSnapshotDomain.builder()
+        private UserRegistrationExistingUserSnapshotDomainModel mapToSnapshot(final UserEntity entity) {
+                return UserRegistrationExistingUserSnapshotDomainModel.builder()
                                 .id(entity.getId())
                                 .firstName(entity.getFirstName())
                                 .firstSurname(entity.getFirstSurname())
@@ -130,11 +131,11 @@ public class UserRepositoryAdapter implements RegisterUserRepositoryPort, FindUs
                                 .build();
         }
 
-        private UserSummaryDomain mapToUserSummary(final UserEntity entity) {
+        private UserSearchSummaryDomainModel mapToUserSummary(final UserEntity entity) {
                 final IdTypeEntity idTypeEntity = entity.getIdType();
                 final CityEntity cityEntity = entity.getHomeCity();
 
-                return UserSummaryDomain.builder()
+                return UserSearchSummaryDomainModel.builder()
                                 .id(entity.getId())
                                 .idType(idTypeEntity != null ? idTypeEntity.getId() : UUIDHelper.getDefault())
                                 .idNumber(entity.getIdNumber())
@@ -150,7 +151,7 @@ public class UserRepositoryAdapter implements RegisterUserRepositoryPort, FindUs
                                 .build();
         }
 
-        private UserEntity mapToEntity(final RegisterUserDomain domain) {
+        private UserEntity mapToEntity(final UserRegistrationDomainModel domain) {
                 final var idTypeId = domain.getIdType();
                 final var cityId = domain.getHomeCity();
 

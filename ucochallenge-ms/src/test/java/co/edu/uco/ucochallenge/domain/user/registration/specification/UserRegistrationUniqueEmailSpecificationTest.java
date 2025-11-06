@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.rules;
+package co.edu.uco.ucochallenge.domain.user.registration.specification;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,10 +9,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
 import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.ExistingUserSnapshotDomain;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationExistingUserSnapshotDomainModel;
 
-class UniqueEmailSpecificationTest {
+class UserRegistrationUniqueEmailSpecificationTest {
 
         @Test
         void shouldAddNotificationErrorWhenEmailAlreadyExists() {
@@ -20,7 +20,7 @@ class UniqueEmailSpecificationTest {
                 AtomicBoolean ownerNotified = new AtomicBoolean(false);
                 AtomicBoolean executorNotified = new AtomicBoolean(false);
 
-                var existingUser = ExistingUserSnapshotDomain.builder()
+                var existingUser = UserRegistrationExistingUserSnapshotDomainModel.builder()
                                 .id(UUID.randomUUID())
                                 .firstName("Carlos")
                                 .firstSurname("Ruiz")
@@ -28,13 +28,13 @@ class UniqueEmailSpecificationTest {
                                 .mobileNumber("1234567890")
                                 .build();
 
-                var specification = new UniqueEmailSpecification(notification,
+                var specification = new UserRegistrationUniqueEmailSpecification(notification,
                                 email -> Optional.of(existingUser),
                                 (email, message) -> ownerNotified.set(true),
                                 (executor, message) -> executorNotified.set(true),
                                 "executor-id");
 
-                var domain = RegisterUserDomain.builder()
+                var domain = UserRegistrationDomainModel.builder()
                                 .id(UUID.randomUUID())
                                 .idType(UUID.randomUUID())
                                 .idNumber("100200300")
