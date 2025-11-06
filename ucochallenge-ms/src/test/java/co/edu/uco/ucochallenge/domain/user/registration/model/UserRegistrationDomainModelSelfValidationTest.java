@@ -1,4 +1,4 @@
-package co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain;
+package co.edu.uco.ucochallenge.domain.user.registration.model;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
 
-class RegisterUserDomainSelfValidationTest {
+class UserRegistrationDomainModelSelfValidationTest {
 
         @Test
         void shouldReportErrorsWhenMandatoryFieldsAreMissing() {
-                var domain = RegisterUserDomain.builder()
+                var domain = UserRegistrationDomainModel.builder()
                                 .id(UUID.randomUUID())
                                 .idType(UUIDHelper.getDefault())
                                 .idNumber("")

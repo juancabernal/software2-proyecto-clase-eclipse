@@ -4,19 +4,19 @@ import org.springframework.stereotype.Component;
 
 import co.edu.uco.ucochallenge.application.interactor.mapper.DomainMapper;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.dto.RegisterUserResponseDTO;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 
 @Component
-public class RegisterUserResponseMapper implements DomainMapper<RegisterUserResponseDTO, RegisterUserDomain> {
+public class RegisterUserResponseMapper implements DomainMapper<RegisterUserResponseDTO, UserRegistrationDomainModel> {
 
         @Override
-        public RegisterUserDomain toDomain(final RegisterUserResponseDTO dto) {
+        public UserRegistrationDomainModel toDomain(final RegisterUserResponseDTO dto) {
                 throw new UnsupportedOperationException("Conversion not supported");
         }
 
         @Override
-        public RegisterUserResponseDTO toDto(final RegisterUserDomain domain) {
+        public RegisterUserResponseDTO toDto(final UserRegistrationDomainModel domain) {
                 return new RegisterUserResponseDTO(
                                 domain.getId(),
                                 domain.getIdType(),

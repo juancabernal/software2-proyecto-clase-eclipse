@@ -5,13 +5,13 @@ import java.util.function.Supplier;
 
 import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
 import co.edu.uco.ucochallenge.domain.specification.Specification;
-import co.edu.uco.ucochallenge.user.registeruser.application.port.RegisterUserRepositoryPort;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
+import co.edu.uco.ucochallenge.domain.user.registration.specification.UserRegistrationAvailableIdSpecification;
+import co.edu.uco.ucochallenge.domain.user.registration.specification.UserRegistrationUniqueEmailSpecification;
+import co.edu.uco.ucochallenge.domain.user.registration.specification.UserRegistrationUniqueIdentificationSpecification;
+import co.edu.uco.ucochallenge.domain.user.registration.specification.UserRegistrationUniqueMobileNumberSpecification;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.NotificationPort;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.rules.AvailableUserIdSpecification;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.rules.UniqueEmailSpecification;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.rules.UniqueIdentificationSpecification;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.rules.UniqueMobileNumberSpecification;
+import co.edu.uco.ucochallenge.user.registeruser.application.port.RegisterUserRepositoryPort;
 
 public class RegisterUserDomainValidator {
 
@@ -27,28 +27,28 @@ public class RegisterUserDomainValidator {
                 this.idGenerator = idGenerator;
         }
 
-        public Notification validate(final RegisterUserDomain domain, final String executorIdentifier) {
+        public Notification validate(final UserRegistrationDomainModel domain, final String executorIdentifier) {
                 final var notification = Notification.create();
                 notification.merge(domain.validate());
 
-                final Specification<RegisterUserDomain> availableIdSpec = new AvailableUserIdSpecification(
+                final Specification<UserRegistrationDomainModel> availableIdSpec = new UserRegistrationAvailableIdSpecification(
                                 repositoryPort::existsById, idGenerator);
 
-                final Specification<RegisterUserDomain> uniqueIdentificationSpec = new UniqueIdentificationSpecification(
+                final Specification<UserRegistrationDomainModel> uniqueIdentificationSpec = new UserRegistrationUniqueIdentificationSpecification(
                                 notification,
                                 repositoryPort::findByIdentification,
                                 notificationPort::notifyAdministrator,
                                 notificationPort::notifyExecutor,
                                 executorIdentifier);
 
-                final Specification<RegisterUserDomain> uniqueEmailSpec = new UniqueEmailSpecification(
+                final Specification<UserRegistrationDomainModel> uniqueEmailSpec = new UserRegistrationUniqueEmailSpecification(
                                 notification,
                                 repositoryPort::findByEmail,
                                 notificationPort::notifyEmailOwner,
                                 notificationPort::notifyExecutor,
                                 executorIdentifier);
 
-                final Specification<RegisterUserDomain> uniqueMobileSpec = new UniqueMobileNumberSpecification(
+                final Specification<UserRegistrationDomainModel> uniqueMobileSpec = new UserRegistrationUniqueMobileNumberSpecification(
                                 notification,
                                 repositoryPort::findByMobileNumber,
                                 notificationPort::notifyMobileOwner,

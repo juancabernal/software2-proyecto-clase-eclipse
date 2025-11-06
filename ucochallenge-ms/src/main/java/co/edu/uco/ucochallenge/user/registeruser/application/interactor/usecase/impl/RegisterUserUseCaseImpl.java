@@ -12,13 +12,13 @@ import co.edu.uco.ucochallenge.crosscuting.exception.BusinessException;
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainValidationException;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 import co.edu.uco.ucochallenge.user.registeruser.application.interactor.usecase.RegisterUserUseCase;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.ContactConfirmationPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.IdTypeQueryPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.LocationQueryPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.NotificationPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.RegisterUserRepositoryPort;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.validation.RegisterUserDomainValidator;
 @Service
 @Transactional
@@ -51,7 +51,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
         }
 
         @Override
-        public RegisterUserDomain execute(final RegisterUserDomain domain) {
+        public UserRegistrationDomainModel execute(final UserRegistrationDomainModel domain) {
                 ensureContactInformation(domain);
                 resolveIdentificationType(domain);
                 validateLocation(domain);
@@ -66,13 +66,13 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 return domain;
         }
 
-        private void ensureContactInformation(final RegisterUserDomain domain) {
+        private void ensureContactInformation(final UserRegistrationDomainModel domain) {
                 if (!domain.hasEmail() && !domain.hasMobileNumber()) {
                         throw new DomainValidationException("register.user.validation.contact.required");
                 }
         }
 
-        private void resolveIdentificationType(final RegisterUserDomain domain) {
+        private void resolveIdentificationType(final UserRegistrationDomainModel domain) {
                 if (!UUIDHelper.getDefault().equals(domain.getIdType())) {
                         if (!idTypeQueryPort.existsById(domain.getIdType())) {
                                 throw new DomainValidationException("register.user.validation.idtype.required");
@@ -90,7 +90,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 domain.updateIdType(idType);
         }
 
-        private void validateLocation(final RegisterUserDomain domain) {
+        private void validateLocation(final UserRegistrationDomainModel domain) {
                 if (isMissing(domain.getCountryId())
                                 || !locationQueryPort.countryExists(domain.getCountryId())) {
                         throw new DomainValidationException("register.user.validation.country.required");
@@ -107,7 +107,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 }
         }
 
-        private void ensureUniqueUserId(final RegisterUserDomain domain) {
+        private void ensureUniqueUserId(final UserRegistrationDomainModel domain) {
                 UUID candidateId = domain.getId();
                 int attempts = 0;
 
@@ -126,7 +126,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 }
         }
 
-        private void sendConfirmations(final RegisterUserDomain domain) {
+        private void sendConfirmations(final UserRegistrationDomainModel domain) {
                 if (domain.hasEmail()) {
                         contactConfirmationPort.confirmEmail(domain.getEmail());
                         LOGGER.info("Correo de confirmación enviado a {}", domain.getEmail());

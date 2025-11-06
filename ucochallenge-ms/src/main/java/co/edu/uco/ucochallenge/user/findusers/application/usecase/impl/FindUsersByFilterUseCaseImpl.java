@@ -4,10 +4,10 @@ import org.springframework.stereotype.Service;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.BusinessException;
 import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
+import co.edu.uco.ucochallenge.domain.user.search.model.UserSearchFilterDomainModel;
+import co.edu.uco.ucochallenge.domain.user.search.model.UserSearchResultDomainModel;
 import co.edu.uco.ucochallenge.user.findusers.application.port.FindUsersByFilterRepositoryPort;
 import co.edu.uco.ucochallenge.user.findusers.application.usecase.FindUsersByFilterUseCase;
-import co.edu.uco.ucochallenge.user.findusers.application.usecase.domain.FindUsersByFilterInputDomain;
-import co.edu.uco.ucochallenge.user.findusers.application.usecase.domain.FindUsersByFilterResponseDomain;
 import co.edu.uco.ucochallenge.user.findusers.application.usecase.domain.validation.FindUsersByFilterDomainValidator;
 
 @Service
@@ -22,7 +22,7 @@ public class FindUsersByFilterUseCaseImpl implements FindUsersByFilterUseCase {
         }
 
         @Override
-        public FindUsersByFilterResponseDomain execute(final FindUsersByFilterInputDomain domain) {
+        public UserSearchResultDomainModel execute(final UserSearchFilterDomainModel domain) {
                 final Notification notification = validator.validate(domain);
                 if (notification.hasErrors()) {
                         throw new BusinessException(notification.formattedMessages());

@@ -16,12 +16,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import co.edu.uco.ucochallenge.crosscuting.exception.DomainValidationException;
 import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.ContactConfirmationPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.IdTypeQueryPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.LocationQueryPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.NotificationPort;
 import co.edu.uco.ucochallenge.user.registeruser.application.port.RegisterUserRepositoryPort;
-import co.edu.uco.ucochallenge.user.registeruser.application.usecase.domain.RegisterUserDomain;
 
 @ExtendWith(MockitoExtension.class)
 class RegisterUserUseCaseImplTest {
@@ -44,7 +44,7 @@ class RegisterUserUseCaseImplTest {
 
         @Test
         void shouldThrowDomainValidationExceptionWhenDomainValidationFails() {
-                var domain = RegisterUserDomain.builder()
+                var domain = UserRegistrationDomainModel.builder()
                                 .id(UUID.randomUUID())
                                 .idType(UUIDHelper.getDefault())
                                 .idNumber("")
