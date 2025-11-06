@@ -29,7 +29,13 @@ const postAndReturnTTL = async (
   endpoint: string,
   failureMessage: string
 ): Promise<ConfirmationResponse> => {
+  console.log(`[api.call] postAndReturnTTL -> POST ${endpoint}`);
+  try {
+    // registramos lo que enviamos (no hay body, sólo endpoint)
+    console.log(`[api.call.payload] postAndReturnTTL`, { endpoint });
+  } catch (e) { /* noop */ }
   const res = await api.post(endpoint, undefined, { validateStatus: () => true });
+  console.log(`[api.result] postAndReturnTTL <- ${endpoint} status=${res.status}`, { responseData: res.data, headers: res.headers });
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
     const seconds = Number(data?.remainingSeconds ?? 0);
@@ -58,14 +64,19 @@ const postVerificationCode = async (
   code: string,
   failureMessage: string
 ): Promise<VerificationAttemptResponse> => { // ✅ FIX: Submit verification code alongside token identifier
-  // Debug logging removed to avoid exposing sensitive information in the browser console
+  // Añadido logging para auditar petición de verificación
   const verifiedAt = new Date().toISOString();
+  try {
+    console.log(`[api.call] postVerificationCode -> POST ${endpoint}`, { payload: { code, token, verifiedAt } });
+  } catch (e) { /* noop */ }
   const res = await api.post(
     endpoint,
     { code, token, verifiedAt },
     { validateStatus: () => true }
   );
-  // Response logging removed to avoid exposing sensitive information in the browser console
+  try {
+    console.log(`[api.result] postVerificationCode <- ${endpoint} status=${res.status}`, { responseData: res.data, headers: res.headers });
+  } catch (e) { /* noop */ }
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
     const userMessage = typeof (res.data as any)?.userMessage === "string"
@@ -163,7 +174,9 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
   return {
     // GET /api/admin/users?page=1&size=10...
     async listUsers(params: { page?: number; size?: number; }): Promise<Page<User>> {
+      console.log('[api.call] listUsers -> GET /api/admin/users', { params });
       const res = await api.get("/api/admin/users", { params, validateStatus: () => true });
+      console.log('[api.result] listUsers <- /api/admin/users', { status: res.status, data: res.data });
       if (res.status !== 200) {
         throw new Error(`Listado usuarios HTTP ${res.status}`);
       }
@@ -193,6 +206,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
 
       try {
+        console.log('[api.call] createUser -> POST /api/admin/users', { payload, options: { timeoutMs, idempotencyKey: options?.idempotencyKey }, headers: maskHeaders(headers) });
         const res = await api.post(
           "/api/admin/users",
           payload,
@@ -203,6 +217,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
             headers,
           }
         );
+        console.log('[api.result] createUser <- /api/admin/users', { status: res.status, data: res.data });
 
         if (res.status !== 201) {
           const data = res.data ?? {};
@@ -238,28 +253,36 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     },
 
     async listIdTypes(): Promise<CatalogItem[]> {
+      console.log('[api.call] listIdTypes -> GET /api/admin/catalogs/id-types');
       const res = await api.get("/api/admin/catalogs/id-types", { validateStatus: () => true });
+      console.log('[api.result] listIdTypes <- /api/admin/catalogs/id-types', { status: res.status, data: res.data });
       if (res.status !== 200) throw new Error(`Catálogo idType HTTP ${res.status}`);
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
     },
 
     async listCities(): Promise<CatalogItem[]> {
+      console.log('[api.call] listCities -> GET /api/admin/catalogs/cities');
       const res = await api.get("/api/admin/catalogs/cities", { validateStatus: () => true });
+      console.log('[api.result] listCities <- /api/admin/catalogs/cities', { status: res.status, data: res.data });
       if (res.status !== 200) throw new Error(`Catálogo ciudades HTTP ${res.status}`);
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
     },
 
     async listDepartments(): Promise<CatalogItem[]> {
+      console.log('[api.call] listDepartments -> GET /api/admin/catalogs/departments');
       const res = await api.get("/api/admin/catalogs/departments", { validateStatus: () => true });
+      console.log('[api.result] listDepartments <- /api/admin/catalogs/departments', { status: res.status, data: res.data });
       if (res.status !== 200) throw new Error(`Catálogo departamentos HTTP ${res.status}`);
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
     },
 
     async listCitiesByDepartment(departmentId: string): Promise<CatalogItem[]> {
+      console.log('[api.call] listCitiesByDepartment -> GET /api/admin/catalogs/departments/${departmentId}/cities', { departmentId });
       const res = await api.get(`/api/admin/catalogs/departments/${departmentId}/cities`, { validateStatus: () => true });
+      console.log('[api.result] listCitiesByDepartment <- /api/admin/catalogs/departments/${departmentId}/cities', { status: res.status, data: res.data });
       if (res.status !== 200) throw new Error(`Catálogo ciudades por departamento HTTP ${res.status}`);
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
@@ -269,7 +292,9 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     async findUserLocally(params: { email?: string; idNumber?: string }): Promise<User | null> {
       const page0 = 0;
       const size = 50;
+      console.log('[api.call] findUserLocally -> GET /api/admin/users', { query: { page: page0, size } });
       const res = await api.get("/api/admin/users", { params: { page: page0, size }, validateStatus: () => true });
+      console.log('[api.result] findUserLocally <- /api/admin/users', { status: res.status, data: res.data });
       if (res.status !== 200) {
         // no queremos lanzar aquí para que el caller decida (fallback silencioso)
         try {
@@ -302,8 +327,10 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email`;
 
       try {
+        console.log('[api.call] requestEmailConfirmation', { userId: trimmedId, adminEndpoint, fallbackEndpoint });
         return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.");
       } catch (error: any) {
+        console.log('[api.error] requestEmailConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         if (error?.response?.status === 404) {
           return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.");
         }
@@ -320,8 +347,10 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile`;
 
       try {
+        console.log('[api.call] requestMobileConfirmation', { userId: trimmedId, adminEndpoint, fallbackEndpoint });
         return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del teléfono móvil.");
       } catch (error: any) {
+        console.log('[api.error] requestMobileConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         if (error?.response?.status === 404) {
           return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del teléfono móvil.");
         }
@@ -347,6 +376,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email/verify`;
 
       try {
+        console.log('[api.call] validateEmailConfirmation', { userId: trimmedId, token: sanitizedToken, code: sanitizedCode, adminEndpoint, fallbackEndpoint });
         return await postVerificationCode(
           api,
           adminEndpoint,
@@ -355,6 +385,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           "No fue posible validar el código del correo electrónico."
         );
       } catch (error: any) {
+        console.log('[api.error] validateEmailConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         if (error?.response?.status === 404) {
           return await postVerificationCode(
             api,
@@ -387,6 +418,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile/verify`;
 
       try {
+        console.log('[api.call] validateMobileConfirmation', { userId: trimmedId, token: sanitizedToken, code: sanitizedCode, adminEndpoint, fallbackEndpoint });
         return await postVerificationCode(
           api,
           adminEndpoint,
@@ -395,6 +427,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           "No fue posible validar el código del teléfono móvil."
         );
       } catch (error: any) {
+        console.log('[api.error] validateMobileConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         if (error?.response?.status === 404) {
           return await postVerificationCode(
             api,
@@ -415,7 +448,9 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
 
       const endpoint = `/api/v1/users/verify`; // ✅ FIX: Target new verification endpoint
-      const res = await api.post(endpoint, { token: sanitizedToken }, { validateStatus: () => true }); // ✅ FIX: Submit token for backend validation
+  console.log('[api.call] verifyUserToken -> POST /api/v1/users/verify', { token: sanitizedToken });
+  const res = await api.post(endpoint, { token: sanitizedToken }, { validateStatus: () => true }); // ✅ FIX: Submit token for backend validation
+  console.log('[api.result] verifyUserToken <- /api/v1/users/verify', { status: res.status, data: res.data });
       if (res.status >= 200 && res.status < 300) { // ✅ FIX: Accept success HTTP codes
         const data = (res.data as any)?.data ?? res.data; // ✅ FIX: Support wrapped responses from API
         return {
