@@ -6,9 +6,9 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
-import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
-import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.notification.Notification;
 import co.edu.uco.ucochallenge.domain.specification.Specification;
 import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationExistingUserSnapshotDomainModel;

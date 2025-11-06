@@ -1,8 +1,8 @@
 package co.edu.uco.ucochallenge.domain.user.search.model;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.NumberHelper;
-import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
-import co.edu.uco.ucochallenge.crosscuting.notification.SelfValidating;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.NumberHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.notification.Notification;
+import co.edu.uco.ucochallenge.crosscutting.legacy.notification.SelfValidating;
 
 public class UserSearchFilterDomainModel implements SelfValidating {
 

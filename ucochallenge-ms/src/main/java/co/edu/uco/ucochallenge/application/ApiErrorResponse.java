@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.application;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.TextHelper;
 
 public final class ApiErrorResponse extends Response<ApiErrorResponse.ErrorData> {
 
