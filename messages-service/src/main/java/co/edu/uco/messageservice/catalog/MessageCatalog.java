@@ -96,7 +96,7 @@ public final class MessageCatalog {
                 "Debes seleccionar una ciudad válida.",
                 "Información de ciudad obligatoria para el registro.");
 
-        // --- Reglas de negocio ---
+        // --- Reglas de negocio -----
         register("register.user.rule.duplicated",
                 "Duplicate user detected with same ID type and number.",
                 "Ya existe un usuario registrado con esta identificación.",
