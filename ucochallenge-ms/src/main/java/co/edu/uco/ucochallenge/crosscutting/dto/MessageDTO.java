@@ -57,6 +57,22 @@ public class MessageDTO {
         return (code != null) ? code : "Error";
     }
 
+    /** Preferencia técnica: mensaje técnico → general → usuario → código. */
+    public String getTechnicalMessageResolved() {
+        if (isNotBlank(technicalMessage)) return technicalMessage;
+        if (isNotBlank(generalMessage)) return generalMessage;
+        if (isNotBlank(userMessage)) return userMessage;
+        return (code != null) ? code : "Technical error";
+    }
+
+    /** Preferencia contextual: mensaje general → usuario → técnico → código. */
+    public String getGeneralMessageResolved() {
+        if (isNotBlank(generalMessage)) return generalMessage;
+        if (isNotBlank(userMessage)) return userMessage;
+        if (isNotBlank(technicalMessage)) return technicalMessage;
+        return (code != null) ? code : "Error";
+    }
+
     private static boolean isNotBlank(String s) {
         return s != null && !s.isBlank();
     }

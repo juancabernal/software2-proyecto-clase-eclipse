@@ -2,6 +2,7 @@ package co.edu.uco.ucochallenge.application.user.contactconfirmation.service;
 
 import java.util.Arrays;
 
+import co.edu.uco.ucochallenge.crosscutting.MessageCodes;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.DomainValidationException;
 
 public enum VerificationChannel {
@@ -40,6 +41,6 @@ public enum VerificationChannel {
                 return Arrays.stream(values())
                                 .filter(channel -> channel.value.equalsIgnoreCase(normalized))
                                 .findFirst()
-                                .orElseThrow(() -> new DomainValidationException("Canal de verificación inválido"));
+                                .orElseThrow(() -> new DomainValidationException(MessageCodes.VERIFICATION_CHANNEL_INVALID));
         }
 }

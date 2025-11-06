@@ -16,6 +16,7 @@ import com.notificationapi.model.NotificationRequest;
 import com.notificationapi.model.SmsOptions;
 import com.notificationapi.model.User;
 
+import co.edu.uco.ucochallenge.crosscutting.MessageCodes;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.NotificationDeliveryException;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.entity.VerificationCodeEntity;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.jpa.VerificationCodeRepository;
@@ -73,7 +74,7 @@ public class NotificationContactConfirmationAdapter implements ContactConfirmati
             LOGGER.info("[NotificationAPI] Sent code {} to {} | Response: {}", code, contact, response);
         } catch (Exception e) {
             LOGGER.error("[NotificationAPI] Error sending code", e);
-            throw new NotificationDeliveryException("No se pudo enviar el código de verificación", e);
+            throw new NotificationDeliveryException(MessageCodes.VERIFICATION_NOTIFICATION_DELIVERY_FAILED, e);
         }
     }
 
@@ -119,7 +120,7 @@ public class NotificationContactConfirmationAdapter implements ContactConfirmati
             LOGGER.warn("Unknown channel '{}'", channel);
         } catch (Exception e) {
             LOGGER.error("[NotificationAPI] Error sending code", e);
-            throw new NotificationDeliveryException("No se pudo enviar el código de verificación", e);
+            throw new NotificationDeliveryException(MessageCodes.VERIFICATION_NOTIFICATION_DELIVERY_FAILED, e);
         }
     }
 
