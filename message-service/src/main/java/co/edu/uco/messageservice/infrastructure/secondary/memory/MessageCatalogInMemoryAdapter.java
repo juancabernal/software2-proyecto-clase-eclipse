@@ -1,73 +1,79 @@
-package co.edu.uco.messageservice.catalog;
+package co.edu.uco.messageservice.infrastructure.secondary.memory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.reactivestreams.Publisher;
 import org.springframework.stereotype.Component;
 
+import co.edu.uco.messageservice.domain.event.MessageCatalogChangeEvent;
+import co.edu.uco.messageservice.domain.event.MessageCatalogEventType;
+import co.edu.uco.messageservice.domain.model.MessageDomainAggregate;
+import co.edu.uco.messageservice.domain.port.MessageCatalogGateway;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 
 /**
- * Catálogo reactivo en memoria que mantiene los mensajes y emite eventos cada
- * vez que cambia su contenido.
+ * Secondary adapter that stores catalog messages in memory. It keeps the
+ * existing behavior while exposing the operations through the domain port.
  */
 @Component
-public class ReactiveMessageCatalog {
+public class MessageCatalogInMemoryAdapter implements MessageCatalogGateway {
 
-    private final Map<String, Message> messages = new ConcurrentHashMap<>();
-    private final Sinks.Many<MessageChange> sink = Sinks.many().replay().latest();
-    private final Flux<MessageChange> changeStream = sink.asFlux();
+    private final Map<String, MessageDomainAggregate> messages = new ConcurrentHashMap<>();
+    private final Sinks.Many<MessageCatalogChangeEvent> sink = Sinks.many().replay().latest();
+    private final Flux<MessageCatalogChangeEvent> changeStream = sink.asFlux();
 
-    public ReactiveMessageCatalog() {
+    public MessageCatalogInMemoryAdapter() {
         loadDefaults();
     }
 
-    public Flux<Message> findAll() {
-        return Flux.defer(() -> Flux.fromIterable(messages.values()).map(this::copyOf));
+    @Override
+    public Publisher<MessageDomainAggregate> fetchAll() {
+        return Flux.defer(() -> Flux.fromIterable(messages.values()));
     }
 
-    public Mono<Message> findByKey(String key) {
-        return Mono.defer(() -> Mono.justOrEmpty(messages.get(key)).map(this::copyOf));
+    @Override
+    public Publisher<MessageDomainAggregate> fetchByKey(String key) {
+        return Mono.defer(() -> Mono.justOrEmpty(messages.get(key)));
     }
 
-    public Mono<Message> save(Message message) {
+    @Override
+    public Publisher<MessageDomainAggregate> save(MessageDomainAggregate message) {
         return Mono.fromSupplier(() -> {
-            Message sanitized = copyOf(message);
-            CatalogEventType type = messages.containsKey(sanitized.getKey()) ? CatalogEventType.UPDATED
-                    : CatalogEventType.CREATED;
-            messages.put(sanitized.getKey(), sanitized);
+            MessageDomainAggregate sanitized = MessageDomainAggregate.create(message.key(), message.value());
+            MessageCatalogEventType type = messages.containsKey(sanitized.key()) ? MessageCatalogEventType.UPDATED
+                    : MessageCatalogEventType.CREATED;
+            messages.put(sanitized.key(), sanitized);
             emit(type, sanitized);
-            return copyOf(sanitized);
+            return sanitized;
         });
     }
 
-    public Mono<Message> remove(String key) {
+    @Override
+    public Publisher<MessageDomainAggregate> deleteByKey(String key) {
         return Mono.defer(() -> {
-            Message removed = messages.remove(key);
+            MessageDomainAggregate removed = messages.remove(key);
             if (removed == null) {
                 return Mono.empty();
             }
-            emit(CatalogEventType.DELETED, removed);
-            return Mono.just(copyOf(removed));
+            emit(MessageCatalogEventType.DELETED, removed);
+            return Mono.just(removed);
         });
     }
 
-    public Flux<MessageChange> changes() {
+    @Override
+    public Publisher<MessageCatalogChangeEvent> listenChanges() {
         return changeStream;
     }
 
-    private void emit(CatalogEventType type, Message message) {
-        sink.emitNext(new MessageChange(type, copyOf(message)), Sinks.EmitFailureHandler.FAIL_FAST);
-    }
-
-    private Message copyOf(Message message) {
-        return new Message(message.getKey(), message.getValue());
+    private void emit(MessageCatalogEventType type, MessageDomainAggregate message) {
+        sink.emitNext(new MessageCatalogChangeEvent(type, message), Sinks.EmitFailureHandler.FAIL_FAST);
     }
 
     private void register(String key, String value) {
-        messages.put(key, new Message(key, value));
+        messages.put(key, MessageDomainAggregate.create(key, value));
     }
 
     private void loadDefaults() {
@@ -174,8 +180,7 @@ public class ReactiveMessageCatalog {
         register("domain.user.mobile.empty.user", "Debe ingresar un número de teléfono móvil.");
         register("domain.user.mobile.invalidFormat.technical",
                 "El número de teléfono móvil debe tener exactamente 10 dígitos.");
-        register("domain.user.mobile.invalidFormat.user",
-                "El número de celular debe tener 10 dígitos.");
+        register("domain.user.mobile.invalidFormat.user", "El número de celular debe tener 10 dígitos.");
         register("domain.user.notFound.technical", "El usuario solicitado no existe en el sistema.");
         register("domain.user.notFound.user", "No encontramos un usuario con la información suministrada.");
         register("domain.user.email.alreadyRegistered.user", "El correo ya se encuentra registrado.");
@@ -199,8 +204,6 @@ public class ReactiveMessageCatalog {
         register("domain.user.mobile.alreadyConfirmed.technical",
                 "El número de teléfono móvil ya fue confirmado anteriormente.");
         register("domain.user.mobile.alreadyConfirmed.user",
-                "El número de teléfono móvil del usuario ya está confirmado.");
-        
-       
+                "El número de teléfono móvil ya está confirmado.");
     }
 }
