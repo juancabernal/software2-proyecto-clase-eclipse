@@ -17,7 +17,11 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.uco.ucochallenge.application.Void;
 import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.notification.VerificationAttemptResponseDTO;
+import co.edu.uco.ucochallenge.application.notification.VerificationChannel;
 import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
+import co.edu.uco.ucochallenge.application.user.contactconfirmation.dto.ConfirmVerificationCodeRequestDTO;
+import co.edu.uco.ucochallenge.application.user.contactconfirmation.dto.ConfirmVerificationCodeResponseDTO;
+import co.edu.uco.ucochallenge.application.user.contactconfirmation.service.UserContactConfirmationService;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.EmailConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationCodeRequestDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
@@ -53,6 +57,7 @@ public class UserController {
     private final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor;
     private final VerifyEmailTokenInteractor verifyEmailTokenInteractor;
     private final VerifyMobileTokenInteractor verifyMobileTokenInteractor;
+    private final UserContactConfirmationService userContactConfirmationService;
 
     /* private final UpdateUserInteractor updateUserInteractor; */
 
@@ -65,7 +70,8 @@ public class UserController {
             final RequestMobileConfirmationInteractor requestMobileConfirmationInteractor,
             final ValidateMobileConfirmationInteractor validateMobileConfirmationInteractor,
             final VerifyEmailTokenInteractor verifyEmailTokenInteractor,
-            final VerifyMobileTokenInteractor verifyMobileTokenInteractor
+            final VerifyMobileTokenInteractor verifyMobileTokenInteractor,
+            final UserContactConfirmationService userContactConfirmationService
             /*
              * , final UpdateUserInteractor updateUserInteractor
              */) {
@@ -78,6 +84,7 @@ public class UserController {
         this.validateMobileConfirmationInteractor = validateMobileConfirmationInteractor;
         this.verifyEmailTokenInteractor = verifyEmailTokenInteractor;
         this.verifyMobileTokenInteractor = verifyMobileTokenInteractor;
+        this.userContactConfirmationService = userContactConfirmationService;
         /* this.updateUserInteractor = updateUserInteractor; */
     }
 
@@ -130,6 +137,18 @@ public class UserController {
                         request.sanitizedCode(),
                         request.sanitizedVerificationDate());
         return ResponseEntity.ok(ApiSuccessResponse.of(response.message(), response));
+    }
+
+    @PostMapping("/{id}/confirmations/verify-code")
+    public ResponseEntity<ApiSuccessResponse<ConfirmVerificationCodeResponseDTO>> confirmContactVerification(
+            @PathVariable("id") final UUID id,
+            @RequestBody final ConfirmVerificationCodeRequestDTO request) {
+        final VerificationChannel channel = VerificationChannel.from(request.sanitizedChannel());
+        userContactConfirmationService.confirmVerificationCode(id, channel, request.sanitizedCode());
+        final String message = channel.isEmail() ? "Correo confirmado." : "SMS confirmado.";
+        final ConfirmVerificationCodeResponseDTO response =
+                new ConfirmVerificationCodeResponseDTO(true, channel.value());
+        return ResponseEntity.ok(ApiSuccessResponse.of(message, response));
     }
 
     @DeleteMapping("/{id}")
