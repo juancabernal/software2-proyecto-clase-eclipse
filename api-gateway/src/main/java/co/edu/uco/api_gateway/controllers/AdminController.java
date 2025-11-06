@@ -23,6 +23,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.CatalogItemDto;
+import co.edu.uco.api_gateway.dto.ConfirmationResponse;
+import co.edu.uco.api_gateway.dto.EmailConfirmationResponse;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
 import co.edu.uco.api_gateway.dto.RegisterUserResponse;
@@ -121,10 +123,10 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/email")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestEmailConfirmation(
+    public ResponseEntity<ApiSuccessResponse<EmailConfirmationResponse>> requestEmailConfirmation(
             @PathVariable("id") final UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response =
+        final ApiSuccessResponse<EmailConfirmationResponse> response =
                 userServiceProxy.requestEmailConfirmation(id, authorizationHeader);
         return ResponseEntity.ok(response);
     }
@@ -176,10 +178,10 @@ public class AdminController {
      */
     @PostMapping("/users/{id}/confirmations/mobile")
     @PreAuthorize("hasAuthority('administrador')")
-    public ResponseEntity<ApiSuccessResponse<Void>> requestMobileConfirmation(
+    public ResponseEntity<ApiSuccessResponse<ConfirmationResponse>> requestMobileConfirmation(
             @PathVariable("id") final UUID id,
             @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response =
+        final ApiSuccessResponse<ConfirmationResponse> response =
                 userServiceProxy.requestMobileConfirmation(id, authorizationHeader);
         return ResponseEntity.ok(response);
     }
