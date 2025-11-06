@@ -35,7 +35,6 @@ type VerificationModalState = {
   type: "email" | "mobile";
   contact: string;
   code: string;
-  tokenId: string; // ✅ FIX: Store verification identifier returned by backend
   loading: boolean;
   status: VerificationAttemptResponse | null;
   error: string | null;
@@ -54,7 +53,6 @@ const emptyVerificationModal = (): VerificationModalState => ({
   type: "email",
   contact: "",
   code: "",
-  tokenId: "", // ✅ FIX: Reset stored verification identifier when closing modal
   loading: false,
   status: null,
   error: null,
@@ -132,9 +130,11 @@ export default function UsersAdmin() {
   >({});
   // Catálogos y estados relacionados
   const [idTypes, setIdTypes] = useState<CatalogItem[]>([]);
+  const [countries, setCountries] = useState<CatalogItem[]>([]);
   const [departments, setDepartments] = useState<CatalogItem[]>([]);
   const [cities, setCities] = useState<CatalogItem[]>([]);
   const [filterCities, setFilterCities] = useState<CatalogItem[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [filterDepartment, setFilterDepartment] = useState<string>("");
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -217,7 +217,7 @@ export default function UsersAdmin() {
         const name = String(u.fullName ?? "").toLowerCase();
         const email = String(u.email ?? "").toLowerCase();
         const phone = String(u.mobileNumber ?? "").toLowerCase();
-        const idType = String(u.idType ?? "");
+        const idType = String(u.idTypeId ?? "");
 
         const matchesName = nameQ ? name.includes(nameQ) : true;
         const matchesEmail = emailQ ? email.includes(emailQ) : true;
@@ -258,13 +258,13 @@ export default function UsersAdmin() {
       try {
         setCatalogLoading(true);
         setCatalogErr(null);
-        const [idTypeOptions, departmentOptions] = await Promise.all([
+        const [idTypeOptions, countryOptions] = await Promise.all([
           api.listIdTypes(),
-          api.listDepartments(),
+          api.listCountries(),
         ]);
         if (!active) return;
         setIdTypes(idTypeOptions);
-        setDepartments(departmentOptions);
+        setCountries(countryOptions);
       } catch (error: any) {
         if (active) setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
       } finally {
@@ -275,6 +275,40 @@ export default function UsersAdmin() {
       active = false;
     };
   }, [api]);
+
+  useEffect(() => {
+    if (!selectedCountry) {
+      setDepartments([]);
+      setSelectedDepartment("");
+      setCities([]);
+      setForm((current) => ({ ...current, homeCity: "" }));
+      return;
+    }
+
+    let active = true;
+    (async () => {
+      try {
+        setCatalogLoading(true);
+        setCatalogErr(null);
+        const departmentOptions = await api.listDepartments(selectedCountry);
+        if (active) {
+          setDepartments(departmentOptions);
+        }
+      } catch (error: any) {
+        if (active) {
+          setCatalogErr(error?.message || "No se pudieron cargar los catálogos.");
+        }
+      } finally {
+        if (active) {
+          setCatalogLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [selectedCountry, api]);
 
   useEffect(() => {
     if (!selectedDepartment) {
@@ -419,7 +453,9 @@ export default function UsersAdmin() {
   const resetForm = () => {
     setForm(emptyForm());
     setFormErr(null);
+    setSelectedCountry("");
     setSelectedDepartment("");
+    setDepartments([]);
     setCities([]);
   };
 
@@ -447,30 +483,32 @@ export default function UsersAdmin() {
 
   // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y cities
   const buildPayload = (form: UserFormState): UserCreateInput => {
-    const sanitize = (value: string) => value.trim();
-
-    // Buscar el UUID correspondiente al idType y homeCity
-    const idTypeItem = idTypes.find((t) => t.name === form.idType || t.id === form.idType);
-    const cityItem = cities.find((c) => c.name === form.homeCity || c.id === form.homeCity);
-
-    const basePayload: UserCreateInput = {
-      idType: sanitize(idTypeItem?.id || form.idType),
-      idNumber: sanitize(form.idNumber),
-      firstName: sanitize(form.firstName),
-      firstSurname: sanitize(form.firstSurname),
-      homeCity: sanitize(cityItem?.id || form.homeCity),
-      email: sanitize(form.email),
+    const sanitize = (value?: string) => (value ?? "").trim();
+    const optional = (value?: string) => {
+      const trimmed = sanitize(value);
+      return trimmed || undefined;
     };
 
-    const extras: Partial<UserCreateInput> = {};
-    const secondName = sanitize(form.secondName);
-    if (secondName) extras.secondName = secondName;
-    const secondSurname = sanitize(form.secondSurname);
-    if (secondSurname) extras.secondSurname = secondSurname;
-    const mobile = sanitize(form.mobileNumber);
-    if (mobile) extras.mobileNumber = mobile;
+    const idTypeItem = idTypes.find((t) => t.id === form.idType);
 
-    return { ...basePayload, ...extras };
+    const countryId = sanitize(selectedCountry);
+    const departmentId = sanitize(selectedDepartment);
+    const cityId = sanitize(form.homeCity);
+
+    return {
+      idTypeId: sanitize(idTypeItem?.id || form.idType),
+      idTypeName: optional(idTypeItem?.name),
+      idNumber: sanitize(form.idNumber),
+      firstName: sanitize(form.firstName),
+      secondName: optional(form.secondName),
+      firstSurname: sanitize(form.firstSurname),
+      secondSurname: optional(form.secondSurname),
+      email: sanitize(form.email),
+      mobile: optional(form.mobileNumber),
+      countryId,
+      departmentId,
+      cityId,
+    };
   };
 
   // (Removed duplicate fetchUsers and related useEffect)
@@ -509,13 +547,6 @@ export default function UsersAdmin() {
     }
 
     const key = countdownKeyFor(userId, type);
-    const successMessage =
-      type === "email" ? "Se envió la solicitud de validación del correo electrónico."
-        : "Se envió la solicitud de validación del teléfono móvil.";
-    const errorFallback =
-      type === "email" ? "No fue posible solicitar la validación del correo electrónico."
-        : "No fue posible solicitar la validación del teléfono móvil.";
-
     const targetUser = pageData?.items?.find((u) => u.userId === userId);
     if (!targetUser) {
       updateFeedback(userId, { variant: "error", message: "No se encontró el usuario seleccionado." });
@@ -537,28 +568,28 @@ export default function UsersAdmin() {
         type === "email"
           ? await api.requestEmailConfirmation(userId)
           : await api.requestMobileConfirmation(userId);
-      startCountdown(key, response.remainingSeconds);
-      updateFeedback(userId, { variant: "success", message: successMessage });
+      updateFeedback(userId, { variant: "success", message: response.message });
+      startCountdown(key, 0);
       setVerificationModal({
         open: true,
         userId,
         type,
         contact: type === "email" ? targetUser.email : targetUser.mobileNumber || "",
         code: "",
-        tokenId: response.verificationId || response.tokenId || "", // ✅ FIX: Keep verification identifier for subsequent code validation
         loading: false,
         status: null,
         error: null,
       });
     } catch (error: any) {
-      const message = error?.message || errorFallback;
+      const message =
+        error?.message ||
+        (type === "email"
+          ? "No fue posible solicitar la validación del correo electrónico."
+          : "No fue posible solicitar la validación del teléfono móvil.");
       updateFeedback(userId, { variant: "error", message });
 
       console.error(`Error solicitando validación de ${type}:`, error);
       closeVerificationModal();
-
-      updateFeedback(userId, { variant: "error", message: error?.message || errorFallback });
-
     } finally {
       setActionLoading((prev) => {
         const { [key]: _r, ...rest } = prev;
@@ -575,11 +606,6 @@ export default function UsersAdmin() {
     if (!verificationModal.open || !verificationModal.userId) {
       return;
     }
-    const sanitizedTokenId = verificationModal.tokenId.trim(); // ✅ FIX: Prepare token identifier for validation request
-    if (!sanitizedTokenId) { // ✅ FIX: Prevent validation without associated token
-      setVerificationModal((prev) => ({ ...prev, error: "No se pudo identificar el token. Solicita un nuevo código." }));
-      return;
-    }
     const trimmedCode = verificationModal.code.trim();
     if (!trimmedCode) {
       setVerificationModal((prev) => ({ ...prev, error: "Ingresa el código enviado." }));
@@ -592,15 +618,14 @@ export default function UsersAdmin() {
     try {
       const response =
         verificationModal.type === "email"
-          ? await api.validateEmailConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode)
-          : await api.validateMobileConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode);
+          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode)
+          : await api.validateMobileConfirmation(verificationModal.userId, trimmedCode);
 
       setVerificationModal((prev) => ({
         ...prev,
         loading: false,
         status: response,
         code: response.success ? "" : prev.code,
-        tokenId: response.verificationId || prev.tokenId, // ✅ FIX: Refresh token identifier if backend returns a new value
         error: null,
       }));
 
@@ -612,8 +637,6 @@ export default function UsersAdmin() {
       if (response.success) {
         clearCountdown(key);
         await fetchUsers();
-      } else if (response.expired || response.attemptsRemaining <= 0) {
-        clearCountdown(key);
       }
     } catch (error: any) {
       const message = error?.message || "No fue posible validar el código.";
@@ -627,6 +650,8 @@ export default function UsersAdmin() {
     if (!state.idNumber.trim()) return "Ingresa el número de identificación.";
     if (!state.firstName.trim()) return "El primer nombre es obligatorio.";
     if (!state.firstSurname.trim()) return "El primer apellido es obligatorio.";
+    if (!selectedCountry.trim()) return "Selecciona el país de residencia.";
+    if (!selectedDepartment.trim()) return "Selecciona el departamento de residencia.";
     if (!state.homeCity.trim()) return "Selecciona la ciudad de residencia.";
     if (!state.email.trim()) return "El correo es obligatorio.";
     if (!/^\S+@\S+\.\S+$/.test(state.email.trim())) return "Correo inválido.";
@@ -861,9 +886,11 @@ export default function UsersAdmin() {
                   <td className="px-4 py-3 text-sm text-gray-300">{user.email}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">{user.mobileNumber || "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">
-                    {idTypes.find((t) => t.id === user.idType)?.name || "Desconocido"}
+                    {user.idTypeId
+                      ? idTypes.find((t) => t.id === user.idTypeId)?.name || "Desconocido"
+                      : "—"}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber}</td>
+                  <td className="px-4 py-3 text-sm text-gray-300">{user.idNumber || "—"}</td>
                   <td className="px-4 py-3 text-sm text-gray-300">
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-wrap items-center gap-2">
@@ -988,11 +1015,6 @@ export default function UsersAdmin() {
                 {verificationModal.status && (
                   <div className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}>
                     {verificationModal.status.message}
-                    {!verificationModal.status.success && verificationModal.status.attemptsRemaining > 0 && (
-                      <span className="ml-2 text-xs text-gray-400">
-                        Intentos restantes: {verificationModal.status.attemptsRemaining}
-                      </span>
-                    )}
                   </div>
                 )}
             </div>
@@ -1138,10 +1160,32 @@ export default function UsersAdmin() {
           </label>
 
           <label className="flex flex-col text-sm text-gray-300">
+            País *
+            <select
+              value={selectedCountry}
+              disabled={catalogLoading}
+              onChange={(e) => {
+                const country = e.target.value;
+                setSelectedCountry(country);
+                setSelectedDepartment("");
+                setForm((f) => ({ ...f, homeCity: "" }));
+              }}
+              className="mt-1 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+            >
+              <option value="">Selecciona…</option>
+              {countries.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col text-sm text-gray-300">
             Departamento *
             <select
               value={selectedDepartment}
-              disabled={catalogLoading}
+              disabled={catalogLoading || !selectedCountry}
               onChange={(e) => {
                 const dept = e.target.value;
                 setSelectedDepartment(dept);
