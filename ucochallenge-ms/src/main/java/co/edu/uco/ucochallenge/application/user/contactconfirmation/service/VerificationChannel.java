@@ -9,6 +9,8 @@ public enum VerificationChannel {
         EMAIL("email"),
         MOBILE("mobile");
 
+        private static final String INVALID_CHANNEL_CODE = "verification.channel.invalid";
+
         private final String value;
 
         VerificationChannel(final String value) {
@@ -40,6 +42,7 @@ public enum VerificationChannel {
                 return Arrays.stream(values())
                                 .filter(channel -> channel.value.equalsIgnoreCase(normalized))
                                 .findFirst()
-                                .orElseThrow(() -> new DomainValidationException("Canal de verificación inválido"));
+                                .orElseThrow(() -> new DomainValidationException(INVALID_CHANNEL_CODE,
+                                                new IllegalArgumentException("Canal recibido: " + rawChannel)));
         }
 }

@@ -57,9 +57,11 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 validateLocation(domain);
                 ensureUniqueUserId(domain);
                 final var notification = validator.validate(domain, "register-api");
-                if (notification.hasErrors()) {
-                        throw new BusinessException("register.user.duplicated");
-                }
+        if (notification.hasErrors()) {
+                        final String technicalDetail = notification.formattedMessages();
+                        throw new BusinessException("register.user.duplicated",
+                                        new IllegalStateException("Violaciones de unicidad: " + technicalDetail));
+        }
 
                 repositoryPort.save(domain);
 
@@ -67,44 +69,52 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
         }
 
         private void ensureContactInformation(final UserRegistrationDomainModel domain) {
-                if (!domain.hasEmail() && !domain.hasMobileNumber()) {
-                        throw new DomainValidationException("register.user.validation.contact.required");
-                }
+        if (!domain.hasEmail() && !domain.hasMobileNumber()) {
+                        throw new DomainValidationException("register.user.validation.contact.required",
+                                        new IllegalArgumentException("Se requiere correo electrónico o número móvil"));
+        }
         }
 
         private void resolveIdentificationType(final UserRegistrationDomainModel domain) {
-                if (!UUIDHelper.getDefault().equals(domain.getIdType())) {
+        if (!UUIDHelper.getDefault().equals(domain.getIdType())) {
                         if (!idTypeQueryPort.existsById(domain.getIdType())) {
-                                throw new DomainValidationException("register.user.validation.idtype.required");
+                                throw new DomainValidationException("register.user.validation.idtype.required",
+                                                new IllegalArgumentException("El tipo de identificación "
+                                                                + domain.getIdType() + " no existe"));
                         }
                         return;
-                }
+        }
 
-                if (TextHelper.isEmpty(domain.getIdTypeName())) {
-                        throw new DomainValidationException("register.user.validation.idtype.required");
-                }
+        if (TextHelper.isEmpty(domain.getIdTypeName())) {
+                        throw new DomainValidationException("register.user.validation.idtype.required",
+                                        new IllegalArgumentException("Nombre de tipo de identificación vacío"));
+        }
 
-                final var idType = idTypeQueryPort.findIdByName(domain.getIdTypeName())
-                                .orElseThrow(() -> new DomainValidationException("register.user.validation.idtype.required"));
+        final var idType = idTypeQueryPort.findIdByName(domain.getIdTypeName())
+                        .orElseThrow(() -> new DomainValidationException("register.user.validation.idtype.required",
+                                        new IllegalArgumentException("No se encontró el tipo " + domain.getIdTypeName())));
 
                 domain.updateIdType(idType);
         }
 
         private void validateLocation(final UserRegistrationDomainModel domain) {
-                if (isMissing(domain.getCountryId())
+        if (isMissing(domain.getCountryId())
                                 || !locationQueryPort.countryExists(domain.getCountryId())) {
-                        throw new DomainValidationException("register.user.validation.country.required");
-                }
+                        throw new DomainValidationException("register.user.validation.country.required",
+                                        new IllegalArgumentException("País inválido: " + domain.getCountryId()));
+        }
 
-                if (isMissing(domain.getDepartmentId())
+        if (isMissing(domain.getDepartmentId())
                                 || !locationQueryPort.departmentExists(domain.getDepartmentId())) {
-                        throw new DomainValidationException("register.user.validation.department.required");
-                }
+                        throw new DomainValidationException("register.user.validation.department.required",
+                                        new IllegalArgumentException("Departamento inválido: " + domain.getDepartmentId()));
+        }
 
-                if (isMissing(domain.getHomeCity())
+        if (isMissing(domain.getHomeCity())
                                 || !locationQueryPort.cityExists(domain.getHomeCity())) {
-                        throw new DomainValidationException("register.user.validation.city.required");
-                }
+                        throw new DomainValidationException("register.user.validation.city.required",
+                                        new IllegalArgumentException("Ciudad inválida: " + domain.getHomeCity()));
+        }
         }
 
         private void ensureUniqueUserId(final UserRegistrationDomainModel domain) {
@@ -116,10 +126,11 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                         attempts++;
                 }
 
-                if (repositoryPort.existsById(candidateId)) {
+        if (repositoryPort.existsById(candidateId)) {
                         LOGGER.warn("Unable to generate a unique user id after {} attempts", attempts);
-                        throw new BusinessException("register.user.identifier.unavailable");
-                }
+                        throw new BusinessException("register.user.identifier.unavailable",
+                                        new IllegalStateException("Intentos agotados generando identificador"));
+        }
 
                 if (!candidateId.equals(domain.getId())) {
                         domain.updateId(candidateId);

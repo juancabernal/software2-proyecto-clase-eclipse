@@ -22,9 +22,10 @@ import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.cache.catalog.P
 public class SendVerificationCodeService {
 
         private static final Logger LOGGER = LoggerFactory.getLogger(SendVerificationCodeService.class);
-        private static final String USER_NOT_FOUND_MESSAGE = "User not found";
-        private static final String MISSING_EMAIL_MESSAGE = "El usuario no tiene correo electrónico configurado";
-        private static final String MISSING_MOBILE_MESSAGE = "El usuario no tiene número móvil configurado";
+        private static final String USER_NOT_FOUND_CODE = "verification.user.notfound";
+        private static final String MISSING_EMAIL_CODE = "verification.email.missing";
+        private static final String MISSING_MOBILE_CODE = "verification.mobile.missing";
+        private static final String NOTIFICATION_DELIVERY_FAILURE_CODE = "notification.delivery.failure";
 
         private final SpringDataUserRepository userRepo;
         private final VerificationCodeService codeService;
@@ -44,7 +45,8 @@ public class SendVerificationCodeService {
         @Transactional(noRollbackFor = NotificationDeliveryException.class)
         public void sendVerificationCode(final UUID userId, final VerificationChannel channel) {
                 final UserEntity user = userRepo.findById(userId)
-                                .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_MESSAGE));
+                                .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_CODE,
+                                                new IllegalArgumentException("No existe usuario con id=" + userId)));
 
                 final String contact = resolveContact(user, channel);
                 final String normalizedContact = channel.normalizeContact(contact);
@@ -72,14 +74,18 @@ public class SendVerificationCodeService {
                 } catch (NotificationDeliveryException ex) {
                         throw ex;
                 } catch (Exception ex) {
-                        throw new NotificationDeliveryException("No se pudo enviar el código de verificación", ex);
+                        throw new NotificationDeliveryException(NOTIFICATION_DELIVERY_FAILURE_CODE, ex);
                 }
         }
 
         private String resolveContact(final UserEntity user, final VerificationChannel channel) {
                 final String contact = channel.isEmail() ? user.getEmail() : user.getMobileNumber();
                 if (contact == null || contact.trim().isEmpty()) {
-                        throw new BusinessException(channel.isEmail() ? MISSING_EMAIL_MESSAGE : MISSING_MOBILE_MESSAGE);
+                        final String code = channel.isEmail() ? MISSING_EMAIL_CODE : MISSING_MOBILE_CODE;
+                        final String detail = channel.isEmail()
+                                        ? "El usuario no tiene correo electrónico configurado"
+                                        : "El usuario no tiene número móvil configurado";
+                        throw new BusinessException(code, new IllegalStateException(detail));
                 }
                 return contact.trim();
         }

@@ -23,10 +23,10 @@ import co.edu.uco.ucochallenge.application.user.contactconfirmation.port.Confirm
 public class UserContactConfirmationServiceImpl implements UserContactConfirmationService {
 
     private static final Pattern CODE_PATTERN = Pattern.compile("^\\d{6}$");
-    private static final String USER_NOT_FOUND_MESSAGE = "User not found";
-    private static final String MISSING_EMAIL_MESSAGE = "El usuario no tiene correo electrónico configurado";
-    private static final String MISSING_MOBILE_MESSAGE = "El usuario no tiene número móvil configurado";
-    private static final String INVALID_CODE_FORMAT_MESSAGE = "El código debe contener exactamente 6 dígitos numéricos";
+    private static final String USER_NOT_FOUND_CODE = "verification.user.notfound";
+    private static final String MISSING_EMAIL_CODE = "verification.email.missing";
+    private static final String MISSING_MOBILE_CODE = "verification.mobile.missing";
+    private static final String INVALID_CODE_FORMAT_CODE = "verification.code.format.invalid";
     private static final int DEFAULT_MAX_ATTEMPTS = 3;
 
     private final VerificationCodeRepository codeRepo;
@@ -48,18 +48,21 @@ public class UserContactConfirmationServiceImpl implements UserContactConfirmati
     @Override
     public void confirmVerificationCode(final UUID userId, final VerificationChannel channel, final String rawCode) {
         final UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_MESSAGE));
+                .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_CODE,
+                        new IllegalArgumentException("No existe usuario con id=" + userId)));
 
         final String contact = resolveContact(user, channel);
         final String normalizedContact = channel.normalizeContact(contact);
         final String code = rawCode == null ? "" : rawCode.trim();
 
         if (!CODE_PATTERN.matcher(code).matches()) {
-            throw new DomainValidationException(INVALID_CODE_FORMAT_MESSAGE);
+            throw new DomainValidationException(INVALID_CODE_FORMAT_CODE,
+                    new IllegalArgumentException("Formato de código inválido: '" + rawCode + "'"));
         }
 
         final VerificationCodeEntity verificationCode = codeRepo.findByContactIgnoreCase(normalizedContact)
-                .orElseThrow(() -> new BusinessException("verification.code.notfound"));
+                .orElseThrow(() -> new BusinessException("verification.code.notfound",
+                        new IllegalStateException("No existe código activo para el contacto " + normalizedContact)));
 
         final Integer attemptsValue = parametersCatalogCache.getParameter(ParamKeys.MAX_CONFIRM_ATTEMPTS)
                 .map(ParameterDTO::value)
@@ -71,18 +74,21 @@ public class UserContactConfirmationServiceImpl implements UserContactConfirmati
         final int maxAttempts = attemptsValue == null || attemptsValue <= 0 ? DEFAULT_MAX_ATTEMPTS : attemptsValue;
 
         if (verificationCode.getAttempts() >= maxAttempts) {
-            throw new BusinessException("verification.code.max.attempts");
+            throw new BusinessException("verification.code.max.attempts",
+                    new IllegalStateException("Intentos agotados para contacto " + normalizedContact));
         }
 
         if (LocalDateTime.now().isAfter(verificationCode.getExpiration())) {
             codeRepo.deleteByContactIgnoreCase(normalizedContact);
-            throw new BusinessException("verification.code.expired");
+            throw new BusinessException("verification.code.expired",
+                    new IllegalStateException("Código vencido para contacto " + normalizedContact));
         }
 
         if (!verificationCode.getCode().equals(code)) {
             verificationCode.incrementAttempts();
             codeRepo.save(verificationCode);
-            throw new BusinessException("verification.code.invalid");
+            throw new BusinessException("verification.code.invalid",
+                    new IllegalStateException("Código recibido '" + code + "' no coincide con el enviado"));
         }
 
         if (channel.isEmail()) {
@@ -97,7 +103,11 @@ public class UserContactConfirmationServiceImpl implements UserContactConfirmati
     private String resolveContact(final UserEntity user, final VerificationChannel channel) {
         final String contact = channel.isEmail() ? user.getEmail() : user.getMobileNumber();
         if (contact == null || contact.trim().isEmpty()) {
-            throw new BusinessException(channel.isEmail() ? MISSING_EMAIL_MESSAGE : MISSING_MOBILE_MESSAGE);
+            final String code = channel.isEmail() ? MISSING_EMAIL_CODE : MISSING_MOBILE_CODE;
+            final String detail = channel.isEmail()
+                    ? "El usuario no tiene correo electrónico configurado"
+                    : "El usuario no tiene número móvil configurado";
+            throw new BusinessException(code, new IllegalStateException(detail));
         }
         return contact.trim();
     }

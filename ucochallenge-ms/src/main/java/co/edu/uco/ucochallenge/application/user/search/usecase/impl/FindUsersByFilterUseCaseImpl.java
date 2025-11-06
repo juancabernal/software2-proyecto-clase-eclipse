@@ -13,6 +13,8 @@ import co.edu.uco.ucochallenge.application.user.search.usecase.domain.validation
 @Service
 public class FindUsersByFilterUseCaseImpl implements FindUsersByFilterUseCase {
 
+        private static final String FILTER_VALIDATION_CODE = "user.search.filters.invalid";
+
         private final FindUsersByFilterRepositoryPort repositoryPort;
         private final FindUsersByFilterDomainValidator validator;
 
@@ -25,7 +27,9 @@ public class FindUsersByFilterUseCaseImpl implements FindUsersByFilterUseCase {
         public UserSearchResultDomainModel execute(final UserSearchFilterDomainModel domain) {
                 final Notification notification = validator.validate(domain);
                 if (notification.hasErrors()) {
-                        throw new BusinessException(notification.formattedMessages());
+                        throw new BusinessException(FILTER_VALIDATION_CODE,
+                                        new IllegalArgumentException("Errores de filtro: "
+                                                        + notification.formattedMessages()));
                 }
 
                 return repositoryPort.findAll(domain.getPage(), domain.getSize());

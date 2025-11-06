@@ -26,6 +26,7 @@ public class NotificationContactConfirmationAdapter implements ContactConfirmati
 
     private static final int CODE_UPPER_BOUND = 1_000_000;
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationContactConfirmationAdapter.class);
+    private static final String DELIVERY_FAILURE_CODE = "notification.delivery.failure";
 
     private final NotificationApi api;
     private final VerificationCodeRepository codeRepository;
@@ -73,7 +74,7 @@ public class NotificationContactConfirmationAdapter implements ContactConfirmati
             LOGGER.info("[NotificationAPI] Sent code {} to {} | Response: {}", code, contact, response);
         } catch (Exception e) {
             LOGGER.error("[NotificationAPI] Error sending code", e);
-            throw new NotificationDeliveryException("No se pudo enviar el código de verificación", e);
+            throw new NotificationDeliveryException(DELIVERY_FAILURE_CODE, e);
         }
     }
 
@@ -119,7 +120,7 @@ public class NotificationContactConfirmationAdapter implements ContactConfirmati
             LOGGER.warn("Unknown channel '{}'", channel);
         } catch (Exception e) {
             LOGGER.error("[NotificationAPI] Error sending code", e);
-            throw new NotificationDeliveryException("No se pudo enviar el código de verificación", e);
+            throw new NotificationDeliveryException(DELIVERY_FAILURE_CODE, e);
         }
     }
 

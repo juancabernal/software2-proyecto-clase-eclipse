@@ -1,7 +1,7 @@
 package co.edu.uco.ucochallenge.infrastructure.primary.web.controller.advice;
 
+import java.util.Collection;
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import co.edu.uco.ucochallenge.application.ApiErrorResponse;
+import co.edu.uco.ucochallenge.crosscutting.dto.MessageDTO;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.BusinessException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.DomainValidationException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.NotFoundException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.NotificationDeliveryException;
-import co.edu.uco.ucochallenge.crosscutting.dto.MessageDTO;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.cache.catalog.MessagesCatalogCache;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -30,6 +30,8 @@ public class PrimaryGlobalExceptionHandler {
 
     private static final String GENERIC_ERROR_MESSAGE =
             "Ocurrió un error inesperado. Por favor, intente nuevamente más tarde.";
+    private static final String GENERIC_TECHNICAL_MESSAGE =
+            "No se recibieron detalles técnicos adicionales para diagnosticar el error.";
 
     private final MessagesCatalogCache messagesCatalogCache;
 
@@ -37,112 +39,199 @@ public class PrimaryGlobalExceptionHandler {
         this.messagesCatalogCache = messagesCatalogCache;
     }
 
-    /** Resuelve un mensaje humano desde el Message-Service con fallback seguro. */
-    private String resolveCatalogMessage(final String code) {
+    /** Obtiene el mensaje completo (usuario + técnico) desde el catálogo con fallbacks seguros. */
+    private MessageDTO resolveCatalogMessage(final String code, final Throwable origin, final String userFallback) {
+        final String safeUserFallback = Optional.ofNullable(userFallback)
+                .filter(f -> !f.isBlank())
+                .orElse(GENERIC_ERROR_MESSAGE);
+        final String safeTechnicalFallback = Optional.ofNullable(origin)
+                .map(this::technicalDetails)
+                .filter(f -> !f.isBlank())
+                .orElse(GENERIC_TECHNICAL_MESSAGE);
+
         if (code == null || code.isBlank()) {
-            return GENERIC_ERROR_MESSAGE;
+            return buildMessage(null, null, safeUserFallback, safeTechnicalFallback);
         }
+
         try {
-            // Tipado explícito para evitar “Cannot infer type arguments for map…”
-            final Function<MessageDTO, String> toUserMessage = new Function<MessageDTO, String>() {
-                @Override public String apply(MessageDTO dto) {
-                    return dto.getUserMessageResolved();
-                }
-            };
-
-            Optional<String> resolved = messagesCatalogCache
-                    .getMessage(code)              // Mono<MessageDTO>
-                    .map(toUserMessage)            // Mono<String>
-                    .onErrorResume(e -> {          // por si 404/timeout
-                        log.warn("Fallo consultando catálogo para '{}': {}", code, e.toString());
-                        return reactor.core.publisher.Mono.empty();
-                    })
-                    .blockOptional();
-
-            return resolved.filter(msg -> msg != null && !msg.isBlank()).orElse(code);
-
+            final MessageDTO catalogMessage = messagesCatalogCache.getMessageSync(code);
+            return buildMessage(catalogMessage, code, safeUserFallback, safeTechnicalFallback);
         } catch (Exception ex) {
             log.warn("No se pudo obtener el mensaje para el código '{}': {}", code, ex.toString());
-            return code;
+            final String technical = safeTechnicalFallback + " | lookupFailure=" + ex.getClass().getSimpleName();
+            return buildMessage(null, code, safeUserFallback, technical);
         }
+    }
+
+    private MessageDTO resolveCatalogMessage(final String code, final Throwable origin) {
+        return resolveCatalogMessage(code, origin, GENERIC_ERROR_MESSAGE);
+    }
+
+    private MessageDTO resolveCatalogMessage(final String code) {
+        return resolveCatalogMessage(code, null, GENERIC_ERROR_MESSAGE);
+    }
+
+    private MessageDTO buildMessage(final MessageDTO source,
+            final String requestedCode,
+            final String userFallback,
+            final String technicalFallback) {
+
+        final String resolvedCode = firstNonBlank(
+                Optional.ofNullable(source).map(MessageDTO::getCode).orElse(null),
+                requestedCode);
+
+        final MessageDTO result = new MessageDTO();
+        result.setCode(resolvedCode);
+        if (source != null) {
+            result.setGeneralMessage(source.getGeneralMessage());
+        }
+
+        final String resolvedUser = firstNonBlank(
+                Optional.ofNullable(source).map(MessageDTO::getUserMessage).orElse(null),
+                Optional.ofNullable(source).map(MessageDTO::getGeneralMessage).orElse(null),
+                userFallback,
+                GENERIC_ERROR_MESSAGE,
+                resolvedCode);
+        result.setUserMessage(resolvedUser);
+
+        final String resolvedTechnical = firstNonBlank(
+                Optional.ofNullable(source).map(MessageDTO::getTechnicalMessage).orElse(null),
+                technicalFallback,
+                resolvedUser,
+                resolvedCode,
+                GENERIC_TECHNICAL_MESSAGE);
+        result.setTechnicalMessage(resolvedTechnical);
+
+        return result;
+    }
+
+    private String firstNonBlank(final String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private String technicalDetails(final Throwable throwable) {
+        final StringBuilder details = new StringBuilder();
+        Throwable current = throwable;
+        while (current != null) {
+            if (details.length() > 0) {
+                details.append(" -> ");
+            }
+            details.append(current.getClass().getName());
+            final String message = current.getMessage();
+            if (message != null && !message.isBlank()) {
+                details.append(": ").append(message.trim());
+            }
+            current = current.getCause();
+        }
+        return details.toString();
     }
 
     // ================== EXCEPCIONES DE NEGOCIO ==================
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiErrorResponse> handleBusiness(final BusinessException ex) {
-        final String message = resolveCatalogMessage(ex.getMessage());
+        final MessageDTO message = resolveCatalogMessage(ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.businessError(message));
+                .body(ApiErrorResponse.businessError(message.getCode(), message));
     }
 
     @ExceptionHandler(DomainValidationException.class)
     public ResponseEntity<ApiErrorResponse> handleDomainValidation(final DomainValidationException ex) {
-        final String message = resolveCatalogMessage(ex.getMessage());
+        final MessageDTO message = resolveCatalogMessage(ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.validationError(message));
+                .body(ApiErrorResponse.validationError(message.getCode(), message));
     }
 
     // ================== RECURSOS NO ENCONTRADOS ==================
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNotFound(final NotFoundException ex) {
-        final String message = resolveCatalogMessage(ex.getMessage());
+        final MessageDTO message = resolveCatalogMessage(ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiErrorResponse.businessError(message));
+                .body(ApiErrorResponse.businessError(message.getCode(), message));
     }
 
     // ================== VALIDACIONES (Jakarta / Spring) ==================
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleJakartaConstraint(final ConstraintViolationException ex) {
-        final String message = ex.getConstraintViolations().stream()
-                .map(v -> Optional.ofNullable(v.getMessage()).orElse(GENERIC_ERROR_MESSAGE))
-                .map(this::resolveCatalogMessage)
+        final MessageDTO message = Optional.ofNullable(ex.getConstraintViolations())
+                .stream()
+                .flatMap(Collection::stream)
                 .findFirst()
-                .orElse(GENERIC_ERROR_MESSAGE);
+                .map(violation -> {
+                    final String violationCode = Optional.ofNullable(violation.getMessage())
+                            .filter(c -> !c.isBlank())
+                            .orElse("validation.constraint.violation");
+                    final String userFallback = String.format(
+                            "El valor del campo '%s' no es válido.", violation.getPropertyPath());
+                    final String technicalDetail = String.format(
+                            "Constraint on '%s' rejected value '%s'",
+                            violation.getPropertyPath(), violation.getInvalidValue());
+                    final Throwable detail = new IllegalArgumentException(technicalDetail, ex);
+                    return resolveCatalogMessage(violationCode, detail, userFallback);
+                })
+                .orElseGet(() -> resolveCatalogMessage("validation.constraint.violation", ex));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.validationError(message));
+                .body(ApiErrorResponse.validationError(message.getCode(), message));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(final MethodArgumentNotValidException ex) {
-        final String message = Optional.ofNullable(ex.getBindingResult().getFieldError())
-                .map(FieldError::getDefaultMessage)
-                .map(this::resolveCatalogMessage)
-                .orElse(GENERIC_ERROR_MESSAGE);
+        final MessageDTO message = Optional.ofNullable(ex.getBindingResult().getFieldError())
+                .map(fieldError -> {
+                    final String code = Optional.ofNullable(fieldError.getDefaultMessage())
+                            .filter(c -> !c.isBlank())
+                            .orElse("validation.method.argument");
+                    final String userFallback = String.format("El campo '%s' no es válido.", fieldError.getField());
+                    final String detail = String.format(
+                            "Field '%s' rejected value '%s' (binding failure)",
+                            fieldError.getField(), fieldError.getRejectedValue());
+                    return resolveCatalogMessage(code, new IllegalArgumentException(detail, ex), userFallback);
+                })
+                .orElseGet(() -> resolveCatalogMessage("validation.method.argument", ex));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.validationError(message));
+                .body(ApiErrorResponse.validationError(message.getCode(), message));
     }
 
     @ExceptionHandler(NotificationDeliveryException.class)
     public ResponseEntity<ApiErrorResponse> handleNotificationDelivery(final NotificationDeliveryException ex) {
-        final String message = resolveCatalogMessage(ex.getMessage());
+        final MessageDTO message = resolveCatalogMessage(ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(ApiErrorResponse.unexpectedError(message));
+                .body(ApiErrorResponse.unexpectedError(message.getCode(), message));
     }
 
     // ================== ERRORES DE BASE DE DATOS ==================
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrity(final DataIntegrityViolationException ex) {
-        final String message = resolveCatalogMessage("exception.general.technical");
+        final MessageDTO message = resolveCatalogMessage("exception.general.technical", ex,
+                "Se detectó una inconsistencia con los datos almacenados.");
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ApiErrorResponse.businessError(message));
+                .body(ApiErrorResponse.businessError(message.getCode(), message));
     }
 
     // ================== ENTIDAD RELACIONADA NO ENCONTRADA ==================
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleEntityNotFound(final EntityNotFoundException ex) {
-        final String message = resolveCatalogMessage("exception.general.validation");
+        final MessageDTO message = resolveCatalogMessage("exception.general.validation", ex,
+                "La información relacionada no existe o fue eliminada.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.businessError(message));
+                .body(ApiErrorResponse.businessError(message.getCode(), message));
     }
 
     // ================== ERROR DESCONOCIDO ==================
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleGeneric(final Exception ex) {
         log.error("Error inesperado: ", ex);
-        final String message = resolveCatalogMessage("exception.general.unexpected");
+        final MessageDTO message = resolveCatalogMessage("exception.general.unexpected", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiErrorResponse.unexpectedError(message));
+                .body(ApiErrorResponse.unexpectedError(message.getCode(), message));
     }
 }
