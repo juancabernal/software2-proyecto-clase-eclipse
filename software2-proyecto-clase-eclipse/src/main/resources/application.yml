@@ -118,5 +118,6 @@ notification:
 # =========================
 # ✅ Configuración de IA (segunda versión)
 # =========================
-
-
+app:
+  cache:
+    enabled: true

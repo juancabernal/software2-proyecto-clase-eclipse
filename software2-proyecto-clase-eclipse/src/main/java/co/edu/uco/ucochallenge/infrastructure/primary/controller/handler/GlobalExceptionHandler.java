@@ -52,6 +52,17 @@ public class GlobalExceptionHandler {
                                                 exception.getUserMessage(), exception.getTechnicalMessage()));
         }
 
+        @ExceptionHandler(org.springframework.beans.factory.NoSuchBeanDefinitionException.class)
+        public ResponseEntity<ApiErrorResponse> handleMissingBean(final org.springframework.beans.factory.NoSuchBeanDefinitionException ex) {
+                LOGGER.error("Error evaluando caché: bean faltante", ex);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(ApiErrorResponse.of(
+                                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                "Error interno al procesar caché. Intenta nuevamente.",
+                                ex.getMessage()
+                        ));
+        }
+
         @ExceptionHandler(Exception.class)
         public ResponseEntity<ApiErrorResponse> handleUnexpectedException(final Exception exception) {
                 final String technicalMessage = MessageProvider

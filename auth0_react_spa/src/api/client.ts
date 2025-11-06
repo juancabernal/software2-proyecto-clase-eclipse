@@ -113,7 +113,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
 
   const api = axios.create({
     baseURL,
-    timeout: 15000, // 15s
+    timeout: Number(import.meta.env.VITE_HTTP_GLOBAL_TIMEOUT_MS ?? 15000), // global default (kept conservative); createUser will use per-request timeout
     maxContentLength: 10 * 1024 * 1024, // 10MB defensivo
     headers: { Accept: "application/json" },
     // withCredentials: false, // actívalo SOLO si tu API usa cookies
@@ -173,19 +173,68 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
 
 
     // POST /api/admin/users
-    async createUser(payload: UserCreateInput): Promise<RegisterUserResponse> {
-      const res = await api.post("/api/admin/users", payload, { validateStatus: () => true });
-      if (res.status !== 201) {
-        // 🔹 Aquí está la diferencia: lanzamos un objeto con 'response' al estilo Axios
-        const data = res.data ?? {};
-        const msg = data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
-        const error: any = new Error(msg);
-        error.response = { data };
-        throw error;
+    // acepta options opcionales: { timeoutMs?, idempotencyKey? }
+    async createUser(
+      payload: UserCreateInput,
+      options?: { timeoutMs?: number; idempotencyKey?: string }
+    ): Promise<RegisterUserResponse> {
+      const HTTP_TIMEOUT_MS = Number(import.meta.env.VITE_HTTP_TIMEOUT_MS ?? 60000);
+      const timeoutMs = options?.timeoutMs ?? HTTP_TIMEOUT_MS;
+
+      const headers: Record<string, string> = {};
+      const enableIdempotency = String(import.meta.env.VITE_ENABLE_IDEMPOTENCY ?? "false") === "true";
+      const idempotencyKey = options?.idempotencyKey;
+      if (enableIdempotency && (idempotencyKey || typeof crypto !== "undefined")) {
+        try {
+          (headers as any)["Idempotency-Key"] = idempotencyKey || (crypto as any).randomUUID?.() || `${Date.now()}-${Math.random()}`;
+        } catch {
+          (headers as any)["Idempotency-Key"] = idempotencyKey || `${Date.now()}-${Math.random()}`;
+        }
       }
 
-      const payloadResponse = res.data as ApiSuccessResponse<RegisterUserResponse>;
-      return payloadResponse.data;
+      try {
+        const res = await api.post(
+          "/api/admin/users",
+          payload,
+          {
+            validateStatus: () => true,
+            timeout: timeoutMs,
+            timeoutErrorMessage: "Tiempo de espera agotado al crear el usuario.",
+            headers,
+          }
+        );
+
+        if (res.status !== 201) {
+          const data = res.data ?? {};
+          const msg = data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
+          const error: any = new Error(msg);
+          // adjuntamos status y data similares al objeto AxiosError.response
+          error.response = { status: res.status, data };
+
+          // logs estructurados (NO imprimir datos sensibles)
+          try {
+            console.error({ event: "createUser:failed", status: res.status, path: "/api/admin/users", message: msg });
+          } catch (e) {
+            // noop
+          }
+
+          throw error;
+        }
+
+        const payloadResponse = res.data as ApiSuccessResponse<RegisterUserResponse>;
+        return payloadResponse.data;
+      } catch (err: any) {
+        // Mapear timeouts de Axios para proveer un mensaje más amigable.
+        if (err?.code === 'ECONNABORTED' || /timeout/i.test(String(err?.message || ''))) {
+          const timeoutErr: any = new Error("El servidor tardó demasiado en responder. Verificaremos si el usuario fue creado.");
+          timeoutErr.code = 'ECONNABORTED';
+          timeoutErr.original = err;
+          // preserve response if present
+          if (err?.response) timeoutErr.response = err.response;
+          throw timeoutErr;
+        }
+        throw err; // rethrow original
+      }
     },
 
     async listIdTypes(): Promise<CatalogItem[]> {
@@ -214,6 +263,34 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       if (res.status !== 200) throw new Error(`Catálogo ciudades por departamento HTTP ${res.status}`);
       const payload = res.data as ApiSuccessResponse<CatalogItem[]>;
       return payload.data;
+    },
+
+    // Helper para buscar localmente si un usuario existe (no rompe contrato público)
+    async findUserLocally(params: { email?: string; idNumber?: string }): Promise<User | null> {
+      const page0 = 0;
+      const size = 50;
+      const res = await api.get("/api/admin/users", { params: { page: page0, size }, validateStatus: () => true });
+      if (res.status !== 200) {
+        // no queremos lanzar aquí para que el caller decida (fallback silencioso)
+        try {
+          console.warn({ event: "findUserLocally:failed", status: res.status });
+        } catch (e) {
+          /* noop */
+        }
+        return null;
+      }
+      const payload = (res.data as ApiSuccessResponse<Page<User>>)?.data ?? (res.data as Page<User>);
+      const items = payload?.items ?? [];
+      const found = items.find((u) => {
+        if (params.email && u.email && params.email) {
+          if (u.email.toLowerCase() === params.email.toLowerCase()) return true;
+        }
+        if (params.idNumber && u.idNumber && params.idNumber) {
+          if (u.idNumber === params.idNumber) return true;
+        }
+        return false;
+      });
+      return found ?? null;
     },
 
     async requestEmailConfirmation(userId: string): Promise<ConfirmationResponse> {
