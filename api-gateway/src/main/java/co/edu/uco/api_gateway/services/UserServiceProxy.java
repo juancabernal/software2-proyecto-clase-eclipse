@@ -1,5 +1,6 @@
 package co.edu.uco.api_gateway.services;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -7,12 +8,14 @@ import java.util.UUID;
 
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.server.ResponseStatusException;
 
 import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
@@ -102,19 +105,53 @@ public class UserServiceProxy {
             final String channel,
             final String authorizationHeader) {
         final String sanitizedChannel = channel == null ? null : channel.trim();
+        if (!StringUtils.hasText(sanitizedChannel)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El canal de verificación es obligatorio.");
+        }
 
-        final ConfirmationResponse response = webClient.post()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/{id}/send-code")
-                        .queryParam("channel", sanitizedChannel)
-                        .build(id))
+        final String normalizedChannel = sanitizedChannel.toUpperCase(Locale.ROOT);
+        return switch (normalizedChannel) {
+            case "EMAIL" -> requestEmailVerification(id, authorizationHeader);
+            case "SMS", "MOBILE" -> requestMobileVerification(id, authorizationHeader);
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Canal de verificación inválido: " + sanitizedChannel);
+        };
+    }
+
+    private ConfirmationResponse requestEmailVerification(
+            final UUID id,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<EmailConfirmationResponse> response = webClient.post()
+                .uri("/{id}/confirmations/email", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(ConfirmationResponse.class)
+                .bodyToMono(EMAIL_CONFIRMATION_RESPONSE)
                 .block();
 
-        return Objects.requireNonNull(response, "La respuesta de envío de código no puede ser nula");
+        final ApiSuccessResponse<EmailConfirmationResponse> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de solicitud de confirmación de correo no puede ser nula");
+        final EmailConfirmationResponse data = Objects.requireNonNull(nonNullResponse.data(),
+                "La información de confirmación de correo no puede ser nula");
+
+        return new ConfirmationResponse(0, null, data.verificationId());
+    }
+
+    private ConfirmationResponse requestMobileVerification(
+            final UUID id,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<ConfirmationResponse> response = webClient.post()
+                .uri("/{id}/confirmations/mobile", id)
+                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(CONFIRMATION_RESPONSE)
+                .block();
+
+        final ApiSuccessResponse<ConfirmationResponse> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
+        return Objects.requireNonNull(nonNullResponse.data(),
+                "La información de confirmación de teléfono no puede ser nula");
     }
 
     public ConfirmVerificationCodeResponse confirmVerificationCode(
