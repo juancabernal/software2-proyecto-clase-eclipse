@@ -73,9 +73,9 @@ security:
 
 external:
   parameters:
-    base-url: http://localhost:8080/parameters/api/v1/parameters
+    base-url: http://localhost:8083/parameters/api/v1/parameters
   messages:
-    base-url: http://localhost:8081/messages/api/v1/messages
+    base-url: http://localhost:8082/messages/api/v1/messages
 
 azure:
   keyvault:

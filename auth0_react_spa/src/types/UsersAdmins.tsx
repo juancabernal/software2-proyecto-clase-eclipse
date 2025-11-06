@@ -749,93 +749,95 @@ export default function UsersAdmin() {
           <div className="text-sm text-gray-400 md:flex-1 md:pr-6 min-w-0">
             <p className="truncate">{pageData ? `Mostrando ${pageData.items.length} usuarios de ${pageData.totalItems}` : "Sin datos"}</p>
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <label className="text-sm text-gray-300 flex items-center gap-2">
-              Tamaño página
-              <select
-                name="size"
-                value={filters.size}
-                onChange={onChangePageSize}
-                className="ml-2 rounded-lg border border-gray-700 bg-[#0f0f12] px-2 py-1 text-sm text-gray-100 outline-none focus:border-gray-500"
-                aria-label="Tamaño de página"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-            </label>
-
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="relative flex-shrink-0">
-                <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <circle cx="11" cy="11" r="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <input
-                  type="text"
-                  value={nameFilter}
-                  onChange={(e) => { setNameFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
-                  placeholder="Nombre"
-                  className="w-44 md:w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
-                  aria-label="Buscar por nombre"
-                />
-              </div>
-
-              <div className="relative flex-shrink-0">
-                <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M16 12a4 4 0 10-8 0 4 4 0 008 0z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <input
-                  type="text"
-                  value={emailFilter}
-                  onChange={(e) => { setEmailFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
-                  placeholder="Correo"
-                  className="w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
-                  aria-label="Buscar por correo"
-                />
-              </div>
-
-              <div className="relative flex-shrink-0">
-                <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M2 8.5A5.5 5.5 0 017.5 3h0A5.5 5.5 0 0113 8.5v7A5.5 5.5 0 017.5 21h0A5.5 5.5 0 012 15.5v-7z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <input
-                  type="text"
-                  value={phoneFilter}
-                  onChange={(e) => { setPhoneFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
-                  placeholder="Celular"
-                  className="w-40 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
-                  aria-label="Buscar por celular"
-                />
-              </div>
-
-              <div className="relative flex-shrink-0">
+          <div className="w-full">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+              <label className="text-sm text-gray-300 md:col-span-2 flex items-center gap-2">
+                Tamaño página
                 <select
-                  value={idTypeFilter}
-                  onChange={(e) => { setIdTypeFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
-                  className="w-44 rounded-lg border border-gray-700 bg-[#0f0f12] pl-3 pr-8 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500 appearance-none"
-                  aria-label="Filtrar por tipo de identificación"
+                  name="size"
+                  value={filters.size}
+                  onChange={onChangePageSize}
+                  className="ml-2 rounded-lg border border-gray-700 bg-[#0f0f12] px-2 py-1 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  aria-label="Tamaño de página"
                 >
-                  <option value="">Tipo ID</option>
-                  {idTypes.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
                 </select>
-                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
+              </label>
 
-            <div className="flex-shrink-0">
-              <button
-                onClick={() => { setOpenNew(true); setCreationResult(null); }}
-                className="ml-2 rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-purple-600"
-                aria-label="Crear nuevo usuario"
-              >
-                <span className="mr-1 font-bold">+</span> Nuevo usuario
-              </button>
+              <div className="md:col-span-9 flex items-center gap-2 min-w-0">
+                <div className="relative flex-shrink-0">
+                  <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="11" cy="11" r="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={nameFilter}
+                    onChange={(e) => { setNameFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                    placeholder="Nombre"
+                    className="w-44 md:w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                    aria-label="Buscar por nombre"
+                  />
+                </div>
+
+                <div className="relative flex-shrink-0">
+                  <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M16 12a4 4 0 10-8 0 4 4 0 008 0z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={emailFilter}
+                    onChange={(e) => { setEmailFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                    placeholder="Correo"
+                    className="w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                    aria-label="Buscar por correo"
+                  />
+                </div>
+
+                <div className="relative flex-shrink-0">
+                  <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M2 8.5A5.5 5.5 0 017.5 3h0A5.5 5.5 0 0113 8.5v7A5.5 5.5 0 017.5 21h0A5.5 5.5 0 012 15.5v-7z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="text"
+                    value={phoneFilter}
+                    onChange={(e) => { setPhoneFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                    placeholder="Celular"
+                    className="w-40 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                    aria-label="Buscar por celular"
+                  />
+                </div>
+
+                <div className="relative flex-shrink-0">
+                  <select
+                    value={idTypeFilter}
+                    onChange={(e) => { setIdTypeFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                    className="max-w-[11rem] rounded-lg border border-gray-700 bg-[#0f0f12] pl-3 pr-8 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500 appearance-none"
+                    aria-label="Filtrar por tipo de identificación"
+                  >
+                    <option value="">Tipo ID</option>
+                    {idTypes.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+
+              <div className="md:col-span-1 flex justify-end">
+                <button
+                  onClick={() => { setOpenNew(true); setCreationResult(null); }}
+                  className="ml-2 rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                  aria-label="Crear nuevo usuario"
+                >
+                  <span className="mr-1 font-bold">+</span> Nuevo usuario
+                </button>
+              </div>
             </div>
           </div>
         </div>
