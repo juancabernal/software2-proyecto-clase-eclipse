@@ -5,8 +5,8 @@ import java.util.UUID;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
-import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.UUIDHelper;
 
 @JsonDeserialize(builder = UserSearchSummaryDomainModel.Builder.class)
 public class UserSearchSummaryDomainModel {

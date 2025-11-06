@@ -1,6 +1,6 @@
 package co.edu.uco.ucochallenge.application;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.ObjectHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.ObjectHelper;
 
 public abstract class Response<T> {
 

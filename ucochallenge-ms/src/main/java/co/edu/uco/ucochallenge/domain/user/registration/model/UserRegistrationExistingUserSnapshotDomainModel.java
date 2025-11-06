@@ -2,8 +2,8 @@ package co.edu.uco.ucochallenge.domain.user.registration.model;
 
 import java.util.UUID;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
-import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.TextHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.UUIDHelper;
 
 public class UserRegistrationExistingUserSnapshotDomainModel {
 

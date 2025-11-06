@@ -4,7 +4,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.UUIDHelper;
 import co.edu.uco.ucochallenge.domain.specification.Specification;
 import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 

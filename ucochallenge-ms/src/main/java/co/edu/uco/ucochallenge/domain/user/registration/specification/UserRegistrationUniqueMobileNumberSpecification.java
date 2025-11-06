@@ -4,7 +4,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
+import co.edu.uco.ucochallenge.crosscutting.legacy.notification.Notification;
 import co.edu.uco.ucochallenge.domain.specification.Specification;
 import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationDomainModel;
 import co.edu.uco.ucochallenge.domain.user.registration.model.UserRegistrationExistingUserSnapshotDomainModel;

@@ -6,7 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.ObjectHelper;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.ObjectHelper;
 
 @JsonDeserialize(builder = UserSearchResultDomainModel.Builder.class)
 public class UserSearchResultDomainModel {
