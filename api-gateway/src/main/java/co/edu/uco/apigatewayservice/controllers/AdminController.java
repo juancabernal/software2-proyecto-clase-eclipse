@@ -1,8 +1,5 @@
 package co.edu.uco.apigatewayservice.controllers;
 
-import java.util.List;
-import java.util.Map;
-//.
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,19 +21,5 @@ public class AdminController {
                 "dashboard"
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);
-    }
-    
-    @RestController
-    @RequestMapping("/api/admin")
-    public class AdminUserController {
-
-        @GetMapping("/users")
-        public ResponseEntity<Object> listUsers() {
-            // simula respuesta
-            return ResponseEntity.ok(Map.of(
-                    "message", "Lista de usuarios (solo administrador).",
-                    "users", List.of("Alice", "Bob", "Charlie")
-            ));
-        }
     }
 }
