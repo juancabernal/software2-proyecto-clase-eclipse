@@ -33,14 +33,51 @@ export type UserCreateInput = {
   idTypeName?: string;
   idNumber: string;
   firstName: string;
-  secondName?: string;
-  firstSurname: string;
-  secondSurname?: string;
+  middleName?: string;
+  lastName: string;
+  secondLastName?: string;
   email: string;
   mobile?: string;
   countryId: string;
   departmentId: string;
   cityId: string;
+};
+
+export type ApiErrorBody = {
+  code?: string;
+  messageCode?: string;
+  userMessage?: string;
+  technicalMessage?: string;
+  generalMessage?: string;
+  message?: string;
+};
+
+export const unwrapErrorResponse = (payload: unknown): ApiErrorBody => {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+
+  const data = payload as any;
+
+  if ("dataReturned" in data) {
+    if (data.dataReturned && data.data && typeof data.data === "object") {
+      return data.data as ApiErrorBody;
+    }
+    return {};
+  }
+
+  return data as ApiErrorBody;
+};
+
+export const extractErrorMessage = (payload: unknown, fallback: string): string => {
+  const data = unwrapErrorResponse(payload);
+  return (
+    data.userMessage ||
+    data.generalMessage ||
+    data.message ||
+    data.technicalMessage ||
+    fallback
+  );
 };
 
 const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_HTTP_GLOBAL_TIMEOUT_MS ?? 15000);
@@ -191,9 +228,13 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       };
     }
 
-    const message = (response.data as any)?.message ?? "No fue posible solicitar la validación.";
+    const fallbackMessage =
+      channel === "email"
+        ? "No fue posible solicitar la validación del correo electrónico."
+        : "No fue posible solicitar la validación del teléfono móvil.";
+    const message = extractErrorMessage(response.data, fallbackMessage);
     const error: any = new Error(message);
-    error.response = response;
+    error.response = { status: response.status, data: unwrapErrorResponse(response.data) };
     throw error;
   };
 
@@ -228,9 +269,9 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       };
     }
 
-    const message = (response.data as any)?.message ?? "No fue posible validar el código.";
+    const message = extractErrorMessage(response.data, "No fue posible validar el código.");
     const error: any = new Error(message);
-    error.response = response;
+    error.response = { status: response.status, data: unwrapErrorResponse(response.data) };
     throw error;
   };
 
@@ -291,9 +332,8 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         const res = await api.post("/api/users", payload, requestConfig);
 
         if (res.status !== 201) {
-          const data = res.data ?? {};
-          const msg =
-            data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
+          const data = unwrapErrorResponse(res.data);
+          const msg = extractErrorMessage(data, "No se pudo crear el usuario");
           const error: any = new Error(msg);
           error.response = { status: res.status, data };
           throw error;
