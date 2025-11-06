@@ -11,11 +11,10 @@ import {
 } from "../api/client";
 import { User } from "./users";
 
+// Tipos locales
 type Filters = {
   page: number;
   size: number;
-
-
 };
 
 type UserFormState = {
@@ -95,7 +94,7 @@ export default function UsersAdmin() {
   // Util: detectar timeouts de Axios
   // (eliminado: ahora detectamos timeouts directamente comprobando error.code === 'ECONNABORTED' en createUser)
 
-  const { getAccessTokenSilently } = useAuth0();
+  const { getAccessTokenSilently, user } = useAuth0();
 
   const baseURL = import.meta.env.VITE_API_SERVER_URL as string;
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE as string;
@@ -590,10 +589,20 @@ export default function UsersAdmin() {
     setVerificationModal((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
+      // Log values used to validate (token and code)
+      try {
+        console.log('[usersAdmin] validateCode -> attempting', { userId: verificationModal.userId, type: verificationModal.type, token: sanitizedTokenId, code: trimmedCode });
+      } catch (e) { /* noop */ }
+
       const response =
         verificationModal.type === "email"
           ? await api.validateEmailConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode)
           : await api.validateMobileConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode);
+
+      // Log response from validation
+      try {
+        console.log('[usersAdmin] validateCode -> response', { userId: verificationModal.userId, response });
+      } catch (e) { /* noop */ }
 
       setVerificationModal((prev) => ({
         ...prev,
@@ -616,6 +625,11 @@ export default function UsersAdmin() {
         clearCountdown(key);
       }
     } catch (error: any) {
+      // Log validation error details for debugging
+      try {
+        console.error('[usersAdmin] validateCode -> error', { userId: verificationModal.userId, status: error?.response?.status, responseData: error?.response?.data, message: error?.message });
+      } catch (e) { /* noop */ }
+
       const message = error?.message || "No fue posible validar el código.";
       setVerificationModal((prev) => ({ ...prev, loading: false, error: message }));
     }
@@ -719,29 +733,36 @@ export default function UsersAdmin() {
   return (
     <section className="space-y-6">
       {/* Encabezado + tamaño */}
+      
+    
+
+      {/* Panel de usuarios */}
       <div className="rounded-2xl border border-gray-800 bg-[#141418] p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-gray-400 md:flex-1 md:pr-6 min-w-0">
+          <div className="text-sm text-gray-400 md:flex-1 md:pr-4 min-w-0">
             <p className="truncate">{pageData ? `Mostrando ${pageData.items.length} usuarios de ${pageData.totalItems}` : "Sin datos"}</p>
           </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <label className="text-sm text-gray-300 flex items-center gap-2">
-              Tamaño página
-              <select
-                name="size"
-                value={filters.size}
-                onChange={onChangePageSize}
-                className="ml-2 rounded-lg border border-gray-700 bg-[#0f0f12] px-2 py-1 text-sm text-gray-100 outline-none focus:border-gray-500"
-                aria-label="Tamaño de página"
-              >
-                <option value={5}>5</option>
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-              </select>
-            </label>
 
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex flex-1 items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <label className="text-sm text-gray-300 flex items-center gap-2">
+                Tamaño página
+                <select
+                  name="size"
+                  value={filters.size}
+                  onChange={onChangePageSize}
+                  className="ml-2 rounded-lg border border-gray-700 bg-[#0f0f12] px-2 py-1 text-sm text-gray-100 outline-none focus:border-gray-500"
+                  aria-label="Tamaño de página"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
               <div className="relative flex-shrink-0">
                 <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
                   <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -752,7 +773,7 @@ export default function UsersAdmin() {
                   value={nameFilter}
                   onChange={(e) => { setNameFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
                   placeholder="Nombre"
-                  className="w-44 md:w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                  className="w-40 sm:w-44 md:w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
                   aria-label="Buscar por nombre"
                 />
               </div>
@@ -766,7 +787,7 @@ export default function UsersAdmin() {
                   value={emailFilter}
                   onChange={(e) => { setEmailFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
                   placeholder="Correo"
-                  className="w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                  className="w-40 sm:w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
                   aria-label="Buscar por correo"
                 />
               </div>
@@ -780,7 +801,7 @@ export default function UsersAdmin() {
                   value={phoneFilter}
                   onChange={(e) => { setPhoneFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
                   placeholder="Celular"
-                  className="w-40 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                  className="w-32 sm:w-40 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
                   aria-label="Buscar por celular"
                 />
               </div>
@@ -789,7 +810,7 @@ export default function UsersAdmin() {
                 <select
                   value={idTypeFilter}
                   onChange={(e) => { setIdTypeFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
-                  className="w-44 rounded-lg border border-gray-700 bg-[#0f0f12] pl-3 pr-8 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500 appearance-none"
+                  className="w-36 sm:w-44 rounded-lg border border-gray-700 bg-[#0f0f12] pl-3 pr-8 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500 appearance-none"
                   aria-label="Filtrar por tipo de identificación"
                 >
                   <option value="">Tipo ID</option>
@@ -803,7 +824,7 @@ export default function UsersAdmin() {
               </div>
             </div>
 
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 ml-auto">
               <button
                 onClick={() => { setOpenNew(true); setCreationResult(null); }}
                 className="ml-2 rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-purple-600"

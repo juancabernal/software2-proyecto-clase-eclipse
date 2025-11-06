@@ -206,7 +206,21 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
 
       try {
-        console.log('[api.call] createUser -> POST /api/admin/users', { payload, options: { timeoutMs, idempotencyKey: options?.idempotencyKey }, headers: maskHeaders(headers) });
+        // Log detallado de la petición
+        console.log('[api.debug] createUser -> Iniciando registro...', {
+          endpoint: '/api/admin/users',
+          payload,
+          timeoutMs,
+          hasIdempotencyKey: Boolean(options?.idempotencyKey),
+          hasHeaders: Boolean(Object.keys(headers).length)
+        });
+
+        // Log de headers (omitiendo sensibles)
+        const safeHeaders = { ...headers };
+        delete safeHeaders['Authorization'];
+        delete safeHeaders['Cookie'];
+        console.log('[api.debug] createUser -> Headers:', safeHeaders);
+
         const res = await api.post(
           "/api/admin/users",
           payload,
@@ -217,21 +231,40 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
             headers,
           }
         );
-        console.log('[api.result] createUser <- /api/admin/users', { status: res.status, data: res.data });
+
+        // Log detallado de la respuesta 
+        console.log('[api.debug] createUser <- Respuesta recibida:', {
+          status: res.status,
+          success: res.status === 201,
+          dataPresent: Boolean(res.data),
+          contentType: res.headers?.['content-type'],
+          responseSize: JSON.stringify(res.data).length
+        });
+
+        // Log del cuerpo de la respuesta
+        if (res.data) {
+          console.log('[api.debug] createUser <- Cuerpo de respuesta:', {
+            data: res.data,
+            error: res.data.error || res.data.message || null
+          });
+        }
 
         if (res.status !== 201) {
           const data = res.data ?? {};
           const msg = data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
-          const error: any = new Error(msg);
-          // adjuntamos status y data similares al objeto AxiosError.response
-          error.response = { status: res.status, data };
+          
+          // Log detallado del error
+          console.error('[api.error] createUser <- Error al crear usuario:', {
+            status: res.status,
+            endpoint: '/api/admin/users',
+            errorMessage: msg,
+            validationErrors: data.errors || [],
+            technicalDetails: data.technicalMessage || null,
+            rawError: data.error || null
+          });
 
-          // logs estructurados (NO imprimir datos sensibles)
-          try {
-            console.error({ event: "createUser:failed", status: res.status, path: "/api/admin/users", message: msg });
-          } catch (e) {
-            // noop
-          }
+          const error: any = new Error(msg);
+          error.response = { status: res.status, data };
 
           throw error;
         }

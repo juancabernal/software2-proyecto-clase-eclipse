@@ -29,13 +29,28 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-[#0f0f12] text-gray-100">
         <main className="mx-auto max-w-6xl px-4 pb-20 pt-10 space-y-8">
           <header className="rounded-2xl border border-gray-800 bg-[#141418] p-6">
-            <h1 className="text-2xl font-bold text-white">Panel de Administrador</h1>
-            <p className="mt-2 text-sm text-gray-400">
-              Bienvenido{user?.name ? `, ${user.name}` : ""}. Acceso concedido por el gateway.
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-white">Panel de Administrador</h1>
+                <p className="mt-2 text-sm text-gray-400">
+                  Bienvenido{user?.name ? `, ${user.name}` : ""}. Acceso concedido por el gateway.
+                </p>
+              </div>
+              {user?.picture && (
+                <img 
+                  src={user.picture} 
+                  alt={user?.name || 'Usuario'} 
+                  className="h-12 w-12 rounded-full border-2 border-indigo-500"
+                />
+              )}
+            </div>
+            
+            
           </header>
 
-          <UsersAdmin />
+          <div className="space-y-8">
+            <UsersAdmin />
+          </div>
 
           <footer className="mt-10 rounded-2xl border border-gray-800 bg-[#141418] p-6 text-center text-sm text-gray-500">
             © {new Date().getFullYear()} Uco Challenge · Dashboard

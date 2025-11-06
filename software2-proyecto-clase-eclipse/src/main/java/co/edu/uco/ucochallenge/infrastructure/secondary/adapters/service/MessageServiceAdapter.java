@@ -51,9 +51,20 @@ public class MessageServiceAdapter implements MessageServicePort {
 
         try {
             log.debug("Fetching message '{}' with parameters {}", key, safeParameters.keySet());
-            return catalogService.findMessageValue(key, safeParameters)
+            String message = catalogService.findMessageValue(key, safeParameters)
                     .filter(value -> !TextHelper.isEmpty(value))
                     .orElse(key);
+
+            // 🔹 Sustituir placeholders si existen
+            if (!safeParameters.isEmpty() && message != null) {
+                for (Map.Entry<String, String> entry : safeParameters.entrySet()) {
+                    String placeholder = "\\{" + entry.getKey() + "\\}";
+                    message = message.replaceAll(placeholder, entry.getValue());
+                }
+            }
+
+            return message;
+
         } catch (final WebClientResponseException.NotFound notFound) {
             log.info("Message '{}' not found in remote catalog", key);
             return key;
