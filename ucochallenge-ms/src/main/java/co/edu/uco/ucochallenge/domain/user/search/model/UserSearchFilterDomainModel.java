@@ -1,5 +1,6 @@
 package co.edu.uco.ucochallenge.domain.user.search.model;
 
+import co.edu.uco.ucochallenge.crosscutting.MessageCodes;
 import co.edu.uco.ucochallenge.crosscutting.legacy.helper.NumberHelper;
 import co.edu.uco.ucochallenge.crosscutting.legacy.notification.Notification;
 import co.edu.uco.ucochallenge.crosscutting.legacy.notification.SelfValidating;
@@ -8,8 +9,8 @@ public class UserSearchFilterDomainModel implements SelfValidating {
 
         private static final int DEFAULT_PAGE = 0;
         private static final int DEFAULT_SIZE = 10;
-        private static final String PAGE_NEGATIVE_CODE = "FIND_USERS_PAGE_NEGATIVE";
-        private static final String SIZE_RANGE_CODE = "FIND_USERS_SIZE_RANGE";
+        private static final String PAGE_NEGATIVE_CODE = MessageCodes.FIND_USERS_PAGE_NEGATIVE;
+        private static final String SIZE_RANGE_CODE = MessageCodes.FIND_USERS_SIZE_RANGE;
 
         private final int page;
         private final int size;

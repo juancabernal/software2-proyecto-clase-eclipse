@@ -2,6 +2,7 @@ package co.edu.uco.ucochallenge.application.user.search.usecase.impl;
 
 import org.springframework.stereotype.Service;
 
+import co.edu.uco.ucochallenge.crosscutting.MessageCodes;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.BusinessException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.notification.Notification;
 import co.edu.uco.ucochallenge.domain.user.search.model.UserSearchFilterDomainModel;
@@ -25,7 +26,12 @@ public class FindUsersByFilterUseCaseImpl implements FindUsersByFilterUseCase {
         public UserSearchResultDomainModel execute(final UserSearchFilterDomainModel domain) {
                 final Notification notification = validator.validate(domain);
                 if (notification.hasErrors()) {
-                        throw new BusinessException(notification.formattedMessages());
+                        final String messageCode = notification.getErrors().stream()
+                                        .map(Notification.NotificationError::code)
+                                        .filter(code -> code != null && !code.isBlank())
+                                        .findFirst()
+                                        .orElse(MessageCodes.EXCEPTION_GENERAL_VALIDATION);
+                        throw new BusinessException(messageCode);
                 }
 
                 return repositoryPort.findAll(domain.getPage(), domain.getSize());

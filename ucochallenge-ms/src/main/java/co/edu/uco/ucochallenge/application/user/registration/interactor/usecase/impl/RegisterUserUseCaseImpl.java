@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.edu.uco.ucochallenge.crosscutting.MessageCodes;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.BusinessException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.DomainValidationException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.helper.TextHelper;
@@ -58,7 +59,7 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
                 ensureUniqueUserId(domain);
                 final var notification = validator.validate(domain, "register-api");
                 if (notification.hasErrors()) {
-                        throw new BusinessException("register.user.duplicated");
+                        throw new BusinessException(MessageCodes.REGISTER_USER_DUPLICATED);
                 }
 
                 repositoryPort.save(domain);
@@ -68,24 +69,24 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
         private void ensureContactInformation(final UserRegistrationDomainModel domain) {
                 if (!domain.hasEmail() && !domain.hasMobileNumber()) {
-                        throw new DomainValidationException("register.user.validation.contact.required");
+                        throw new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_CONTACT_REQUIRED);
                 }
         }
 
         private void resolveIdentificationType(final UserRegistrationDomainModel domain) {
                 if (!UUIDHelper.getDefault().equals(domain.getIdType())) {
                         if (!idTypeQueryPort.existsById(domain.getIdType())) {
-                                throw new DomainValidationException("register.user.validation.idtype.required");
+                                throw new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_IDTYPE_REQUIRED);
                         }
                         return;
                 }
 
                 if (TextHelper.isEmpty(domain.getIdTypeName())) {
-                        throw new DomainValidationException("register.user.validation.idtype.required");
+                        throw new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_IDTYPE_REQUIRED);
                 }
 
                 final var idType = idTypeQueryPort.findIdByName(domain.getIdTypeName())
-                                .orElseThrow(() -> new DomainValidationException("register.user.validation.idtype.required"));
+                                .orElseThrow(() -> new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_IDTYPE_REQUIRED));
 
                 domain.updateIdType(idType);
         }
@@ -93,17 +94,17 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
         private void validateLocation(final UserRegistrationDomainModel domain) {
                 if (isMissing(domain.getCountryId())
                                 || !locationQueryPort.countryExists(domain.getCountryId())) {
-                        throw new DomainValidationException("register.user.validation.country.required");
+                        throw new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_COUNTRY_REQUIRED);
                 }
 
                 if (isMissing(domain.getDepartmentId())
                                 || !locationQueryPort.departmentExists(domain.getDepartmentId())) {
-                        throw new DomainValidationException("register.user.validation.department.required");
+                        throw new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_DEPARTMENT_REQUIRED);
                 }
 
                 if (isMissing(domain.getHomeCity())
                                 || !locationQueryPort.cityExists(domain.getHomeCity())) {
-                        throw new DomainValidationException("register.user.validation.city.required");
+                        throw new DomainValidationException(MessageCodes.REGISTER_USER_VALIDATION_CITY_REQUIRED);
                 }
         }
 
@@ -118,8 +119,8 @@ public class RegisterUserUseCaseImpl implements RegisterUserUseCase {
 
                 if (repositoryPort.existsById(candidateId)) {
                         LOGGER.warn("Unable to generate a unique user id after {} attempts", attempts);
-                        throw new BusinessException("register.user.identifier.unavailable");
-                }
+                        throw new BusinessException(MessageCodes.REGISTER_USER_IDENTIFIER_UNAVAILABLE);
+        }
 
                 if (!candidateId.equals(domain.getId())) {
                         domain.updateId(candidateId);

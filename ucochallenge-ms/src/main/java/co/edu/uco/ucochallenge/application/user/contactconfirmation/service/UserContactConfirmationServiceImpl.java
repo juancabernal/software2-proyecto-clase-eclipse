@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.edu.uco.ucochallenge.crosscutting.MessageCodes;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.BusinessException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.DomainValidationException;
 import co.edu.uco.ucochallenge.crosscutting.legacy.exception.NotFoundException;
@@ -23,10 +24,6 @@ import co.edu.uco.ucochallenge.application.user.contactconfirmation.port.Confirm
 public class UserContactConfirmationServiceImpl implements UserContactConfirmationService {
 
     private static final Pattern CODE_PATTERN = Pattern.compile("^\\d{6}$");
-    private static final String USER_NOT_FOUND_MESSAGE = "User not found";
-    private static final String MISSING_EMAIL_MESSAGE = "El usuario no tiene correo electrónico configurado";
-    private static final String MISSING_MOBILE_MESSAGE = "El usuario no tiene número móvil configurado";
-    private static final String INVALID_CODE_FORMAT_MESSAGE = "El código debe contener exactamente 6 dígitos numéricos";
     private static final int DEFAULT_MAX_ATTEMPTS = 3;
 
     private final VerificationCodeRepository codeRepo;
@@ -48,18 +45,18 @@ public class UserContactConfirmationServiceImpl implements UserContactConfirmati
     @Override
     public void confirmVerificationCode(final UUID userId, final VerificationChannel channel, final String rawCode) {
         final UserEntity user = userRepo.findById(userId)
-                .orElseThrow(() -> new NotFoundException(USER_NOT_FOUND_MESSAGE));
+                .orElseThrow(() -> new NotFoundException(MessageCodes.VERIFICATION_USER_NOT_FOUND));
 
         final String contact = resolveContact(user, channel);
         final String normalizedContact = channel.normalizeContact(contact);
         final String code = rawCode == null ? "" : rawCode.trim();
 
         if (!CODE_PATTERN.matcher(code).matches()) {
-            throw new DomainValidationException(INVALID_CODE_FORMAT_MESSAGE);
+            throw new DomainValidationException(MessageCodes.VERIFICATION_CODE_FORMAT_INVALID);
         }
 
         final VerificationCodeEntity verificationCode = codeRepo.findByContactIgnoreCase(normalizedContact)
-                .orElseThrow(() -> new BusinessException("verification.code.notfound"));
+                .orElseThrow(() -> new BusinessException(MessageCodes.VERIFICATION_CODE_NOT_FOUND));
 
         final Integer attemptsValue = parametersCatalogCache.getParameter(ParamKeys.MAX_CONFIRM_ATTEMPTS)
                 .map(ParameterDTO::value)
@@ -71,18 +68,18 @@ public class UserContactConfirmationServiceImpl implements UserContactConfirmati
         final int maxAttempts = attemptsValue == null || attemptsValue <= 0 ? DEFAULT_MAX_ATTEMPTS : attemptsValue;
 
         if (verificationCode.getAttempts() >= maxAttempts) {
-            throw new BusinessException("verification.code.max.attempts");
+            throw new BusinessException(MessageCodes.VERIFICATION_CODE_MAX_ATTEMPTS);
         }
 
         if (LocalDateTime.now().isAfter(verificationCode.getExpiration())) {
             codeRepo.deleteByContactIgnoreCase(normalizedContact);
-            throw new BusinessException("verification.code.expired");
+            throw new BusinessException(MessageCodes.VERIFICATION_CODE_EXPIRED);
         }
 
         if (!verificationCode.getCode().equals(code)) {
             verificationCode.incrementAttempts();
             codeRepo.save(verificationCode);
-            throw new BusinessException("verification.code.invalid");
+            throw new BusinessException(MessageCodes.VERIFICATION_CODE_INVALID);
         }
 
         if (channel.isEmail()) {
@@ -97,7 +94,9 @@ public class UserContactConfirmationServiceImpl implements UserContactConfirmati
     private String resolveContact(final UserEntity user, final VerificationChannel channel) {
         final String contact = channel.isEmail() ? user.getEmail() : user.getMobileNumber();
         if (contact == null || contact.trim().isEmpty()) {
-            throw new BusinessException(channel.isEmail() ? MISSING_EMAIL_MESSAGE : MISSING_MOBILE_MESSAGE);
+            throw new BusinessException(channel.isEmail()
+                    ? MessageCodes.VERIFICATION_CONTACT_EMAIL_MISSING
+                    : MessageCodes.VERIFICATION_CONTACT_MOBILE_MISSING);
         }
         return contact.trim();
     }

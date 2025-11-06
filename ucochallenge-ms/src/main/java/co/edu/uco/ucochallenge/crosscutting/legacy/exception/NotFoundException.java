@@ -4,7 +4,19 @@ public class NotFoundException extends RuntimeException {
 
         private static final long serialVersionUID = 1L;
 
-        public NotFoundException(final String message) {
-                super(message);
+        private final String code;
+
+        public NotFoundException(final String code) {
+                super(code);
+                this.code = code;
+        }
+
+        public NotFoundException(final String code, final Throwable cause) {
+                super(code, cause);
+                this.code = code;
+        }
+
+        public String getCode() {
+                return code;
         }
 }

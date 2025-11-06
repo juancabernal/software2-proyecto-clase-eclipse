@@ -46,6 +46,11 @@ public final class MessageCatalog {
                 "El tipo de identificación es obligatorio.",
                 "No se especificó el tipo de documento.");
 
+        register("register.user.validation.contact.required",
+                "User registration requires at least one contact method (email or mobile).",
+                "Debes registrar al menos un correo o un número de celular.",
+                "Faltan datos de contacto para completar el registro.");
+
         register("register.user.validation.idnumber.required",
                 "Missing required field: identification number.",
                 "El número de identificación es obligatorio.",
@@ -76,6 +81,21 @@ public final class MessageCatalog {
                 "El número de teléfono debe contener exactamente 10 dígitos.",
                 "El teléfono no cumple la longitud esperada.");
 
+        register("register.user.validation.country.required",
+                "Selected country does not exist or was not provided.",
+                "Debes seleccionar un país válido.",
+                "Información de país obligatoria para el registro.");
+
+        register("register.user.validation.department.required",
+                "Selected department/state does not exist or was not provided.",
+                "Debes seleccionar un departamento válido.",
+                "Información de departamento obligatoria para el registro.");
+
+        register("register.user.validation.city.required",
+                "Selected city does not exist or was not provided.",
+                "Debes seleccionar una ciudad válida.",
+                "Información de ciudad obligatoria para el registro.");
+
         // --- Reglas de negocio ---
         register("register.user.rule.duplicated",
                 "Duplicate user detected with same ID type and number.",
@@ -102,6 +122,24 @@ public final class MessageCatalog {
                 "Duplicated data detected while registering user.",
                 "Ya existe un usuario registrado con datos proporcionados.",
                 "Se detectó información duplicada durante el registro.");
+
+        register("register.user.identifier.unavailable",
+                "Unable to generate a unique user identifier after maximum retries.",
+                "No pudimos generar un identificador para tu usuario. Intenta nuevamente.",
+                "Error al generar un identificador único para el usuario.");
+
+        // =========================================================
+        // 🔍 BÚSQUEDA DE USUARIOS
+        // =========================================================
+        register("find.users.page.negative",
+                "Page index parameter must be greater than or equal to zero.",
+                "La página solicitada debe ser 0 o mayor.",
+                "Número de página fuera del rango permitido.");
+
+        register("find.users.size.range",
+                "Page size parameter must be between 1 and 100 records.",
+                "El tamaño de página debe estar entre 1 y 100 registros.",
+                "Cantidad de resultados por página inválida.");
 
         // =========================================================
         // 🔐 AUTENTICACIÓN
@@ -156,6 +194,46 @@ public final class MessageCatalog {
                 "Maximum number of confirmation attempts reached.",
                 "Has superado el número máximo de intentos.",
                 "Se superó el límite de intentos de confirmación.");
+
+        register("verification.channel.required",
+                "Missing verification channel value in request payload.",
+                "Debes indicar el canal de verificación.",
+                "Canal de verificación obligatorio.");
+
+        register("verification.code.required",
+                "Missing verification code value in request payload.",
+                "Debes ingresar el código de verificación.",
+                "Código de verificación obligatorio.");
+
+        register("verification.channel.invalid",
+                "Verification channel provided is not supported by the service.",
+                "El canal de verificación seleccionado no es válido.",
+                "Canal de verificación inválido.");
+
+        register("verification.code.format.invalid",
+                "Verification code must contain exactly six digits.",
+                "El código debe contener exactamente seis dígitos numéricos.",
+                "Formato del código de verificación inválido.");
+
+        register("verification.contact.email.missing",
+                "User entity lacks email address required to send verification code.",
+                "El usuario no tiene un correo electrónico configurado.",
+                "Falta el correo electrónico del usuario para enviar el código.");
+
+        register("verification.contact.mobile.missing",
+                "User entity lacks mobile number required to send verification code.",
+                "El usuario no tiene un número de celular configurado.",
+                "Falta el número de celular del usuario para enviar el código.");
+
+        register("verification.user.notfound",
+                "User associated to verification process was not found in database.",
+                "No encontramos al usuario solicitado.",
+                "Usuario no disponible para la verificación.");
+
+        register("verification.notification.delivery.failed",
+                "External provider rejected the delivery of the verification notification.",
+                "No pudimos enviar el código de verificación. Intenta nuevamente.",
+                "Fallo al enviar el código de verificación al usuario.");
     }
 
     private MessageCatalog() { /* utility */ }
