@@ -22,38 +22,38 @@ public class UserEntity {
     private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "tipo_identificacion")
+    @JoinColumn(name = "tipo_identificacion_id")
     private IdTypeEntity idType;
 
-    @Column(name = "numeroIdentificacion")
+    @Column(name = "numero_identificacion")
     private String idNumber;
 
-    @Column(name = "primerNombre")
+    @Column(name = "primer_nombre")
     private String firstName;
 
-    @Column(name = "segundoNombre")
+    @Column(name = "segundo_nombre")
     private String secondName;
 
-    @Column(name = "primerApellido")
+    @Column(name = "primer_apellido")
     private String firstSurname;
 
-    @Column(name = "segundoApellido")
+    @Column(name = "segundo_apellido")
     private String secondSurname;
 
     @ManyToOne
-    @JoinColumn(name = "ciudadResidencia")
+    @JoinColumn(name = "ciudad_residencia_id")
     private CityEntity homeCity;
 
-    @Column(name = "email")
+    @Column(name = "correo_electronico")
     private String email;
 
-    @Column(name = "telefonoMovil")
+    @Column(name = "numero_telefono_movil")
     private String mobileNumber;
 
-    @Column(name = "emailConfirmado")
+    @Column(name = "correo_electronico_confirmado")
     private boolean emailConfirmed;
 
-    @Column(name = "telefonoMovilConfirmado")
+    @Column(name = "numero_telefono_movil_confirmado")
     private boolean mobileNumberConfirmed;
 
     @Transient

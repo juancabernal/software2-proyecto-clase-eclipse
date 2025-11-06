@@ -4,7 +4,6 @@ import {
   CatalogItem,
   Page,
   RegisterUserResponse,
-  UserCreateInput,
   makeApi,
   VerificationAttemptResponse,
 
@@ -74,20 +73,65 @@ export default function UsersAdmin() {
 
   function extractBackendMessage(error: any): string {
     const FALLBACK = "No se pudo crear el usuario.";
-    // Priorizar mensajes diseñados para el usuario
+
+    const extractFrom = (payload: any): string | null => {
+      if (!payload || typeof payload !== "object") {
+        return null;
+      }
+
+      const directMessage =
+        payload.userMessage ||
+        payload.generalMessage ||
+        payload.message ||
+        payload.msg ||
+        payload.technicalMessage;
+
+      if (directMessage && typeof directMessage === "string" && directMessage.trim()) {
+        return directMessage.trim();
+      }
+
+      // Formatos conocidos: { dataReturned: true, data: {...} }
+      if (payload.data && payload.data !== payload) {
+        const nested = extractFrom(payload.data);
+        if (nested) {
+          return nested;
+        }
+      }
+
+      // Algunos backends envían errores en "error" o "errors"
+      if (payload.error && payload.error !== payload) {
+        const nested = extractFrom(payload.error);
+        if (nested) {
+          return nested;
+        }
+      }
+
+      if (Array.isArray(payload.errors)) {
+        for (const item of payload.errors) {
+          const nested = extractFrom(item);
+          if (nested) {
+            return nested;
+          }
+        }
+      }
+
+      return null;
+    };
+
     try {
-      if (error?.response?.data) {
-        const data = error.response.data as any;
-        return (
-          data.userMessage || data.technicalMessage || data.message || error?.message || FALLBACK
-        );
+      const sources = [error?.response?.data, error?.data, error];
+      for (const source of sources) {
+        const message = extractFrom(source);
+        if (message) {
+          return message;
+        }
       }
     } catch {
-      // ignore
+      // ignore parsing errors y continua con fallback
     }
 
     // fallback por si algo viene roto
-    return error?.message || FALLBACK;
+    return (error?.message && String(error.message)) || FALLBACK;
   }
 
   // Util: detectar timeouts de Axios

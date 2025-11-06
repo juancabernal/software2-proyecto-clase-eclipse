@@ -20,9 +20,9 @@ public class CityEntity {
 	@Column(name = "id")
 	private UUID id;
 
-	@ManyToOne
-	@JoinColumn(name = "departamento")
-	private StateEntity state;
+        @ManyToOne
+        @JoinColumn(name = "departamento_id")
+        private StateEntity state;
 
 	@Column(name = "nombre")
 	private String name;
