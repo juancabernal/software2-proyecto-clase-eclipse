@@ -24,6 +24,8 @@ import org.springframework.web.server.ResponseStatusException;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.CatalogItemDto;
 import co.edu.uco.api_gateway.dto.ConfirmationResponse;
+import co.edu.uco.api_gateway.dto.ConfirmVerificationCodeRequest;
+import co.edu.uco.api_gateway.dto.ConfirmVerificationCodeResponse;
 import co.edu.uco.api_gateway.dto.EmailConfirmationResponse;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
@@ -73,6 +75,28 @@ public class AdminController {
         final ApiSuccessResponse<RegisterUserResponse> createdUser =
                 userServiceProxy.createUser(user, authorizationHeader);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+
+    @PostMapping("/users/{id}/send-code")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ConfirmationResponse> sendVerificationCode(
+            @PathVariable("id") final UUID id,
+            @RequestParam("channel") final String channel,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final ConfirmationResponse response = userServiceProxy
+                .sendVerificationCode(id, channel, authorizationHeader);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+    }
+
+    @PostMapping("/users/{id}/confirm-code")
+    @PreAuthorize("hasAuthority('administrador')")
+    public ResponseEntity<ConfirmVerificationCodeResponse> confirmVerificationCode(
+            @PathVariable("id") final UUID id,
+            @RequestBody final ConfirmVerificationCodeRequest request,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) final String authorizationHeader) {
+        final ConfirmVerificationCodeResponse response = userServiceProxy
+                .confirmVerificationCode(id, request, authorizationHeader);
+        return ResponseEntity.ok(response);
     }
 
     /**

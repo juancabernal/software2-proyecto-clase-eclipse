@@ -7,6 +7,8 @@ export type RegisterUserResponse = { userId: string; fullName: string; email: st
 export type CatalogItem = { id: string; name: string; }; // ✅ FIX: Preserve catalog item typing
 type ConfirmationResponse = { // ✅ FIX: Extend confirmation payload with verification identifiers
   remainingSeconds: number; // ✅ FIX: Keep countdown seconds for UI timers
+  contact?: string; // ✅ FIX: Surface target contact for contextual messaging
+  channel?: string; // ✅ FIX: Keep channel information returned by backend
   tokenId?: string; // ✅ FIX: Surface legacy token identifier for compatibility
   verificationId?: string; // ✅ FIX: Expose public verification identifier for link validation
 };
@@ -20,6 +22,11 @@ export type VerificationAttemptResponse = {
   verificationId?: string; // ✅ FIX: Capture verification identifier returned by backend
 };
 
+export type ConfirmVerificationResponse = {
+  confirmed: boolean;
+  message?: string;
+};
+
 
 const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
 
@@ -27,14 +34,15 @@ const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
 const postAndReturnTTL = async (
   api: AxiosInstance,
   endpoint: string,
-  failureMessage: string
+  failureMessage: string,
+  params?: Record<string, string | null | undefined>
 ): Promise<ConfirmationResponse> => {
   console.log(`[api.call] postAndReturnTTL -> POST ${endpoint}`);
   try {
     // registramos lo que enviamos (no hay body, sólo endpoint)
-    console.log(`[api.call.payload] postAndReturnTTL`, { endpoint });
+    console.log(`[api.call.payload] postAndReturnTTL`, { endpoint, params });
   } catch (e) { /* noop */ }
-  const res = await api.post(endpoint, undefined, { validateStatus: () => true });
+  const res = await api.post(endpoint, undefined, { validateStatus: () => true, params });
   console.log(`[api.result] postAndReturnTTL <- ${endpoint} status=${res.status}`, {
     responseData: res.data,
     // Separate userMessage and data for clearer logging
@@ -110,6 +118,8 @@ const postAndReturnTTL = async (
       : sanitizedTokenId; // ✅ FIX: Fallback to token identifier when verification id missing
     return {
       remainingSeconds: Number.isFinite(seconds) ? seconds : 0,
+      contact: typeof data?.contact === "string" && data.contact ? data.contact : undefined,
+      channel: typeof data?.channel === "string" && data.channel ? data.channel : undefined,
       tokenId: sanitizedTokenId,
       verificationId: sanitizedVerificationId,
     }; // ✅ FIX: Return identifiers alongside TTL for frontend storage
@@ -418,13 +428,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const trimmedId = userId?.trim();
       if (!trimmedId) throw new Error("Es necesario proporcionar el identificador del usuario.");
 
-      const encodedId = encodeURIComponent(trimmedId);
-      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email`;
+    const encodedId = encodeURIComponent(trimmedId);
+    const adminEndpoint = `/api/admin/users/${encodedId}/send-code`;
+    const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/send-code`;
+    const params = { channel: "email" };
 
       try {
         console.log('[api.call] requestEmailConfirmation', { userId: trimmedId, adminEndpoint, fallbackEndpoint });
-        return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.");
+        return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.", params);
       } catch (error: any) {
         console.log('[api.error] requestEmailConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         try {
@@ -432,7 +443,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           console.log('[api.error] requestEmailConfirmation -> response.headers', error?.response?.headers);
         } catch (e) { /* noop */ }
         if (error?.response?.status === 404) {
-          return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.");
+          return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.", params);
         }
         throw error;
       }
@@ -442,13 +453,14 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const trimmedId = userId?.trim();
       if (!trimmedId) throw new Error("Es necesario proporcionar el identificador del usuario.");
 
-      const encodedId = encodeURIComponent(trimmedId);
-      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile`;
+    const encodedId = encodeURIComponent(trimmedId);
+    const adminEndpoint = `/api/admin/users/${encodedId}/send-code`;
+    const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/send-code`;
+    const params = { channel: "mobile" };
 
       try {
         console.log('[api.call] requestMobileConfirmation', { userId: trimmedId, adminEndpoint, fallbackEndpoint });
-        return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del teléfono móvil.");
+        return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del teléfono móvil.", params);
       } catch (error: any) {
         console.log('[api.error] requestMobileConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         try {
@@ -456,90 +468,62 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           console.log('[api.error] requestMobileConfirmation -> response.headers', error?.response?.headers);
         } catch (e) { /* noop */ }
         if (error?.response?.status === 404) {
-          return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del teléfono móvil.");
+          return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del teléfono móvil.", params);
         }
         throw error;
       }
     },
-    async validateEmailConfirmation(userId: string, token: string, code: string): Promise<VerificationAttemptResponse> { // ✅ FIX: Require token identifier for email confirmation
+    async confirmVerificationCode(
+      userId: string,
+      channel: "email" | "mobile",
+      code: string
+    ): Promise<ConfirmVerificationResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
         throw new Error("Es necesario proporcionar el identificador del usuario.");
       }
-      const sanitizedToken = token?.trim(); // ✅ FIX: Normalize token identifier before submission
-      if (!sanitizedToken) { // ✅ FIX: Ensure token identifier is present
-        throw new Error("El identificador del token es obligatorio para validar el código.");
-      }
+
       const sanitizedCode = code?.trim();
       if (!sanitizedCode) {
         throw new Error("Debes ingresar el código de verificación.");
       }
+      if (!/^\d{6}$/.test(sanitizedCode)) {
+        throw new Error("El código debe tener 6 dígitos.");
+      }
 
       const encodedId = encodeURIComponent(trimmedId);
-      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/email/verify`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/email/verify`;
+      const adminEndpoint = `/api/admin/users/${encodedId}/confirm-code`;
+      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirm-code`;
+      const payload = { channel, code: sanitizedCode };
 
-      try {
-        console.log('[api.call] validateEmailConfirmation', { userId: trimmedId, token: sanitizedToken, code: sanitizedCode, adminEndpoint, fallbackEndpoint });
-        return await postVerificationCode(
-          api,
-          adminEndpoint,
-          sanitizedToken,
-          sanitizedCode,
-          "No fue posible validar el código del correo electrónico."
-        );
-      } catch (error: any) {
-        console.log('[api.error] validateEmailConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
-        if (error?.response?.status === 404) {
-          return await postVerificationCode(
-            api,
-            fallbackEndpoint,
-            sanitizedToken,
-            sanitizedCode,
-            "No fue posible validar el código del correo electrónico."
-          );
+      const sendRequest = async (endpoint: string) => {
+        console.log('[api.call] confirmVerificationCode', { endpoint, payload });
+        const res = await api.post(endpoint, payload, { validateStatus: () => true });
+        console.log('[api.result] confirmVerificationCode', { status: res.status, data: res.data });
+
+        if (res.status >= 200 && res.status < 300) {
+          const responseBody = res.data ?? {};
+          const innerData = typeof responseBody.data === "object" ? responseBody.data : {};
+          const data = Object.keys(innerData).length > 0 ? innerData : responseBody;
+          const confirmed = Boolean(data?.confirmed ?? data?.success);
+          const message = typeof data?.message === "string"
+            ? data.message
+            : (typeof responseBody.userMessage === "string" ? responseBody.userMessage : undefined);
+          return { confirmed, message } as ConfirmVerificationResponse;
         }
+
+        const msg = (res.data && (res.data.message || res.data.error))
+          || "No fue posible validar el código.";
+        const error: any = new Error(msg);
+        error.response = res;
         throw error;
-      }
-    },
-
-    async validateMobileConfirmation(userId: string, token: string, code: string): Promise<VerificationAttemptResponse> { // ✅ FIX: Require token identifier for mobile confirmation
-      const trimmedId = userId?.trim();
-      if (!trimmedId) {
-        throw new Error("Es necesario proporcionar el identificador del usuario.");
-      }
-      const sanitizedToken = token?.trim(); // ✅ FIX: Normalize token identifier before submission
-      if (!sanitizedToken) { // ✅ FIX: Ensure token identifier is present for validation
-        throw new Error("El identificador del token es obligatorio para validar el código.");
-      }
-      const sanitizedCode = code?.trim();
-      if (!sanitizedCode) {
-        throw new Error("Debes ingresar el código de verificación.");
-      }
-
-      const encodedId = encodeURIComponent(trimmedId);
-      const adminEndpoint = `/api/admin/users/${encodedId}/confirmations/mobile/verify`;
-      const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirmations/mobile/verify`;
+      };
 
       try {
-        console.log('[api.call] validateMobileConfirmation', { userId: trimmedId, token: sanitizedToken, code: sanitizedCode, adminEndpoint, fallbackEndpoint });
-        return await postVerificationCode(
-          api,
-          adminEndpoint,
-          sanitizedToken,
-          sanitizedCode,
-          "No fue posible validar el código del teléfono móvil."
-        );
+        return await sendRequest(adminEndpoint);
       } catch (error: any) {
-        console.log('[api.error] validateMobileConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         if (error?.response?.status === 404) {
-          return await postVerificationCode(
-            api,
-            fallbackEndpoint,
-            sanitizedToken,
-            sanitizedCode,
-            "No fue posible validar el código del teléfono móvil."
-          );
+          return await sendRequest(fallbackEndpoint);
         }
         throw error;
       }

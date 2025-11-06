@@ -6,7 +6,7 @@ import {
   RegisterUserResponse,
   UserCreateInput,
   makeApi,
-  VerificationAttemptResponse,
+  ConfirmVerificationResponse,
 
 } from "../api/client";
 import { User } from "./users";
@@ -34,9 +34,8 @@ type VerificationModalState = {
   type: "email" | "mobile";
   contact: string;
   code: string;
-  tokenId: string; // ✅ FIX: Store verification identifier returned by backend
   loading: boolean;
-  status: VerificationAttemptResponse | null;
+  status: ConfirmVerificationResponse | null;
   error: string | null;
 };
 
@@ -53,7 +52,6 @@ const emptyVerificationModal = (): VerificationModalState => ({
   type: "email",
   contact: "",
   code: "",
-  tokenId: "", // ✅ FIX: Reset stored verification identifier when closing modal
   loading: false,
   status: null,
   error: null,
@@ -554,20 +552,17 @@ export default function UsersAdmin() {
 
       startCountdown(key, response.remainingSeconds);
       updateFeedback(userId, { variant: "success", message: successMessage });
+      const contactFromResponse =
+        (typeof response.contact === "string" && response.contact)
+          ? response.contact
+          : (type === "email" ? targetUser.email : targetUser.mobileNumber || "");
 
-      const verificationId = response.verificationId || response.tokenId || "";
       try {
-        console.log('[usersAdmin] requestConfirmation -> validation data', { 
-          userId, 
+        console.log('[usersAdmin] requestConfirmation -> modal state', {
+          userId,
           type,
-          verificationId,
-          // Log verification state for debugging
-          hasVerificationId: Boolean(verificationId),
-          tokenLength: verificationId.length,
-          expected: {
-            format: "UUID string like: d92e3b5a-f16e-42b7-9550-fd9f0159b64d",
-            channel: type === "email" ? "EMAIL" : "MOBILE"
-          }
+          contact: contactFromResponse,
+          remainingSeconds: response.remainingSeconds,
         });
       } catch (e) { /* noop */ }
 
@@ -575,9 +570,8 @@ export default function UsersAdmin() {
         open: true,
         userId,
         type,
-        contact: type === "email" ? targetUser.email : targetUser.mobileNumber || "",
+        contact: contactFromResponse,
         code: "",
-        tokenId: verificationId, // ✅ FIX: Keep verification identifier for subsequent code validation
         loading: false,
         status: null,
         error: null,
@@ -600,21 +594,18 @@ export default function UsersAdmin() {
   };
 
   const handleVerificationCodeChange = (value: string) => {
-    setVerificationModal((prev) => ({ ...prev, code: value, error: null }));
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 6);
+    setVerificationModal((prev) => ({ ...prev, code: digitsOnly, error: null }));
   };
 
   const handleVerifyCode = async () => {
     if (!verificationModal.open || !verificationModal.userId) {
       return;
     }
-    const sanitizedTokenId = verificationModal.tokenId.trim(); // ✅ FIX: Prepare token identifier for validation request
-    if (!sanitizedTokenId) { // ✅ FIX: Prevent validation without associated token
-      setVerificationModal((prev) => ({ ...prev, error: "No se pudo identificar el token. Solicita un nuevo código." }));
-      return;
-    }
+
     const trimmedCode = verificationModal.code.trim();
-    if (!trimmedCode) {
-      setVerificationModal((prev) => ({ ...prev, error: "Ingresa el código enviado." }));
+    if (!/^\d{6}$/.test(trimmedCode)) {
+      setVerificationModal((prev) => ({ ...prev, error: "Ingresa un código de 6 dígitos." }));
       return;
     }
 
@@ -622,46 +613,47 @@ export default function UsersAdmin() {
     setVerificationModal((prev) => ({ ...prev, loading: true, error: null }));
 
     try {
-      // Log values used to validate (token and code)
-      try {
-        console.log('[usersAdmin] validateCode -> attempting', { userId: verificationModal.userId, type: verificationModal.type, token: sanitizedTokenId, code: trimmedCode });
-      } catch (e) { /* noop */ }
+      console.log('[usersAdmin] confirmCode -> attempting', {
+        userId: verificationModal.userId,
+        type: verificationModal.type,
+        code: trimmedCode,
+      });
 
-      const response =
-        verificationModal.type === "email"
-          ? await api.validateEmailConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode)
-          : await api.validateMobileConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode);
+      const response = await api.confirmVerificationCode(
+        verificationModal.userId,
+        verificationModal.type,
+        trimmedCode
+      );
 
-      // Log response from validation
-      try {
-        console.log('[usersAdmin] validateCode -> response', { userId: verificationModal.userId, response });
-      } catch (e) { /* noop */ }
+      console.log('[usersAdmin] confirmCode -> response', {
+        userId: verificationModal.userId,
+        response,
+      });
 
       setVerificationModal((prev) => ({
         ...prev,
         loading: false,
         status: response,
-        code: response.success ? "" : prev.code,
-        tokenId: response.verificationId || prev.tokenId, // ✅ FIX: Refresh token identifier if backend returns a new value
+        code: '',
         error: null,
       }));
 
       updateFeedback(verificationModal.userId, {
-        variant: response.success ? "success" : "error",
-        message: response.message,
+        variant: response.confirmed ? "success" : "error",
+        message: response.message || (response.confirmed ? "Contacto confirmado." : "No fue posible validar el código."),
       });
 
-      if (response.success) {
+      if (response.confirmed) {
         clearCountdown(key);
         await fetchUsers();
-      } else if (response.expired || response.attemptsRemaining <= 0) {
-        clearCountdown(key);
       }
     } catch (error: any) {
-      // Log validation error details for debugging
-      try {
-        console.error('[usersAdmin] validateCode -> error', { userId: verificationModal.userId, status: error?.response?.status, responseData: error?.response?.data, message: error?.message });
-      } catch (e) { /* noop */ }
+      console.error('[usersAdmin] confirmCode -> error', {
+        userId: verificationModal.userId,
+        status: error?.response?.status,
+        responseData: error?.response?.data,
+        message: error?.message,
+      });
 
       const message = error?.message || "No fue posible validar el código.";
       setVerificationModal((prev) => ({ ...prev, loading: false, error: message }));
@@ -1040,13 +1032,8 @@ export default function UsersAdmin() {
                 )}
 
                 {verificationModal.status && (
-                  <div className={`text-sm ${verificationModal.status.success ? "text-emerald-400" : "text-amber-300"}`}>
-                    {verificationModal.status.message}
-                    {!verificationModal.status.success && verificationModal.status.attemptsRemaining > 0 && (
-                      <span className="ml-2 text-xs text-gray-400">
-                        Intentos restantes: {verificationModal.status.attemptsRemaining}
-                      </span>
-                    )}
+                  <div className="text-sm text-emerald-400">
+                    {verificationModal.status.message || "El contacto se confirmó correctamente."}
                   </div>
                 )}
             </div>

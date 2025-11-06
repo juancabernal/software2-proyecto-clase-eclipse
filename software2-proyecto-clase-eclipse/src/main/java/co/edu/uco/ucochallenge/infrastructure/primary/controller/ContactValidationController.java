@@ -9,11 +9,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.notification.VerificationAttemptResponseDTO;
+import co.edu.uco.ucochallenge.application.notification.VerificationChannel;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.EmailConfirmationResponseDTO;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.ConfirmVerificationCodeRequestDTO;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.ConfirmVerificationCodeResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationCodeRequestDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationLinkRequestDTO; // ✅ FIX: Accept token-only verification requests
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
@@ -21,6 +25,9 @@ import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.Req
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateMobileConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ValidateTokenViaPublicIdInteractor; // ✅ FIX: Wire new interactor for link verification
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.SendVerificationCodeInteractor;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.ConfirmVerificationCodeInteractor;
+import co.edu.uco.ucochallenge.crosscuting.exception.DomainException;
 import co.edu.uco.ucochallenge.infrastructure.primary.controller.response.ApiSuccessResponse;
 
 @RestController
@@ -34,18 +41,52 @@ public class ContactValidationController {
     private final ValidateEmailConfirmationInteractor validateEmailInteractor;
     private final ValidateMobileConfirmationInteractor validateMobileInteractor;
     private final ValidateTokenViaPublicIdInteractor validatePublicTokenInteractor; // ✅ FIX: Store dependency for public verification flow
+    private final SendVerificationCodeInteractor sendVerificationCodeInteractor;
+    private final ConfirmVerificationCodeInteractor confirmVerificationCodeInteractor;
 
     public ContactValidationController(
             final RequestEmailConfirmationInteractor emailInteractor,
             final RequestMobileConfirmationInteractor mobileInteractor,
             final ValidateEmailConfirmationInteractor validateEmailInteractor,
             final ValidateMobileConfirmationInteractor validateMobileInteractor,
-            final ValidateTokenViaPublicIdInteractor validatePublicTokenInteractor) { // ✅ FIX: Inject new interactor for link verification
+            final ValidateTokenViaPublicIdInteractor validatePublicTokenInteractor,
+            final SendVerificationCodeInteractor sendVerificationCodeInteractor,
+            final ConfirmVerificationCodeInteractor confirmVerificationCodeInteractor) { // ✅ FIX: Inject new interactor for link verification
         this.emailInteractor = emailInteractor;
         this.mobileInteractor = mobileInteractor;
         this.validateEmailInteractor = validateEmailInteractor;
         this.validateMobileInteractor = validateMobileInteractor;
         this.validatePublicTokenInteractor = validatePublicTokenInteractor; // ✅ FIX: Assign new interactor for link verification
+        this.sendVerificationCodeInteractor = sendVerificationCodeInteractor;
+        this.confirmVerificationCodeInteractor = confirmVerificationCodeInteractor;
+    }
+
+    @PostMapping("/{userId}/send-code")
+    public ResponseEntity<ConfirmationResponseDTO> sendVerificationCode(@PathVariable UUID userId,
+            @RequestParam("channel") String channelValue) {
+        final VerificationChannel channel = VerificationChannel.from(channelValue);
+        LOGGER.info("🚀 Solicitud de envío de código para el usuario {} vía {}", userId, channel);
+        final ConfirmationResponseDTO response = sendVerificationCodeInteractor.execute(userId, channel);
+        return ResponseEntity.accepted().body(response);
+    }
+
+    @PostMapping("/{userId}/confirm-code")
+    public ResponseEntity<ConfirmVerificationCodeResponseDTO> confirmVerificationCode(
+            @PathVariable UUID userId,
+            @RequestBody ConfirmVerificationCodeRequestDTO request) {
+        final VerificationChannel channel = request.sanitizedChannel();
+        final String code = request.sanitizedCode();
+        LOGGER.info("✅ Validando código para el usuario {} vía {}", userId, channel);
+        final VerificationAttemptResponseDTO result = confirmVerificationCodeInteractor
+                .execute(userId, channel, code);
+
+        if (!result.success()) {
+            throw DomainException.build(result.message());
+        }
+
+        final ConfirmVerificationCodeResponseDTO response =
+                new ConfirmVerificationCodeResponseDTO(true, result.message());
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{userId}/confirm-email")

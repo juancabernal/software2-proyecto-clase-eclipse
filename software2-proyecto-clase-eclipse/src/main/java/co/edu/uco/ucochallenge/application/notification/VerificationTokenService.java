@@ -198,6 +198,28 @@ public class VerificationTokenService {
                 token.id()); // ✅ FIX: Provide identifier to confirm successful validation
     }
 
+    @Transactional
+    public VerificationAttemptResponseDTO validateTokenByContact(final User user,
+            final VerificationChannel channel,
+            final String providedCode,
+            final LocalDateTime verificationDate) {
+        final String contact = resolveContact(user, channel);
+        final VerificationToken token = repository.findByContact(contact)
+                .orElse(null);
+
+        if (token == null) {
+            final String message = MessageProvider
+                    .getMessage(MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
+            return new VerificationAttemptResponseDTO(false, false, 0,
+                    isContactConfirmed(user, channel),
+                    user.emailConfirmed() && user.mobileNumberConfirmed(),
+                    message,
+                    null);
+        }
+
+        return validateToken(user, channel, token.id(), providedCode, verificationDate);
+    }
+
     @Transactional // ✅ FIX: Ensure link-based verification updates run within a transaction
     public VerificationAttemptResponseDTO validateTokenViaPublicId(final UUID tokenId) { // ✅ FIX: Enable verification link consumption without user context
         final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId); // ✅ FIX: Normalize incoming identifier before processing
