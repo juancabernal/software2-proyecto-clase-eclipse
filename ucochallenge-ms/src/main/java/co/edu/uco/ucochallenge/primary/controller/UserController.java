@@ -12,12 +12,12 @@ import co.edu.uco.ucochallenge.user.confirmcontact.application.service.UserConta
 import co.edu.uco.ucochallenge.user.confirmcontact.application.service.VerificationChannel;
 import co.edu.uco.ucochallenge.user.confirmcontact.application.service.dto.ConfirmVerificationCodeRequestDTO;
 import co.edu.uco.ucochallenge.user.confirmcontact.application.service.dto.ConfirmVerificationCodeResponseDTO;
-import co.edu.uco.ucochallenge.user.findusers.application.interactor.FindUsersByFilterInteractor;
-import co.edu.uco.ucochallenge.user.findusers.application.interactor.dto.FindUsersByFilterInputDTO;
-import co.edu.uco.ucochallenge.user.findusers.application.interactor.dto.FindUsersByFilterOutputDTO;
-import co.edu.uco.ucochallenge.user.registeruser.application.interactor.RegisterUserInteractor;
-import co.edu.uco.ucochallenge.user.registeruser.application.interactor.dto.RegisterUserInputDTO;
-import co.edu.uco.ucochallenge.user.registeruser.application.interactor.dto.RegisterUserResponseDTO;
+import co.edu.uco.ucochallenge.application.user.registration.dto.UserRegistrationRequestDTO;
+import co.edu.uco.ucochallenge.application.user.registration.dto.UserRegistrationResponseDTO;
+import co.edu.uco.ucochallenge.application.user.registration.interactor.UserRegistrationApplicationInteractor;
+import co.edu.uco.ucochallenge.application.user.search.dto.UserSearchQueryRequestDTO;
+import co.edu.uco.ucochallenge.application.user.search.dto.UserSearchQueryResponseDTO;
+import co.edu.uco.ucochallenge.application.user.search.interactor.UserSearchApplicationInteractor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
@@ -28,33 +28,34 @@ public class UserController {
 
     private static final Logger log = LoggerFactory.getLogger(UserController.class);
 
-    private final RegisterUserInteractor registerUserInteractor;
-    private final FindUsersByFilterInteractor findUsersByFilterInteractor;
+    private final UserRegistrationApplicationInteractor userRegistrationInteractor;
+    private final UserSearchApplicationInteractor userSearchInteractor;
     private final UserContactConfirmationService userContactConfirmationService;
     private final SendVerificationCodeService sendVerificationCodeService;
 
-    public UserController(final RegisterUserInteractor registerUserInteractor,
-                          final FindUsersByFilterInteractor findUsersByFilterInteractor,
+    public UserController(final UserRegistrationApplicationInteractor userRegistrationInteractor,
+                          final UserSearchApplicationInteractor userSearchInteractor,
                           final UserContactConfirmationService userContactConfirmationService,
                           final SendVerificationCodeService sendVerificationCodeService) {
-        this.registerUserInteractor = registerUserInteractor;
-        this.findUsersByFilterInteractor = findUsersByFilterInteractor;
+        this.userRegistrationInteractor = userRegistrationInteractor;
+        this.userSearchInteractor = userSearchInteractor;
         this.userContactConfirmationService = userContactConfirmationService;
         this.sendVerificationCodeService = sendVerificationCodeService;
     }
 
     @PostMapping("/users")
-    public ResponseEntity<RegisterUserResponseDTO> create(@Valid @RequestBody final RegisterUserInputDTO request) {
-        final RegisterUserResponseDTO response = registerUserInteractor.execute(request);
+    public ResponseEntity<UserRegistrationResponseDTO> create(
+                    @Valid @RequestBody final UserRegistrationRequestDTO request) {
+        final UserRegistrationResponseDTO response = userRegistrationInteractor.execute(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping("/users")
-    public ResponseEntity<FindUsersByFilterOutputDTO> getUsers(
+    public ResponseEntity<UserSearchQueryResponseDTO> getUsers(
             @RequestParam(name = "page", required = false) final Integer page,
             @RequestParam(name = "size", required = false) final Integer size) {
-        final var normalizedInput = FindUsersByFilterInputDTO.normalize(page, size);
-        final var response = findUsersByFilterInteractor.execute(normalizedInput);
+        final var normalizedInput = UserSearchQueryRequestDTO.normalize(page, size);
+        final var response = userSearchInteractor.execute(normalizedInput);
         return ResponseEntity.ok(response);
     }
 

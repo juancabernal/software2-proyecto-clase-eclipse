@@ -4,13 +4,13 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
+import co.edu.uco.ucochallenge.application.user.registration.port.UserRegistrationLocationQueryPort;
 import co.edu.uco.ucochallenge.secondary.ports.repository.CityRepository;
 import co.edu.uco.ucochallenge.secondary.ports.repository.CountryRepository;
 import co.edu.uco.ucochallenge.secondary.ports.repository.StateRepository;
-import co.edu.uco.ucochallenge.user.registeruser.application.port.LocationQueryPort;
 
 @Repository
-public class LocationRepositoryAdapter implements LocationQueryPort {
+public class LocationRepositoryAdapter implements UserRegistrationLocationQueryPort {
 
         private final CountryRepository countryRepository;
         private final StateRepository stateRepository;

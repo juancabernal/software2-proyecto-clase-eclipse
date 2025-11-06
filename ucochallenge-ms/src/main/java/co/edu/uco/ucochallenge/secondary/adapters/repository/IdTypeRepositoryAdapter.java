@@ -5,13 +5,13 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
+import co.edu.uco.ucochallenge.application.user.registration.port.UserRegistrationIdTypeQueryPort;
 import co.edu.uco.ucochallenge.crosscuting.helper.TextHelper;
 import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.IdTypeEntity;
 import co.edu.uco.ucochallenge.secondary.ports.repository.IdTypeRepository;
-import co.edu.uco.ucochallenge.user.registeruser.application.port.IdTypeQueryPort;
 
 @Repository
-public class IdTypeRepositoryAdapter implements IdTypeQueryPort {
+public class IdTypeRepositoryAdapter implements UserRegistrationIdTypeQueryPort {
 
         private final IdTypeRepository repository;
 

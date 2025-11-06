@@ -16,13 +16,13 @@ import com.notificationapi.model.NotificationRequest;
 import com.notificationapi.model.SmsOptions;
 import com.notificationapi.model.User;
 
+import co.edu.uco.ucochallenge.application.user.registration.port.UserRegistrationContactConfirmationPort;
 import co.edu.uco.ucochallenge.crosscuting.exception.NotificationDeliveryException;
 import co.edu.uco.ucochallenge.secondary.adapters.repository.entity.VerificationCodeEntity;
 import co.edu.uco.ucochallenge.secondary.adapters.repository.jpa.VerificationCodeRepository;
-import co.edu.uco.ucochallenge.user.registeruser.application.port.ContactConfirmationPort;
 
 @Component
-public class NotificationContactConfirmationAdapter implements ContactConfirmationPort {
+public class NotificationContactConfirmationAdapter implements UserRegistrationContactConfirmationPort {
 
     private static final int CODE_UPPER_BOUND = 1_000_000;
     private static final Logger LOGGER = LoggerFactory.getLogger(NotificationContactConfirmationAdapter.class);

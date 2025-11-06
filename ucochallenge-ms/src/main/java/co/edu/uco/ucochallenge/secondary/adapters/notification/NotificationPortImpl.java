@@ -15,10 +15,10 @@ import com.notificationapi.model.User;
 import co.edu.uco.ucochallenge.crosscutting.ParamKeys;
 import co.edu.uco.ucochallenge.crosscutting.dto.ParameterDTO;
 import co.edu.uco.ucochallenge.secondary.adapters.cache.catalog.ParametersCatalogCache;
-import co.edu.uco.ucochallenge.user.registeruser.application.port.NotificationPort;
+import co.edu.uco.ucochallenge.application.user.registration.port.UserRegistrationNotificationPort;
 
 @Component
-public class NotificationPortImpl implements NotificationPort {
+public class NotificationPortImpl implements UserRegistrationNotificationPort {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationPortImpl.class);
 
