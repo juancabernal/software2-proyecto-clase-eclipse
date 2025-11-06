@@ -2,9 +2,9 @@ package co.edu.uco.ucochallenge.application.user.contactvalidation.usecase;
 
 import java.util.UUID;
 
-import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.EmailConfirmationResponseDTO;
 
 public interface RequestEmailConfirmationUseCase {
 
-    ConfirmationResponseDTO execute(UUID userId);
+    EmailConfirmationResponseDTO execute(UUID userId);
 }

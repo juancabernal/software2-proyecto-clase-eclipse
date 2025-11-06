@@ -18,6 +18,7 @@ import co.edu.uco.ucochallenge.application.Void;
 import co.edu.uco.ucochallenge.application.notification.ConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.notification.VerificationAttemptResponseDTO;
 import co.edu.uco.ucochallenge.application.pagination.dto.PaginationRequestDTO;
+import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.EmailConfirmationResponseDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.dto.VerificationCodeRequestDTO;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestEmailConfirmationInteractor;
 import co.edu.uco.ucochallenge.application.user.contactvalidation.interactor.RequestMobileConfirmationInteractor;
@@ -138,9 +139,9 @@ public class UserController {
     }
 
     @PostMapping("/{id}/confirmations/email")
-    public ResponseEntity<ApiSuccessResponse<ConfirmationResponseDTO>> requestEmailConfirmation(
+    public ResponseEntity<ApiSuccessResponse<EmailConfirmationResponseDTO>> requestEmailConfirmation(
             @PathVariable("id") final UUID id) {
-        final ConfirmationResponseDTO response = requestEmailConfirmationInteractor.execute(id);
+        final EmailConfirmationResponseDTO response = requestEmailConfirmationInteractor.execute(id);
         return ResponseEntity.ok(ApiSuccessResponse.of(
                 "Se envió la solicitud de validación del correo electrónico.",
                 response));
