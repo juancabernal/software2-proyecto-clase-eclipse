@@ -30,6 +30,45 @@ export type ConfirmVerificationResponse = {
 
 const DEFAULT_FAILURE_MESSAGE = "No fue posible solicitar la validación.";
 
+const EMAIL_VERIFICATION_STORAGE_KEY = "api.admin.users.email.verificationId";
+let emailVerificationIdCache: string | undefined;
+
+const persistEmailVerificationId = (value?: string | null) => {
+  const sanitizedValue = typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  emailVerificationIdCache = sanitizedValue;
+  try {
+    if (typeof window !== "undefined" && window?.localStorage) {
+      if (sanitizedValue) {
+        window.localStorage.setItem(EMAIL_VERIFICATION_STORAGE_KEY, sanitizedValue);
+      } else {
+        window.localStorage.removeItem(EMAIL_VERIFICATION_STORAGE_KEY);
+      }
+    }
+  } catch (storageError) {
+    console.warn("[api.warn] persistEmailVerificationId -> storage error", storageError);
+  }
+};
+
+const readEmailVerificationId = (): string | undefined => {
+  if (emailVerificationIdCache && emailVerificationIdCache.trim().length > 0) {
+    return emailVerificationIdCache;
+  }
+
+  try {
+    if (typeof window !== "undefined" && window?.localStorage) {
+      const stored = window.localStorage.getItem(EMAIL_VERIFICATION_STORAGE_KEY);
+      if (stored && stored.trim().length > 0) {
+        emailVerificationIdCache = stored.trim();
+        return emailVerificationIdCache;
+      }
+    }
+  } catch (storageError) {
+    console.warn("[api.warn] readEmailVerificationId -> storage error", storageError);
+  }
+
+  return undefined;
+};
+
 // --- Helper seguro para POST que devuelve TTL
 const postAndReturnTTL = async (
   api: AxiosInstance,
@@ -466,9 +505,24 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/send-code`;
     const params = { channel: "email" };
 
+      const handleResponse = (response: ConfirmationResponse) => {
+        if (response?.verificationId) {
+          persistEmailVerificationId(response.verificationId);
+          console.log('[api.debug] requestEmailConfirmation -> stored verificationId', {
+            verificationId: response.verificationId,
+            storage: 'localStorage + memory cache'
+          });
+        } else {
+          persistEmailVerificationId(undefined);
+          console.warn('[api.warn] requestEmailConfirmation -> verificationId ausente en la respuesta');
+        }
+        return response;
+      };
+
       try {
         console.log('[api.call] requestEmailConfirmation', { userId: trimmedId, adminEndpoint, fallbackEndpoint });
-        return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.", params);
+        const response = await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.", params);
+        return handleResponse(response);
       } catch (error: any) {
         console.log('[api.error] requestEmailConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
         try {
@@ -476,7 +530,8 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
           console.log('[api.error] requestEmailConfirmation -> response.headers', error?.response?.headers);
         } catch (e) { /* noop */ }
         if (error?.response?.status === 404) {
-          return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.", params);
+          const response = await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.", params);
+          return handleResponse(response);
         }
         throw error;
       }
@@ -525,6 +580,17 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw new Error("El código debe tener 6 dígitos.");
       }
 
+      const providedToken = token?.trim();
+      const verificationId = providedToken || readEmailVerificationId();
+      if (!verificationId) {
+        console.error('[api.error] confirmVerificationCode -> missing verificationId', {
+          userId: trimmedId,
+          channel,
+          hint: 'Ejecuta requestEmailConfirmation antes de confirmar el código.'
+        });
+        throw new Error("No se encontró un identificador de verificación activo. Solicita un nuevo código e inténtalo nuevamente.");
+      }
+
       // Log code validation before making request
       console.log('[api.debug] confirmVerificationCode -> code validation', {
         sanitizedInput: {
@@ -543,7 +609,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirm-code`;
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirm-code`;
-  const payload = token ? { channel, code: sanitizedCode, token } : { channel, code: sanitizedCode };
+      const payload = { channel, code: sanitizedCode, token: verificationId };
 
       const sendRequest = async (endpoint: string) => {
         // Log detailed request info including verification code and optional token
@@ -553,7 +619,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
             channel,
             code: sanitizedCode,
             userId: trimmedId,
-            tokenSent: token ?? null
+            tokenSent: verificationId
           },
           validation: {
             codeFormat: {
