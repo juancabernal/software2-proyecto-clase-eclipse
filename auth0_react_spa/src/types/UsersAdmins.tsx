@@ -7,7 +7,8 @@ import {
   UserCreateInput,
   makeApi,
   VerificationAttemptResponse,
-
+  extractErrorMessage,
+  unwrapErrorResponse,
 } from "../api/client";
 import { User } from "./users";
 
@@ -74,20 +75,19 @@ export default function UsersAdmin() {
 
   function extractBackendMessage(error: any): string {
     const FALLBACK = "No se pudo crear el usuario.";
-    // Priorizar mensajes diseñados para el usuario
     try {
-      if (error?.response?.data) {
-        const data = error.response.data as any;
-        return (
-          data.userMessage || data.technicalMessage || data.message || error?.message || FALLBACK
-        );
+      if (error?.response?.data !== undefined) {
+        return extractErrorMessage(error.response.data, FALLBACK);
       }
     } catch {
       // ignore
     }
 
-    // fallback por si algo viene roto
-    return error?.message || FALLBACK;
+    if (error?.message) {
+      return String(error.message);
+    }
+
+    return extractErrorMessage(unwrapErrorResponse(error), FALLBACK);
   }
 
   // Util: detectar timeouts de Axios
@@ -482,7 +482,7 @@ export default function UsersAdmin() {
     : false;
 
   // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y cities
-  const buildPayload = (form: UserFormState): any => {
+  const buildPayload = (form: UserFormState): UserCreateInput => {
     const sanitize = (value?: string) => (value ?? "").trim();
     const optional = (value?: string) => {
       const trimmed = sanitize(value);

@@ -20,8 +20,8 @@ public class StateEntity {
 	@Column(name = "id")
 	private UUID id;
 
-	@ManyToOne
-	@JoinColumn(name = "pais")
+        @ManyToOne
+        @JoinColumn(name = "pais_id")
 	private CountryEntity country;
 
 	@Column(name = "nombre")
