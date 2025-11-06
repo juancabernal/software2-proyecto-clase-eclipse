@@ -35,6 +35,7 @@ type VerificationModalState = {
   type: "email" | "mobile";
   contact: string;
   code: string;
+  tokenId: string; // ✅ FIX: Store verification identifier returned by backend
   loading: boolean;
   status: VerificationAttemptResponse | null;
   error: string | null;
@@ -53,6 +54,7 @@ const emptyVerificationModal = (): VerificationModalState => ({
   type: "email",
   contact: "",
   code: "",
+  tokenId: "", // ✅ FIX: Reset stored verification identifier when closing modal
   loading: false,
   status: null,
   error: null,
@@ -74,21 +76,24 @@ export default function UsersAdmin() {
 
   function extractBackendMessage(error: any): string {
     const FALLBACK = "No se pudo crear el usuario.";
-
-    // ✅ Si el Gateway ya envía JSON, solo tomamos el userMessage
-    if (error?.response?.data) {
-      const data = error.response.data;
-      return (
-        data.userMessage ||
-        data.technicalMessage ||
-        data.message ||
-        FALLBACK
-      );
+    // Priorizar mensajes diseñados para el usuario
+    try {
+      if (error?.response?.data) {
+        const data = error.response.data as any;
+        return (
+          data.userMessage || data.technicalMessage || data.message || error?.message || FALLBACK
+        );
+      }
+    } catch {
+      // ignore
     }
 
     // fallback por si algo viene roto
     return error?.message || FALLBACK;
   }
+
+  // Util: detectar timeouts de Axios
+  // (eliminado: ahora detectamos timeouts directamente comprobando error.code === 'ECONNABORTED' en createUser)
 
   const { getAccessTokenSilently } = useAuth0();
 
@@ -107,6 +112,10 @@ export default function UsersAdmin() {
   );
 
   const [filters, setFilters] = useState<Filters>(initialFilters);
+  const [nameFilter, setNameFilter] = useState<string>("");
+  const [emailFilter, setEmailFilter] = useState<string>("");
+  const [phoneFilter, setPhoneFilter] = useState<string>("");
+  const [idTypeFilter, setIdTypeFilter] = useState<string>("");
   const [pageData, setPageData] = useState<Page<User> | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -116,6 +125,7 @@ export default function UsersAdmin() {
   const [form, setForm] = useState<UserFormState>(emptyForm);
   const [formErr, setFormErr] = useState<string | null>(null);
   const [creationResult, setCreationResult] = useState<RegisterUserResponse | null>(null);
+  const [foundAfterError, setFoundAfterError] = useState<RegisterUserResponse | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [feedbackMessages, setFeedbackMessages] = useState<
     Record<string, { variant: "success" | "error"; message: string }>
@@ -141,6 +151,7 @@ export default function UsersAdmin() {
   }, [filterCities, filterDepartment]);
   const [countdown, setCountdown] = useState<Record<string, number>>({});
   const timersRef = useRef<Map<string, number>>(new Map());
+  const successBannerTimer = useRef<number | null>(null);
   const [verificationModal, setVerificationModal] = useState<VerificationModalState>(emptyVerificationModal());
   const countdownKeyFor = useCallback((userId: string, type: "email" | "mobile") => `${userId}-${type}`, []);
   const clearCountdown = useCallback((key: string) => {
@@ -160,24 +171,73 @@ export default function UsersAdmin() {
 
 
 
-  // 🔁 carga de usuarios paginada contra el backend (sin filtros locales)
+  // 🔁 carga de usuarios paginada contra el backend (con soporte para filtros cliente)
   const fetchUsers = useCallback(async () => {
+    // helper que recolecta páginas hasta un tope para búsquedas cliente
+    const fetchAllUsersForSearch = async (pageSize: number, maxPages: number) => {
+      const collected: User[] = [];
+      let page = 0;
+      try {
+        while (true) {
+          const p = await api.listUsers({ page, size: pageSize });
+          collected.push(...(p.items ?? []));
+          if (page >= (p.totalPages - 1)) break;
+          page++;
+          if (page >= maxPages) break;
+        }
+      } catch (err) {
+        console.warn({ event: 'fetchAllUsersForSearch:partial', err });
+      }
+      return collected;
+    };
+
     try {
       setLoading(true);
       setErr(null);
       const page0 = Math.max(filters.page - 1, 0);
       const size = filters.size;
 
-      const data = await api.listUsers({ page: page0, size });
+      const nameQ = (nameFilter || "").trim().toLowerCase();
+      const emailQ = (emailFilter || "").trim().toLowerCase();
+      const phoneQ = (phoneFilter || "").trim().toLowerCase();
+      const idTypeQ = (idTypeFilter || "").trim();
 
+      const anyFilter = Boolean(nameQ || emailQ || phoneQ || idTypeQ);
+      if (!anyFilter) {
+        const data = await api.listUsers({ page: page0, size });
+        setPageData(data);
+        return;
+      }
 
-      setPageData(data);
+      const SEARCH_FETCH_SIZE = Number(import.meta.env.VITE_SEARCH_FETCH_SIZE ?? 100);
+      const SEARCH_MAX_PAGES = Number(import.meta.env.VITE_SEARCH_MAX_PAGES ?? 20);
+      const items = await fetchAllUsersForSearch(Math.max(size, SEARCH_FETCH_SIZE), SEARCH_MAX_PAGES);
+
+      const filtered = items.filter((u) => {
+        const name = String(u.fullName ?? "").toLowerCase();
+        const email = String(u.email ?? "").toLowerCase();
+        const phone = String(u.mobileNumber ?? "").toLowerCase();
+        const idType = String(u.idType ?? "");
+
+        const matchesName = nameQ ? name.includes(nameQ) : true;
+        const matchesEmail = emailQ ? email.includes(emailQ) : true;
+        const matchesPhone = phoneQ ? phone.includes(phoneQ) : true;
+        const matchesIdType = idTypeQ ? idType === idTypeQ : true;
+
+        return matchesName && matchesEmail && matchesPhone && matchesIdType;
+      });
+
+      const totalItems = filtered.length;
+      const totalPages = Math.max(1, Math.ceil(totalItems / size));
+      const start = page0 * size;
+      const pageItems = filtered.slice(start, start + size);
+      setPageData({ items: pageItems, page: filters.page, size, totalItems, totalPages });
     } catch (e: any) {
       setErr(e?.message || "No se pudo cargar usuarios.");
     } finally {
       setLoading(false);
     }
-  }, [api, filters]);
+  }, [api, filters, nameFilter, emailFilter, phoneFilter, idTypeFilter]);
 
   // 🔔 debounce para evitar spam al backend al tipear
   const debounceRef = useRef<number | null>(null);
@@ -189,7 +249,7 @@ export default function UsersAdmin() {
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [fetchUsers]);
+  }, [fetchUsers, nameFilter, emailFilter, phoneFilter, idTypeFilter]);
 
   // catálogos
   useEffect(() => {
@@ -329,14 +389,53 @@ export default function UsersAdmin() {
     return () => {
       timersRef.current.forEach((intervalId) => clearInterval(intervalId));
       timersRef.current.clear();
+      if (successBannerTimer.current) {
+        clearTimeout(successBannerTimer.current);
+        successBannerTimer.current = null;
+      }
     };
   }, []);
+
+  // Auto-hide creationResult banner after 5s
+  useEffect(() => {
+    if (!creationResult) return;
+    // clear existing timer
+    if (successBannerTimer.current) {
+      clearTimeout(successBannerTimer.current);
+      successBannerTimer.current = null;
+    }
+    successBannerTimer.current = window.setTimeout(() => {
+      setCreationResult(null);
+    }, 5000);
+
+    return () => {
+      if (successBannerTimer.current) {
+        clearTimeout(successBannerTimer.current);
+        successBannerTimer.current = null;
+      }
+    };
+  }, [creationResult]);
 
   const resetForm = () => {
     setForm(emptyForm());
     setFormErr(null);
     setSelectedDepartment("");
     setCities([]);
+  };
+
+  const handleCloseAndRefreshAfterFound = async () => {
+    // usuario detectado en backend: cerrar modal y refrescar lista bajo control del usuario
+    setOpenNew(false);
+    resetForm();
+    setFoundAfterError(null);
+    setFilters((f) => ({ ...f, page: 1 }));
+    await fetchUsers();
+  };
+
+  const handleKeepModalAfterFound = () => {
+    // mantener modal abierto y limpiar la nota encontrada
+    setFoundAfterError(null);
+    setFormErr(null);
   };
 
   const verificationCountdown = verificationModal.open
@@ -446,6 +545,7 @@ export default function UsersAdmin() {
         type,
         contact: type === "email" ? targetUser.email : targetUser.mobileNumber || "",
         code: "",
+        tokenId: response.verificationId || response.tokenId || "", // ✅ FIX: Keep verification identifier for subsequent code validation
         loading: false,
         status: null,
         error: null,
@@ -475,6 +575,11 @@ export default function UsersAdmin() {
     if (!verificationModal.open || !verificationModal.userId) {
       return;
     }
+    const sanitizedTokenId = verificationModal.tokenId.trim(); // ✅ FIX: Prepare token identifier for validation request
+    if (!sanitizedTokenId) { // ✅ FIX: Prevent validation without associated token
+      setVerificationModal((prev) => ({ ...prev, error: "No se pudo identificar el token. Solicita un nuevo código." }));
+      return;
+    }
     const trimmedCode = verificationModal.code.trim();
     if (!trimmedCode) {
       setVerificationModal((prev) => ({ ...prev, error: "Ingresa el código enviado." }));
@@ -487,14 +592,15 @@ export default function UsersAdmin() {
     try {
       const response =
         verificationModal.type === "email"
-          ? await api.validateEmailConfirmation(verificationModal.userId, trimmedCode)
-          : await api.validateMobileConfirmation(verificationModal.userId, trimmedCode);
+          ? await api.validateEmailConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode)
+          : await api.validateMobileConfirmation(verificationModal.userId, sanitizedTokenId, trimmedCode);
 
       setVerificationModal((prev) => ({
         ...prev,
         loading: false,
         status: response,
         code: response.success ? "" : prev.code,
+        tokenId: response.verificationId || prev.tokenId, // ✅ FIX: Refresh token identifier if backend returns a new value
         error: null,
       }));
 
@@ -535,6 +641,9 @@ export default function UsersAdmin() {
       return;
     }
 
+    // snapshot para verificación post-timeout (declaro fuera del try para usar en catch)
+    const snapshot = { email: form.email?.trim(), idNumber: form.idNumber?.trim() };
+
     try {
       setFormErr(null);
       setCreating(true);
@@ -544,10 +653,63 @@ export default function UsersAdmin() {
       setOpenNew(false);
       resetForm();
       setFilters((f) => ({ ...f, page: 1 }));
+      await fetchUsers(); // éxito real → refresco
     } catch (error: any) {
-      console.error("Error al crear usuario:", error);
-      console.log("👉 error.response?.data:", error?.response?.data);
+      // Si es timeout, intentamos verificar si el usuario quedó creado consultando directamente al backend
+      if (error?.code === 'ECONNABORTED') {
+        try {
+          const found = await api.findUserLocally({ email: snapshot.email, idNumber: snapshot.idNumber });
+          if (found) {
+            setCreationResult({ userId: found.userId, fullName: found.fullName, email: found.email });
+            setFormErr(null);
+            setOpenNew(false);
+            resetForm();
+            setFilters((f) => ({ ...f, page: 1 }));
+            await fetchUsers();
+            return;
+          }
+        } catch (_) { /* noop */ }
+      }
+
+      // Si el backend responde con status 409 o 400 con mensajes claros
+      const status = error?.response?.status;
       const backendMsg = extractBackendMessage(error);
+      if (status === 409) {
+        // conflicto: correo o documento duplicado
+        setFormErr(backendMsg || "Ya existe un usuario con esos datos.");
+        return;
+      }
+      if (status === 400) {
+        // validaciones conocidas
+        setFormErr(backendMsg || "Datos de entrada inválidos.");
+        return;
+      }
+
+      // Si el backend devuelve 5xx, muchas veces es un error genérico.
+      // Intentamos verificar si el usuario quedó creado consultando directamente al backend.
+      if (status && status >= 500) {
+        try {
+          const found = await api.findUserLocally({ email: snapshot.email, idNumber: snapshot.idNumber });
+          if (found) {
+            setCreationResult({ userId: found.userId, fullName: found.fullName, email: found.email });
+            setFormErr(null);
+            setOpenNew(false);
+            resetForm();
+            setFilters((f) => ({ ...f, page: 1 }));
+            await fetchUsers();
+            return;
+          }
+        } catch (lookupErr) {
+          console.warn({ event: "createUser:5xx-lookup-failed", err: lookupErr });
+        }
+
+        // Si no encontramos nada, mostramos el mensaje genérico y dejamos modal abierto
+        setFormErr("Se presentó un error inesperado. Intenta nuevamente.");
+        return;
+      }
+
+      // fallback
+      console.error("Error al crear usuario:", error);
       setFormErr(backendMsg);
     } finally {
       setCreating(false);
@@ -559,17 +721,18 @@ export default function UsersAdmin() {
       {/* Encabezado + tamaño */}
       <div className="rounded-2xl border border-gray-800 bg-[#141418] p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="text-sm text-gray-400">
-            {pageData ? `Mostrando ${pageData.items.length} usuarios de ${pageData.totalItems}` : "Sin datos"}
+          <div className="text-sm text-gray-400 md:flex-1 md:pr-6 min-w-0">
+            <p className="truncate">{pageData ? `Mostrando ${pageData.items.length} usuarios de ${pageData.totalItems}` : "Sin datos"}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-gray-300">
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <label className="text-sm text-gray-300 flex items-center gap-2">
               Tamaño página
               <select
                 name="size"
                 value={filters.size}
                 onChange={onChangePageSize}
-                className="ml-2 rounded-lg border border-gray-700 bg-[#0f0f12] px-3 py-2 text-sm text-gray-100 outline-none focus:border-gray-500"
+                className="ml-2 rounded-lg border border-gray-700 bg-[#0f0f12] px-2 py-1 text-sm text-gray-100 outline-none focus:border-gray-500"
+                aria-label="Tamaño de página"
               >
                 <option value={5}>5</option>
                 <option value={10}>10</option>
@@ -578,17 +741,88 @@ export default function UsersAdmin() {
               </select>
             </label>
 
-            <button
-              onClick={() => { setOpenNew(true); setCreationResult(null); }}
-              className="rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-medium text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-purple-600"
-            >
-              + Nuevo usuario
-            </button>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="relative flex-shrink-0">
+                <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="11" cy="11" r="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <input
+                  type="text"
+                  value={nameFilter}
+                  onChange={(e) => { setNameFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                  placeholder="Nombre"
+                  className="w-44 md:w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                  aria-label="Buscar por nombre"
+                />
+              </div>
+
+              <div className="relative flex-shrink-0">
+                <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M16 12a4 4 0 10-8 0 4 4 0 008 0z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <input
+                  type="text"
+                  value={emailFilter}
+                  onChange={(e) => { setEmailFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                  placeholder="Correo"
+                  className="w-52 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                  aria-label="Buscar por correo"
+                />
+              </div>
+
+              <div className="relative flex-shrink-0">
+                <svg className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M2 8.5A5.5 5.5 0 017.5 3h0A5.5 5.5 0 0113 8.5v7A5.5 5.5 0 017.5 21h0A5.5 5.5 0 012 15.5v-7z" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <input
+                  type="text"
+                  value={phoneFilter}
+                  onChange={(e) => { setPhoneFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                  placeholder="Celular"
+                  className="w-40 rounded-lg border border-gray-700 bg-[#0f0f12] pl-9 pr-2 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500"
+                  aria-label="Buscar por celular"
+                />
+              </div>
+
+              <div className="relative flex-shrink-0">
+                <select
+                  value={idTypeFilter}
+                  onChange={(e) => { setIdTypeFilter(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
+                  className="w-44 rounded-lg border border-gray-700 bg-[#0f0f12] pl-3 pr-8 py-1 text-sm text-gray-100 outline-none focus:border-indigo-500 appearance-none"
+                  aria-label="Filtrar por tipo de identificación"
+                >
+                  <option value="">Tipo ID</option>
+                  {idTypes.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            </div>
+
+            <div className="flex-shrink-0">
+              <button
+                onClick={() => { setOpenNew(true); setCreationResult(null); }}
+                className="ml-2 rounded-lg bg-gradient-to-r from-indigo-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                aria-label="Crear nuevo usuario"
+              >
+                <span className="mr-1 font-bold">+</span> Nuevo usuario
+              </button>
+            </div>
           </div>
         </div>
       </div>
+        {/* Banner de éxito (creación) - arriba de la lista */}
+        {creationResult && (
+          <div className="mb-4 rounded-xl border border-emerald-800 bg-emerald-900/30 px-4 py-3 text-sm text-emerald-200">
+            Usuario <strong>{creationResult.fullName}</strong> registrado con ID {creationResult.userId}.
+          </div>
+        )}
 
-      {/* Tabla de usuarios */}
+        {/* Tabla de usuarios */}
       <div className="overflow-hidden rounded-2xl border border-gray-800">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-800">
@@ -964,7 +1198,30 @@ export default function UsersAdmin() {
 
         </div>
 
-        {formErr && <p className="mt-3 text-sm text-red-300">{formErr}</p>}
+        {foundAfterError ? (
+          <div className="mt-3 rounded-md bg-yellow-900/30 p-3 text-sm text-yellow-100">
+            <p>
+              Parece que el usuario <strong>{foundAfterError.fullName}</strong> fue creado en el servidor (ID {foundAfterError.userId}).
+              No cerré el modal automáticamente.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={handleCloseAndRefreshAfterFound}
+                className="rounded-lg bg-emerald-700 px-3 py-1 text-sm font-medium text-white hover:opacity-90"
+              >
+                Cerrar y ver lista
+              </button>
+              <button
+                onClick={handleKeepModalAfterFound}
+                className="rounded-lg border border-yellow-700 px-3 py-1 text-sm font-medium text-yellow-100 hover:opacity-90"
+              >
+                Mantener abierto
+              </button>
+            </div>
+          </div>
+        ) : formErr && (
+          <p className="mt-3 text-sm text-red-300">{formErr}</p>
+        )}
 
         <div className="mt-5 flex items-center justify-end gap-3">
           <button
@@ -987,11 +1244,7 @@ export default function UsersAdmin() {
   }
 
   {
-    creationResult && (
-      <div className="rounded-xl border border-emerald-800 bg-emerald-900/30 px-4 py-3 text-sm text-emerald-200">
-        Usuario <strong>{creationResult.fullName}</strong> registrado con ID {creationResult.userId}.
-      </div>
-    )
+    /* removed: moved banner above the users table */
   }
     </section >
   );
