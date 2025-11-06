@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: 8081
 
 spring:
   application:
@@ -8,10 +8,15 @@ spring:
     active: dev
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/postgres
+    url: jdbc:postgresql://dpg-d3n8p524d50c73f4am9g-a.oregon-postgres.render.com/software2terraxs
     # username y password NO se definen aquí; vendrán del Key Vault en el bean
-    driver-class-name: org.postgresql.Driver
-
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.postgresql.Driver}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      max-lifetime: 600000
+      connection-timeout: 20000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -36,6 +41,19 @@ spring:
         jwt:
           issuer-uri: https://dev-ebechd8p85cw3p1x.us.auth0.com/  # TODO completar dominio Auth0 (con barra final)
 
+  cache:
+    type: redis
+    redis:
+      time-to-live: 300000   # TTL por defecto para @Cacheable (5 min)
+    data:
+      redis:
+        host: ${REDIS_HOST:localhost}
+        port: ${REDIS_PORT:6379}
+
+docker:
+  compose:
+    enabled: false  # 🔹 Desactiva Docker Compose para evitar errores
+
 logging:
   level:
     root: INFO
@@ -43,9 +61,11 @@ logging:
     org.hibernate.type.descriptor.sql: TRACE
     com.azure.identity: INFO
     reactor.netty: WARN
+    org.springframework.cache: TRACE
+    org.springframework.data.redis: DEBUG
 
 jwt:
-  expected-audience: https://api.uco-challenge            # TODO completar con el Identifier de Auth0
+  expected-audience: https://api.uco-challenge  # TODO completar con el Identifier de Auth0
 
 security:
   gateway:
@@ -59,37 +79,10 @@ external:
 
 azure:
   keyvault:
-    url: https://uco-vault.vault.azure.net/
+    url: https://uco-vault-secrets.vault.azure.net/
   secrets:
-    client-id: client-id
-    client-secret: client-secret
-
-# ============================================================
-# 📊 MÉTRICAS / PROMETHEUS / GRAFANA
-# (Añadido sin modificar nada de lo anterior)
-# ============================================================
-management:
-  metrics:
-    tags:
-      application: ${spring.application.name}
-  endpoints:
-    web:
-      exposure:
-        include: info,health,prometheus
-
-# =========================
-# Redis / Cache
-# =========================
----
-spring:
-  cache:
-    type: redis
-    redis:
-      time-to-live: 300000   # TTL por defecto para @Cacheable (5 min)
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
+    db-username: db-username
+    db-password: db-password
 
 uco:
   cache:
@@ -100,7 +93,11 @@ uco:
     parameters:
       ttl-seconds: 900
 
-logging:
-  level:
-    org.springframework.cache: TRACE
-    org.springframework.data.redis: DEBUG
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoints:
+    web:
+      exposure:
+        include: info,health,prometheus

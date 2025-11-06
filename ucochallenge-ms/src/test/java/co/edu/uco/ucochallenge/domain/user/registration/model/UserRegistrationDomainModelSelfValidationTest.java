@@ -6,8 +6,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import co.edu.uco.ucochallenge.crosscuting.helper.UUIDHelper;
-import co.edu.uco.ucochallenge.crosscuting.notification.Notification;
+import co.edu.uco.ucochallenge.crosscutting.legacy.helper.UUIDHelper;
 
 class UserRegistrationDomainModelSelfValidationTest {
 

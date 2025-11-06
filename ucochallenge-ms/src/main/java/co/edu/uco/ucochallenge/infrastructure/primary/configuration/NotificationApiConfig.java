@@ -9,8 +9,8 @@ import com.notificationapi.NotificationApi;
 @Configuration
 public class NotificationApiConfig {
 
-    private static final String SECRET_CLIENT_ID = "client-id";
-    private static final String SECRET_CLIENT_SECRET = "client-secret";
+    private static final String SECRET_CLIENT_ID = "cliente-id";
+    private static final String SECRET_CLIENT_SECRET = "cliente-secret-id";
 
     private final SecretProvider secrets;
 

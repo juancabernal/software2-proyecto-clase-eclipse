@@ -11,7 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "verification_code")
+@Table(name = "verification_tokens")
 public class VerificationCodeEntity {
 
     @Id
