@@ -17,6 +17,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
 import co.edu.uco.api_gateway.dto.ConfirmationResponse;
+import co.edu.uco.api_gateway.dto.ConfirmVerificationCodeRequest;
+import co.edu.uco.api_gateway.dto.ConfirmVerificationCodeResponse;
 import co.edu.uco.api_gateway.dto.EmailConfirmationResponse;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.ListUsersResponse;
@@ -93,6 +95,51 @@ public class UserServiceProxy {
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de creación de usuario no puede ser nula");
+    }
+
+    public ConfirmationResponse sendVerificationCode(
+            final UUID id,
+            final String channel,
+            final String authorizationHeader) {
+        final String sanitizedChannel = channel == null ? null : channel.trim();
+
+        final ConfirmationResponse response = webClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/{id}/send-code")
+                        .queryParam("channel", sanitizedChannel)
+                        .build(id))
+                .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(ConfirmationResponse.class)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de envío de código no puede ser nula");
+    }
+
+    public ConfirmVerificationCodeResponse confirmVerificationCode(
+            final UUID id,
+            final ConfirmVerificationCodeRequest request,
+            final String authorizationHeader) {
+        final String sanitizedChannel = request.channel() == null ? null : request.channel().trim();
+        final String sanitizedCode = request.code() == null ? null : request.code().trim();
+        final ConfirmVerificationCodeRequest payload = new ConfirmVerificationCodeRequest(
+                sanitizedChannel,
+                sanitizedCode);
+
+        final ConfirmVerificationCodeResponse response = webClient.post()
+                .uri("/{id}/confirm-code", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(payload)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(ConfirmVerificationCodeResponse.class)
+                .block();
+
+        return Objects.requireNonNull(response, "La respuesta de confirmación de código no puede ser nula");
     }
 
     /**
