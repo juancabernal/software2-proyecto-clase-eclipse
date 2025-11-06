@@ -16,6 +16,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import co.edu.uco.api_gateway.dto.ApiErrorResponse;
 import co.edu.uco.api_gateway.dto.ApiSuccessResponse;
+import co.edu.uco.api_gateway.dto.ConfirmationResponse;
+import co.edu.uco.api_gateway.dto.EmailConfirmationResponse;
 import co.edu.uco.api_gateway.dto.GetUserResponse;
 import co.edu.uco.api_gateway.dto.ListUsersResponse;
 import co.edu.uco.api_gateway.dto.PageResponse;
@@ -46,6 +48,14 @@ public class UserServiceProxy {
             };
 
     private static final ParameterizedTypeReference<ApiSuccessResponse<Void>> VOID_RESPONSE =
+            new ParameterizedTypeReference<>() {
+            };
+
+    private static final ParameterizedTypeReference<ApiSuccessResponse<EmailConfirmationResponse>> EMAIL_CONFIRMATION_RESPONSE =
+            new ParameterizedTypeReference<>() {
+            };
+
+    private static final ParameterizedTypeReference<ApiSuccessResponse<ConfirmationResponse>> CONFIRMATION_RESPONSE =
             new ParameterizedTypeReference<>() {
             };
 
@@ -175,29 +185,29 @@ public class UserServiceProxy {
         return Objects.requireNonNull(response, "La respuesta de eliminación de usuario no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestEmailConfirmation(
+    public ApiSuccessResponse<EmailConfirmationResponse> requestEmailConfirmation(
             final UUID id,
             final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final ApiSuccessResponse<EmailConfirmationResponse> response = webClient.post()
                 .uri("/{id}/confirmations/email", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(EMAIL_CONFIRMATION_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de correo no puede ser nula");
     }
 
-    public ApiSuccessResponse<Void> requestMobileConfirmation(
+    public ApiSuccessResponse<ConfirmationResponse> requestMobileConfirmation(
             final UUID id,
             final String authorizationHeader) {
-        final ApiSuccessResponse<Void> response = webClient.post()
+        final ApiSuccessResponse<ConfirmationResponse> response = webClient.post()
                 .uri("/{id}/confirmations/mobile", id)
                 .headers(httpHeaders -> setAuthorization(httpHeaders, authorizationHeader))
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(VOID_RESPONSE)
+                .bodyToMono(CONFIRMATION_RESPONSE)
                 .block();
 
         return Objects.requireNonNull(response, "La respuesta de solicitud de confirmación de teléfono no puede ser nula");
