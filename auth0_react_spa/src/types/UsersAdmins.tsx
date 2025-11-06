@@ -37,6 +37,7 @@ type VerificationModalState = {
   loading: boolean;
   status: ConfirmVerificationResponse | null;
   error: string | null;
+  verificationId?: string | null;
 };
 
 const initialFilters: Filters = {
@@ -55,6 +56,7 @@ const emptyVerificationModal = (): VerificationModalState => ({
   loading: false,
   status: null,
   error: null,
+  verificationId: null,
 });
 
 const emptyForm = (): UserFormState => ({
@@ -575,6 +577,7 @@ export default function UsersAdmin() {
         loading: false,
         status: null,
         error: null,
+        verificationId: response.verificationId ?? null,
       });
     } catch (error: any) {
       const message = error?.message || errorFallback;
@@ -604,6 +607,28 @@ export default function UsersAdmin() {
     }
 
     const trimmedCode = verificationModal.code.trim();
+    
+    // Log validation context before format check
+    console.log('[usersAdmin] handleVerifyCode -> validation check', {
+      input: {
+        code: trimmedCode,
+        userId: verificationModal.userId,
+        type: verificationModal.type
+      },
+      validation: {
+        format: {
+          isValid: /^\d{6}$/.test(trimmedCode),
+          length: trimmedCode.length,
+          expected: '6 digits'
+        },
+        context: {
+          hasUser: Boolean(verificationModal.userId),
+          hasContact: Boolean(verificationModal.contact),
+          isOpen: verificationModal.open
+        }
+      }
+    });
+
     if (!/^\d{6}$/.test(trimmedCode)) {
       setVerificationModal((prev) => ({ ...prev, error: "Ingresa un código de 6 dígitos." }));
       return;
@@ -619,15 +644,42 @@ export default function UsersAdmin() {
         code: trimmedCode,
       });
 
+      console.log('[usersAdmin] confirmCode -> sending verification', {
+        request: {
+          userId: verificationModal.userId,
+          type: verificationModal.type,
+          code: trimmedCode
+        },
+        context: {
+          contact: verificationModal.contact,
+          remainingTime: verificationCountdown,
+          previousError: verificationModal.error
+        }
+      });
+
       const response = await api.confirmVerificationCode(
         verificationModal.userId,
         verificationModal.type,
-        trimmedCode
+        trimmedCode,
+        verificationModal.verificationId ?? undefined
       );
 
-      console.log('[usersAdmin] confirmCode -> response', {
-        userId: verificationModal.userId,
-        response,
+      console.log('[usersAdmin] confirmCode -> verification result', {
+        request: {
+          userId: verificationModal.userId,
+          type: verificationModal.type,
+          code: trimmedCode
+        },
+        result: {
+          success: response.confirmed,
+          message: response.message,
+          feedback: response.confirmed ? "Verification successful" : "Verification failed"
+        },
+        validationFlow: {
+          inputValid: trimmedCode.length === 6 && /^\d+$/.test(trimmedCode),
+          apiResponded: true,
+          receivedValidResponse: typeof response.confirmed === 'boolean'
+        }
       });
 
       setVerificationModal((prev) => ({

@@ -139,16 +139,49 @@ const postVerificationCode = async (
 ): Promise<VerificationAttemptResponse> => { // ✅ FIX: Submit verification code alongside token identifier
   // Añadido logging para auditar petición de verificación
   const verifiedAt = new Date().toISOString();
-  try {
-    console.log(`[api.call] postVerificationCode -> POST ${endpoint}`, { payload: { code, token, verifiedAt } });
-  } catch (e) { /* noop */ }
-  const res = await api.post(
-    endpoint,
-    { code, token, verifiedAt },
-    { validateStatus: () => true }
-  );
-  try {
-    console.log(`[api.result] postVerificationCode <- ${endpoint} status=${res.status}`, { responseData: res.data, headers: res.headers });
+    try {
+      // Enhanced pre-request validation logging
+      console.log(`[api.call] postVerificationCode -> PRE-VALIDATION ${endpoint}`, {
+        requestMetadata: {
+          timestamp: verifiedAt,
+          endpoint: endpoint,
+          hasToken: Boolean(token),
+          hasCode: Boolean(code)
+        },
+        tokenValidation: {
+          length: token?.length,
+          isUUID: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token),
+          value: token,
+          expectedFormat: 'UUID v4'
+        },
+        codeValidation: {
+          length: code?.length,
+          isValid: /^\d{6}$/.test(code),
+          value: code,
+          expectedFormat: '6 digits'
+        }
+      });
+    } catch (e) { /* noop */ }
+
+    const res = await api.post(
+      endpoint,
+      { code, token, verifiedAt },
+      { validateStatus: () => true }
+    );  try {
+    console.log(`[api.result] postVerificationCode <- ${endpoint}`, {
+      status: res.status,
+      responseData: res.data,
+      headers: res.headers,
+      validation: {
+        success: Boolean(res.data?.data?.success || res.data?.success),
+        message: res.data?.data?.message || res.data?.message || res.data?.userMessage,
+        verificationId: res.data?.data?.verificationId || res.data?.verificationId,
+        tokenId: res.data?.data?.tokenId || res.data?.tokenId,
+        // Comparar token enviado vs recibido
+        sentToken: token,
+        receivedToken: res.data?.data?.verificationId || res.data?.data?.tokenId || res.data?.verificationId || res.data?.tokenId
+      }
+    });
   } catch (e) { /* noop */ }
   if (res.status >= 200 && res.status < 300) {
     const data = (res.data as any)?.data ?? res.data;
@@ -476,7 +509,8 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     async confirmVerificationCode(
       userId: string,
       channel: "email" | "mobile",
-      code: string
+      code: string,
+      token?: string
     ): Promise<ConfirmVerificationResponse> {
       const trimmedId = userId?.trim();
       if (!trimmedId) {
@@ -491,15 +525,67 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         throw new Error("El código debe tener 6 dígitos.");
       }
 
+      // Log code validation before making request
+      console.log('[api.debug] confirmVerificationCode -> code validation', {
+        sanitizedInput: {
+          code: sanitizedCode,
+          channel,
+          userId: trimmedId
+        },
+        validation: {
+          matches6Digits: /^\d{6}$/.test(sanitizedCode),
+          length: sanitizedCode.length,
+          channel: channel === 'email' ? 'EMAIL' : 'MOBILE',
+          expectedFormat: '6 digits numeric code'
+        }
+      });
+
       const encodedId = encodeURIComponent(trimmedId);
       const adminEndpoint = `/api/admin/users/${encodedId}/confirm-code`;
       const fallbackEndpoint = `/uco-challenge/api/v1/users/${encodedId}/confirm-code`;
-      const payload = { channel, code: sanitizedCode };
+  const payload = token ? { channel, code: sanitizedCode, token } : { channel, code: sanitizedCode };
 
       const sendRequest = async (endpoint: string) => {
-        console.log('[api.call] confirmVerificationCode', { endpoint, payload });
+        // Log detailed request info including verification code and optional token
+        console.log('[api.call] confirmVerificationCode -> request details', {
+          endpoint,
+          request: {
+            channel,
+            code: sanitizedCode,
+            userId: trimmedId,
+            tokenSent: token ?? null
+          },
+          validation: {
+            codeFormat: {
+              value: sanitizedCode,
+              length: sanitizedCode.length,
+              isValid: /^\d{6}$/.test(sanitizedCode)
+            },
+            channelInfo: {
+              type: channel,
+              normalized: channel.toUpperCase()
+            }
+          }
+        });
+
         const res = await api.post(endpoint, payload, { validateStatus: () => true });
-        console.log('[api.result] confirmVerificationCode', { status: res.status, data: res.data });
+
+        // Log detailed response including code validation
+        console.log('[api.result] confirmVerificationCode -> response analysis', {
+          request: {
+            sentCode: sanitizedCode,
+            endpoint,
+            channel
+          },
+          response: {
+            status: res.status,
+            data: res.data,
+            confirmation: {
+              success: Boolean(res.data?.confirmed || res.data?.data?.confirmed),
+              message: res.data?.message || res.data?.data?.message
+            }
+          }
+        });
 
         if (res.status >= 200 && res.status < 300) {
           const responseBody = res.data ?? {};
@@ -520,7 +606,29 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       };
 
       try {
-        return await sendRequest(adminEndpoint);
+        const response = await sendRequest(adminEndpoint);
+        
+        // Log code comparison after receiving response
+        console.log('[api.debug] confirmVerificationCode -> code comparison', {
+          sentCode: {
+            value: sanitizedCode,
+            channel: channel,
+            userId: trimmedId
+          },
+          response: {
+            confirmed: response.confirmed,
+            message: response.message,
+            success: response.confirmed === true
+          },
+          codeValidation: {
+            originalCode: sanitizedCode,
+            isValid: /^\d{6}$/.test(sanitizedCode),
+            endpoint: adminEndpoint,
+            timestamp: new Date().toISOString()
+          }
+        });
+
+        return response;
       } catch (error: any) {
         if (error?.response?.status === 404) {
           return await sendRequest(fallbackEndpoint);
