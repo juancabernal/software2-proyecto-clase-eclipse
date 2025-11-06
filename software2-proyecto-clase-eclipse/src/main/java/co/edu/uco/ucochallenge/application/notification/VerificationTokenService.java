@@ -68,9 +68,18 @@ public class VerificationTokenService {
             notifyUser(user, channel, code, ttlSeconds, maxAttempts);
         } catch (Exception ex) {
             LOGGER.error("⚠️ Failed to send notification for user {} (token saved anyway): {}", user.id(), ex.getMessage());
-        }
 
-        return new ConfirmationResponseDTO(ttlSeconds, savedToken.id(), savedToken.id()); // ✅ FIX: Return verification identifier alongside TTL
+        }
+        LOGGER.info("Token generado: id={}, contact={}, channel={}, ttl={}",
+                savedToken.id(), contact, channel.name(), ttlSeconds);
+
+        return new ConfirmationResponseDTO(
+                savedToken.id(),   // UUID del token generado
+                contact,           // correo o móvil
+                channel.name(),    // EMAIL o MOBILE
+                ttlSeconds         // segundos de expiración
+        );
+
     }
 
     @Transactional

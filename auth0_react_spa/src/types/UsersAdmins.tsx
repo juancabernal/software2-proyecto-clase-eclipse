@@ -536,15 +536,48 @@ export default function UsersAdmin() {
         type === "email"
           ? await api.requestEmailConfirmation(userId)
           : await api.requestMobileConfirmation(userId);
+
+      // Log request type and full response to validate correct channel usage
+      try {
+        console.log('[usersAdmin] requestConfirmation -> response', { 
+          userId, 
+          requestType: type,
+          requestedChannel: type === "email" ? "EMAIL" : "MOBILE",
+          response: {
+            verificationId: response.verificationId,
+            remainingSeconds: response.remainingSeconds,
+            // Show raw response in case backend returns additional fields
+            raw: response
+          }
+        });
+      } catch (e) { /* noop */ }
+
       startCountdown(key, response.remainingSeconds);
       updateFeedback(userId, { variant: "success", message: successMessage });
+
+      const verificationId = response.verificationId || response.tokenId || "";
+      try {
+        console.log('[usersAdmin] requestConfirmation -> validation data', { 
+          userId, 
+          type,
+          verificationId,
+          // Log verification state for debugging
+          hasVerificationId: Boolean(verificationId),
+          tokenLength: verificationId.length,
+          expected: {
+            format: "UUID string like: d92e3b5a-f16e-42b7-9550-fd9f0159b64d",
+            channel: type === "email" ? "EMAIL" : "MOBILE"
+          }
+        });
+      } catch (e) { /* noop */ }
+
       setVerificationModal({
         open: true,
         userId,
         type,
         contact: type === "email" ? targetUser.email : targetUser.mobileNumber || "",
         code: "",
-        tokenId: response.verificationId || response.tokenId || "", // ✅ FIX: Keep verification identifier for subsequent code validation
+        tokenId: verificationId, // ✅ FIX: Keep verification identifier for subsequent code validation
         loading: false,
         status: null,
         error: null,

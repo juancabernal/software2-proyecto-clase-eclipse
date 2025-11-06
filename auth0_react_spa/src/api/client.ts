@@ -35,12 +35,75 @@ const postAndReturnTTL = async (
     console.log(`[api.call.payload] postAndReturnTTL`, { endpoint });
   } catch (e) { /* noop */ }
   const res = await api.post(endpoint, undefined, { validateStatus: () => true });
-  console.log(`[api.result] postAndReturnTTL <- ${endpoint} status=${res.status}`, { responseData: res.data, headers: res.headers });
+  console.log(`[api.result] postAndReturnTTL <- ${endpoint} status=${res.status}`, {
+    responseData: res.data,
+    // Separate userMessage and data for clearer logging
+    message: res.data?.userMessage,
+    data: {
+      verificationId: res.data?.data?.verificationId,
+      contact: res.data?.data?.contact,
+      channel: res.data?.data?.channel,
+      remainingSeconds: res.data?.data?.remainingSeconds
+    },
+    headers: res.headers
+  });
+  try {
+    // Log the raw axios response for deep inspection when debugging missing verification identifiers
+    console.log('[api.result] postAndReturnTTL RAW res', {
+      status: res.status,
+      statusText: res.statusText,
+      url: res.config?.url,
+      fullData: res.data,
+      expectedFormat: {
+        userMessage: "string",
+        data: {
+          verificationId: "UUID string",
+          contact: "email or phone",
+          channel: "EMAIL or MOBILE",
+          remainingSeconds: "number"
+        }
+      },
+      headers: res.headers,
+      request: res.request && (res.request.responseURL || res.request.path || res.request._header || res.request),
+    });
+  } catch (e) { /* noop */ }
   if (res.status >= 200 && res.status < 300) {
-    const data = (res.data as any)?.data ?? res.data;
+    const data = (() => {
+      // Detectar si la respuesta viene envuelta o plana
+      if (res?.data?.data && typeof res.data.data === "object") {
+        return res.data.data;
+      }
+      if (res?.data && typeof res.data === "object") {
+        return res.data;
+      }
+      return {};
+    })();
     const seconds = Number(data?.remainingSeconds ?? 0);
-    const rawTokenId = data?.tokenId ?? null; // ✅ FIX: Capture token identifier from backend response
-    const rawVerificationId = data?.verificationId ?? null; // ✅ FIX: Capture verification identifier when provided
+
+    // Log extracted values vs expected format
+    try {
+      console.log('[api.debug] postAndReturnTTL parsed fields', {
+        expectedFields: {
+          verificationId: 'UUID string from data.verificationId',
+          contact: 'email/phone from data.contact',
+          channel: 'EMAIL/MOBILE from data.channel',
+          remainingSeconds: 'number from data.remainingSeconds'
+        },
+        actualFields: {
+          verificationId: data?.verificationId,
+          contact: data?.contact,
+          channel: data?.channel,
+          remainingSeconds: data?.remainingSeconds,
+          // Include legacy fields in case they're used
+          tokenId: data?.tokenId,
+          // Log all fields to see what's actually present
+          allDataFields: Object.keys(data || {})
+        }
+      });
+    } catch (e) { /* noop */ }
+
+    const rawTokenId = data?.tokenId ?? null;
+    const rawVerificationId = data?.verificationId ?? null;
     const sanitizedTokenId = typeof rawTokenId === "string" && rawTokenId ? rawTokenId : undefined; // ✅ FIX: Normalize token identifier value
     const sanitizedVerificationId = typeof rawVerificationId === "string" && rawVerificationId
       ? rawVerificationId
@@ -138,7 +201,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     const sameOrigin = (reqUrl.origin === base.origin);
     if (sameOrigin) {
       try {
-  const token = await getToken();
+        const token = await getToken();
         if (token) {
           config.headers = config.headers ?? {};
           (config.headers as any).Authorization = `Bearer ${token}`;
@@ -252,7 +315,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         if (res.status !== 201) {
           const data = res.data ?? {};
           const msg = data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
-          
+
           // Log detallado del error
           console.error('[api.error] createUser <- Error al crear usuario:', {
             status: res.status,
@@ -364,6 +427,10 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del correo electrónico.");
       } catch (error: any) {
         console.log('[api.error] requestEmailConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
+        try {
+          console.log('[api.error] requestEmailConfirmation -> response.data', error?.response?.data);
+          console.log('[api.error] requestEmailConfirmation -> response.headers', error?.response?.headers);
+        } catch (e) { /* noop */ }
         if (error?.response?.status === 404) {
           return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del correo electrónico.");
         }
@@ -384,6 +451,10 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         return await postAndReturnTTL(api, adminEndpoint, "No fue posible solicitar la validación del teléfono móvil.");
       } catch (error: any) {
         console.log('[api.error] requestMobileConfirmation error', { error: error?.response?.status ?? error?.message ?? error });
+        try {
+          console.log('[api.error] requestMobileConfirmation -> response.data', error?.response?.data);
+          console.log('[api.error] requestMobileConfirmation -> response.headers', error?.response?.headers);
+        } catch (e) { /* noop */ }
         if (error?.response?.status === 404) {
           return await postAndReturnTTL(api, fallbackEndpoint, "No fue posible solicitar la validación del teléfono móvil.");
         }
@@ -481,23 +552,39 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       }
 
       const endpoint = `/api/v1/users/verify`; // ✅ FIX: Target new verification endpoint
-  console.log('[api.call] verifyUserToken -> POST /api/v1/users/verify', { token: sanitizedToken });
-  const res = await api.post(endpoint, { token: sanitizedToken }, { validateStatus: () => true }); // ✅ FIX: Submit token for backend validation
-  console.log('[api.result] verifyUserToken <- /api/v1/users/verify', { status: res.status, data: res.data });
-      if (res.status >= 200 && res.status < 300) { // ✅ FIX: Accept success HTTP codes
-        const data = (res.data as any)?.data ?? res.data; // ✅ FIX: Support wrapped responses from API
+      console.log('[api.call] verifyUserToken -> POST /api/v1/users/verify', { token: sanitizedToken });
+      const res = await api.post(endpoint, { token: sanitizedToken }, { validateStatus: () => true }); // ✅ FIX: Submit token for backend validation
+      console.log('[api.result] verifyUserToken <- /api/v1/users/verify', { status: res.status, data: res.data });
+      if (res.status >= 200 && res.status < 300) {
+        // --- Extraer el cuerpo de forma segura, incluso si Axios anida "data" o no ---
+        const responseBody = res.data ?? {};
+        const innerData = typeof responseBody.data === "object" ? responseBody.data : {};
+        const data = Object.keys(innerData).length > 0 ? innerData : responseBody;
+
+        console.log('[api.debug] verifyUserToken parsed payload', {
+          raw: res.data,
+          extracted: data,
+          keys: Object.keys(data || {}),
+        });
+        console.log('[api.result] verifyUserToken <- /api/v1/users/verify', { status: res.status, data: res.data });
+        const rawVerificationId = data?.verificationId ?? null;
+        const sanitizedVerificationId =
+          typeof rawVerificationId === "string" && rawVerificationId.length > 0
+            ? rawVerificationId
+            : undefined;
+
         return {
-          success: Boolean(data?.success), // ✅ FIX: Surface backend success status
-          expired: Boolean(data?.expired), // ✅ FIX: Communicate expiration state
-          attemptsRemaining: Number(data?.attemptsRemaining ?? 0), // ✅ FIX: Maintain attempt counter information
-          contactConfirmed: Boolean(data?.contactConfirmed), // ✅ FIX: Signal contact confirmation status
-          allContactsConfirmed: Boolean(data?.allContactsConfirmed), // ✅ FIX: Propagate global confirmation state
-          message: String(data?.message ?? "") || "", // ✅ FIX: Preserve backend message for UI display
-          verificationId: typeof data?.verificationId === "string" && data?.verificationId
-            ? data.verificationId
-            : (typeof data?.tokenId === "string" && data?.tokenId ? data.tokenId : undefined),
-        }; // ✅ FIX: Return normalized verification response structure
+          success: Boolean(data?.success),
+          expired: Boolean(data?.expired),
+          attemptsRemaining: Number(data?.attemptsRemaining ?? 0),
+          contactConfirmed: Boolean(data?.contactConfirmed),
+          allContactsConfirmed: Boolean(data?.allContactsConfirmed),
+          message: String(data?.message ?? ""),
+          verificationId: sanitizedVerificationId,
+        };
       }
+
+
       const msg = (res.data && (res.data.message || res.data.error)) || "No fue posible validar el token."; // ✅ FIX: Provide descriptive fallback message
       const error: any = new Error(msg); // ✅ FIX: Raise error with backend message context
       error.response = res; // ✅ FIX: Attach response details for upstream handling

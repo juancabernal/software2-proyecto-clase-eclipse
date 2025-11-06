@@ -47,6 +47,9 @@ public class RequestEmailConfirmationUseCaseImpl implements RequestEmailConfirma
         }
 
         final var tokenResponse = verificationTokenService.generateToken(user, VerificationChannel.EMAIL);
+        LOGGER.info("Token response: {}", tokenResponse);
+        LOGGER.info("Mapped DTO: {}", EmailConfirmationResponseDTO.from(tokenResponse));
+
 
         LOGGER.info("Dispatching email confirmation request for user {}", user.id());
         return EmailConfirmationResponseDTO.from(tokenResponse);
