@@ -64,6 +64,10 @@ public class UserServiceProxy {
             new ParameterizedTypeReference<>() {
             };
 
+    private static final ParameterizedTypeReference<ApiSuccessResponse<VerificationAttemptResponse>>
+            VERIFICATION_ATTEMPT_RESPONSE = new ParameterizedTypeReference<>() {
+            };
+
     private final WebClient webClient;
 
 
@@ -159,13 +163,32 @@ public class UserServiceProxy {
             final ConfirmVerificationCodeRequest request,
             final String authorizationHeader) {
         final String sanitizedChannel = request.channel() == null ? null : request.channel().trim();
-        final String sanitizedCode = request.code() == null ? null : request.code().trim();
-        final ConfirmVerificationCodeRequest payload = new ConfirmVerificationCodeRequest(
-                sanitizedChannel,
-                sanitizedCode);
+        if (!StringUtils.hasText(sanitizedChannel)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El canal de verificación es obligatorio.");
+        }
 
-        final ConfirmVerificationCodeResponse response = webClient.post()
-                .uri("/{id}/confirm-code", id)
+        final String sanitizedCode = request.code() == null ? null : request.code().trim();
+        if (!StringUtils.hasText(sanitizedCode)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El código de verificación es obligatorio.");
+        }
+
+        final VerificationCodeRequest payload = new VerificationCodeRequest(null, sanitizedCode, null);
+
+        final String normalizedChannel = sanitizedChannel.toLowerCase(Locale.ROOT);
+        return switch (normalizedChannel) {
+            case "email" -> confirmEmailVerificationCode(id, payload, authorizationHeader);
+            case "mobile", "sms" -> confirmMobileVerificationCode(id, payload, authorizationHeader);
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Canal de verificación inválido: " + sanitizedChannel);
+        };
+    }
+
+    private ConfirmVerificationCodeResponse confirmEmailVerificationCode(
+            final UUID id,
+            final VerificationCodeRequest payload,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<Void> response = webClient.post()
+                .uri("/{id}/confirmations/email/verify", id)
                 .headers(httpHeaders -> {
                     setAuthorization(httpHeaders, authorizationHeader);
                     httpHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -173,10 +196,41 @@ public class UserServiceProxy {
                 .bodyValue(payload)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, this::mapError)
-                .bodyToMono(ConfirmVerificationCodeResponse.class)
+                .bodyToMono(VOID_RESPONSE)
                 .block();
 
-        return Objects.requireNonNull(response, "La respuesta de confirmación de código no puede ser nula");
+        final ApiSuccessResponse<Void> nonNullResponse = Objects
+                .requireNonNull(response, "La respuesta de verificación de correo no puede ser nula");
+        final String message = StringUtils.hasText(nonNullResponse.userMessage())
+                ? nonNullResponse.userMessage()
+                : "Correo verificado correctamente.";
+        return new ConfirmVerificationCodeResponse(true, message);
+    }
+
+    private ConfirmVerificationCodeResponse confirmMobileVerificationCode(
+            final UUID id,
+            final VerificationCodeRequest payload,
+            final String authorizationHeader) {
+        final ApiSuccessResponse<VerificationAttemptResponse> response = webClient.post()
+                .uri("/{id}/confirmations/mobile/verify", id)
+                .headers(httpHeaders -> {
+                    setAuthorization(httpHeaders, authorizationHeader);
+                    httpHeaders.setContentType(MediaType.APPLICATION_JSON);
+                })
+                .bodyValue(payload)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError, this::mapError)
+                .bodyToMono(VERIFICATION_ATTEMPT_RESPONSE)
+                .block();
+
+        final ApiSuccessResponse<VerificationAttemptResponse> nonNullResponse = Objects.requireNonNull(response,
+                "La respuesta de verificación de teléfono no puede ser nula");
+        final VerificationAttemptResponse data = Objects.requireNonNull(nonNullResponse.data(),
+                "La información de verificación de teléfono no puede ser nula");
+        final String message = StringUtils.hasText(data.message())
+                ? data.message()
+                : nonNullResponse.userMessage();
+        return new ConfirmVerificationCodeResponse(data.success(), message);
     }
 
     /**
@@ -419,5 +473,15 @@ public class UserServiceProxy {
                     }
                     return Mono.error(new DownstreamException(response.statusCode(), parsed));
                 });
+    }
+
+    private record VerificationAttemptResponse(
+            boolean success,
+            boolean expired,
+            int attemptsRemaining,
+            boolean contactConfirmed,
+            boolean allContactsConfirmed,
+            String message,
+            UUID verificationId) {
     }
 }
