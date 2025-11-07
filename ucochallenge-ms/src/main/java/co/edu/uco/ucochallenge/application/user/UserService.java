@@ -4,7 +4,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.entity.CityEntity;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.entity.IdTypeEntity;
@@ -20,17 +19,13 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    @Transactional
     public UserEntity registerUser(final UserEntity user) {
         if (user == null) {
             throw new IllegalArgumentException("Datos de usuario obligatorios");
         }
 
-        final String email = sanitize(user.getEmail());
-        if (email.isEmpty()) {
-            throw new IllegalArgumentException("El email es obligatorio");
-        }
-        if (userRepository.existsByEmailIgnoreCase(email)) {
+        final String email = Optional.ofNullable(user.getEmail()).map(String::trim).orElse("");
+        if (!email.isEmpty() && userRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("Email ya registrado");
         }
 
@@ -40,23 +35,21 @@ public class UserService {
 
     private UserEntity buildNormalizedUser(final UserEntity user, final String email) {
         final IdTypeEntity idType = Optional.ofNullable(user.getIdType())
-                .map(this::normalizeIdType)
                 .orElseGet(() -> new IdTypeEntity.Builder().build());
         final CityEntity homeCity = Optional.ofNullable(user.getHomeCity())
-                .map(this::normalizeCity)
                 .orElseGet(() -> new CityEntity.Builder().build());
 
         final UserEntity.Builder builder = new UserEntity.Builder()
                 .id(UUID.randomUUID())
                 .idType(idType)
-                .idNumber(sanitize(user.getIdNumber()))
-                .firstName(sanitize(user.getFirstName()))
-                .secondName(sanitize(user.getSecondName()))
-                .firstSurname(sanitize(user.getFirstSurname()))
-                .secondSurname(sanitize(user.getSecondSurname()))
+                .idNumber(Optional.ofNullable(user.getIdNumber()).orElse(""))
+                .firstName(Optional.ofNullable(user.getFirstName()).orElse(""))
+                .secondName(Optional.ofNullable(user.getSecondName()).orElse(""))
+                .firstSurname(Optional.ofNullable(user.getFirstSurname()).orElse(""))
+                .secondSurname(Optional.ofNullable(user.getSecondSurname()).orElse(""))
                 .homeCity(homeCity)
                 .email(email)
-                .mobileNumber(sanitize(user.getMobileNumber()));
+                .mobileNumber(Optional.ofNullable(user.getMobileNumber()).orElse(""));
 
         if (user.isEmailConfirmed()) {
             builder.emailConfirmed(true);
@@ -66,30 +59,5 @@ public class UserService {
         }
 
         return builder.build();
-    }
-
-    private IdTypeEntity normalizeIdType(final IdTypeEntity source) {
-        return new IdTypeEntity.Builder()
-                .id(source.getId())
-                .name(sanitize(source.getName()))
-                .build();
-    }
-
-    private CityEntity normalizeCity(final CityEntity source) {
-        final CityEntity.Builder builder = new CityEntity.Builder()
-                .id(source.getId())
-                .name(sanitize(source.getName()));
-
-        if (source.getState() != null) {
-            builder.state(source.getState());
-        }
-
-        return builder.build();
-    }
-
-    private String sanitize(final String value) {
-        return Optional.ofNullable(value)
-                .map(String::trim)
-                .orElse("");
     }
 }
