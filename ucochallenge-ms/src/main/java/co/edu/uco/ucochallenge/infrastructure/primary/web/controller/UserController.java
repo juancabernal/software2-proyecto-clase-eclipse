@@ -13,7 +13,7 @@ import co.edu.uco.ucochallenge.application.user.UserService;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.entity.UserEntity;
 
 @RestController
-@RequestMapping({"/api/users", "/uco-challenge/api/v1/users"})
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
