@@ -29,18 +29,22 @@ export type VerificationAttemptResponse = {
 };
 
 export type UserCreateInput = {
-  idTypeId: string;
-  idTypeName?: string;
-  idNumber: string;
-  firstName: string;
+  idType?: {
+    id?: string;
+    name?: string;
+  };
+  idNumber?: string;
+  firstName?: string;
   secondName?: string;
-  firstSurname: string;
+  firstSurname?: string;
   secondSurname?: string;
-  email: string;
-  mobile?: string;
-  countryId: string;
-  departmentId: string;
-  cityId: string;
+  homeCity?: {
+    id?: string;
+  };
+  email?: string;
+  mobileNumber?: string;
+  emailConfirmed?: boolean;
+  mobileNumberConfirmed?: boolean;
 };
 
 const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_HTTP_GLOBAL_TIMEOUT_MS ?? 15000);
@@ -59,15 +63,19 @@ const makeTokenGetter = (rawGetToken: () => Promise<string>) => {
 
 const buildUserFromDto = (dto: any): User => {
   const firstName = String(dto?.firstName ?? "").trim();
-  const secondName = String(dto?.secondName ?? "").trim();
-  const firstSurname = String(dto?.lastName ?? "").trim();
-  const secondSurname = String(dto?.secondSurname ?? "").trim();
+  const secondName = String(dto?.secondName ?? dto?.middleName ?? "").trim();
+  const firstSurname = String(dto?.firstSurname ?? dto?.lastName ?? "").trim();
+  const secondSurname = String(dto?.secondSurname ?? dto?.secondLastName ?? "").trim();
 
   const nameParts = [firstName, secondName, firstSurname, secondSurname].filter(Boolean);
 
   return {
     userId: String(dto?.id ?? ""),
-    idTypeId: dto?.idTypeId ? String(dto.idTypeId) : undefined,
+    idTypeId: dto?.idTypeId
+      ? String(dto.idTypeId)
+      : dto?.idType?.id
+      ? String(dto.idType.id)
+      : undefined,
     idNumber: dto?.idNumber ? String(dto.idNumber) : undefined,
     firstName,
     secondName: secondName || undefined,
@@ -78,7 +86,11 @@ const buildUserFromDto = (dto: any): User => {
     mobileNumber: dto?.mobileNumber ? String(dto.mobileNumber) : undefined,
     emailConfirmed: Boolean(dto?.emailConfirmed),
     mobileNumberConfirmed: Boolean(dto?.mobileNumberConfirmed),
-    homeCityId: dto?.homeCityId ? String(dto.homeCityId) : undefined,
+    homeCityId: dto?.homeCityId
+      ? String(dto.homeCityId)
+      : dto?.homeCity?.id
+      ? String(dto.homeCity.id)
+      : undefined,
   };
 };
 
@@ -288,39 +300,37 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       );
 
       try {
-        const res = await api.post("/api/users", payload, requestConfig);
+        const res = await api.post("/api/users/register", payload, requestConfig);
 
         if (res.status !== 201) {
           const data = res.data ?? {};
           const msg =
-            data.userMessage || data.technicalMessage || data.message || "No se pudo crear el usuario";
+            data.userMessage ||
+            data.technicalMessage ||
+            data.message ||
+            data.error ||
+            "No se pudo crear el usuario";
           const error: any = new Error(msg);
           error.response = { status: res.status, data };
           throw error;
         }
 
         const data = res.data as {
-          id: string;
+          id?: string;
           firstName?: string;
-          middleName?: string;
-          lastName?: string;
-          secondLastName?: string;
+          secondName?: string;
+          firstSurname?: string;
+          secondSurname?: string;
           email?: string | null;
         };
 
-        const fullName = [
-          data.firstName,
-          data.middleName,
-          data.lastName,
-          data.secondLastName,
-        ]
+        const parts = [data.firstName, data.secondName, data.firstSurname, data.secondSurname]
           .filter((part) => typeof part === "string" && part.trim().length > 0)
-          .map((part) => String(part).trim())
-          .join(" ");
+          .map((part) => String(part).trim());
 
         return {
-          userId: String(data.id),
-          fullName,
+          userId: String(data.id ?? ""),
+          fullName: parts.join(" "),
           email: data.email ?? null,
         };
       } catch (error: any) {
