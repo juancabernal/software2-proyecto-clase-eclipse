@@ -1,8 +1,10 @@
 import axios from "axios";
 import { useAuth0 } from "@auth0/auth0-react";
+import { resolveApiBaseUrl } from "../api/client";
 
 const AdminPage = () => {
   const { getAccessTokenSilently } = useAuth0();
+  const baseURL = resolveApiBaseUrl(import.meta.env.VITE_API_SERVER_URL as string | undefined);
 
   const callApi = async () => {
     try {
@@ -12,7 +14,7 @@ const AdminPage = () => {
         },
       });
       const response = await axios.get(
-        `${import.meta.env.VITE_API_SERVER_URL}/api/admin`,
+        `${baseURL}/admin`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

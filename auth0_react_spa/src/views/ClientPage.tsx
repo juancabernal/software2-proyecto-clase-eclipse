@@ -1,8 +1,10 @@
 import { useAuth0 } from "@auth0/auth0-react";
 import axios from "axios";
+import { resolveApiBaseUrl } from "../api/client";
 
 const ClientPage = () => {
   const { getAccessTokenSilently } = useAuth0();
+  const baseURL = resolveApiBaseUrl(import.meta.env.VITE_API_SERVER_URL as string | undefined);
 
   const callApi = async () => {
     try {
@@ -15,7 +17,7 @@ const ClientPage = () => {
       console.log("token: " + token);
 
       const response = await axios.get(
-        `${import.meta.env.VITE_API_SERVER_URL}/api/client`,
+        `${baseURL}/client`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

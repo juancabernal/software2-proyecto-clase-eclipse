@@ -4,10 +4,9 @@ import {
   CatalogItem,
   Page,
   RegisterUserResponse,
-  UserCreateInput,
   makeApi,
+  resolveApiBaseUrl,
   VerificationAttemptResponse,
-
 } from "../api/client";
 import { User } from "./users";
 
@@ -95,7 +94,8 @@ export default function UsersAdmin() {
 
   const { getAccessTokenSilently } = useAuth0();
 
-  const baseURL = import.meta.env.VITE_API_SERVER_URL as string;
+  const rawBaseURL = import.meta.env.VITE_API_SERVER_URL as string | undefined;
+  const baseURL = resolveApiBaseUrl(rawBaseURL);
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE as string;
 
   const api = useMemo(
@@ -489,21 +489,24 @@ export default function UsersAdmin() {
       return trimmed || undefined;
     };
 
-    const idTypeItem = idTypes.find((t) => t.id === form.idType);
+    const trimmedIdType = sanitize(form.idType);
+    const idTypeItem = idTypes.find((t) => sanitize(t.id) === trimmedIdType);
 
     const countryId = sanitize(selectedCountry);
     const departmentId = sanitize(selectedDepartment);
     const cityId = sanitize(form.homeCity);
 
-    // ✅ Corregido: usar los nombres exactos que espera el backend
+    const idTypeId = optional(idTypeItem?.id);
+    const idTypeName = optional(idTypeItem?.name) ?? (trimmedIdType || undefined);
+
     return {
-      idTypeId: sanitize(idTypeItem?.id || form.idType),
-      idTypeName: optional(idTypeItem?.name),
+      idTypeId: idTypeId ?? undefined,
+      idTypeName,
       idNumber: sanitize(form.idNumber),
       firstName: sanitize(form.firstName),
-      middleName: optional(form.secondName),         // ✅ antes era secondName
-      lastName: sanitize(form.firstSurname),         // ✅ antes era firstSurname
-      secondLastName: optional(form.secondSurname),  // ✅ antes era secondSurname
+      middleName: optional(form.secondName),
+      lastName: sanitize(form.firstSurname),
+      secondLastName: optional(form.secondSurname),
       email: sanitize(form.email),
       mobile: optional(form.mobileNumber),
       countryId,
