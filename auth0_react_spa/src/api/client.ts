@@ -29,22 +29,18 @@ export type VerificationAttemptResponse = {
 };
 
 export type UserCreateInput = {
-  idType?: {
-    id?: string;
-    name?: string;
-  };
-  idNumber?: string;
-  firstName?: string;
-  secondName?: string;
-  firstSurname?: string;
-  secondSurname?: string;
-  homeCity?: {
-    id?: string;
-  };
+  idTypeId?: string;
+  idTypeName?: string;
+  idNumber: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  secondLastName?: string;
   email?: string;
-  mobileNumber?: string;
-  emailConfirmed?: boolean;
-  mobileNumberConfirmed?: boolean;
+  mobile?: string;
+  countryId: string;
+  departmentId: string;
+  cityId: string;
 };
 
 const DEFAULT_TIMEOUT = Number(import.meta.env.VITE_HTTP_GLOBAL_TIMEOUT_MS ?? 15000);
@@ -299,8 +295,29 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         options?.idempotencyKey
       );
 
+      const required = (value: string) => String(value ?? "").trim();
+      const optional = (value?: string) => {
+        const trimmed = String(value ?? "").trim();
+        return trimmed.length > 0 ? trimmed : undefined;
+      };
+
+      const body = {
+        idTypeId: optional(payload.idTypeId),
+        idTypeName: optional(payload.idTypeName),
+        idNumber: required(payload.idNumber),
+        firstName: required(payload.firstName),
+        middleName: optional(payload.middleName),
+        lastName: required(payload.lastName),
+        secondLastName: optional(payload.secondLastName),
+        email: optional(payload.email),
+        mobile: optional(payload.mobile),
+        countryId: required(payload.countryId),
+        departmentId: required(payload.departmentId),
+        cityId: required(payload.cityId),
+      };
+
       try {
-        const res = await api.post("/api/users/register", payload, requestConfig);
+        const res = await api.post("/api/users", body, requestConfig);
 
         if (res.status !== 201) {
           const data = res.data ?? {};
@@ -318,13 +335,13 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
         const data = res.data as {
           id?: string;
           firstName?: string;
-          secondName?: string;
-          firstSurname?: string;
-          secondSurname?: string;
+          middleName?: string;
+          lastName?: string;
+          secondLastName?: string;
           email?: string | null;
         };
 
-        const parts = [data.firstName, data.secondName, data.firstSurname, data.secondSurname]
+        const parts = [data.firstName, data.middleName, data.lastName, data.secondLastName]
           .filter((part) => typeof part === "string" && part.trim().length > 0)
           .map((part) => String(part).trim());
 

@@ -487,38 +487,29 @@ export default function UsersAdmin() {
     : false;
 
   // ✅ buildPayload ahora está dentro del componente y puede usar idTypes y cities
-  const buildPayload = (form: UserFormState): any => {
+  const buildPayload = (form: UserFormState): UserCreateInput => {
     const sanitize = (value?: string) => (value ?? "").trim();
     const optional = (value?: string) => {
       const trimmed = sanitize(value);
-      return trimmed || undefined;
+      return trimmed.length > 0 ? trimmed : undefined;
     };
 
     const idTypeItem = idTypes.find((t) => t.id === form.idType);
-    const idTypeId = sanitize(idTypeItem?.id || form.idType);
-    const cityId = sanitize(form.homeCity);
+    const idTypeId = optional(idTypeItem?.id || form.idType);
 
     return {
-      idType: idTypeId
-        ? {
-            id: idTypeId,
-            name: optional(idTypeItem?.name),
-          }
-        : undefined,
+      idTypeId,
+      idTypeName: idTypeId ? optional(idTypeItem?.name) : undefined,
       idNumber: sanitize(form.idNumber),
       firstName: sanitize(form.firstName),
-      secondName: optional(form.secondName),
-      firstSurname: sanitize(form.firstSurname),
-      secondSurname: optional(form.secondSurname),
-      homeCity: cityId
-        ? {
-            id: cityId,
-          }
-        : undefined,
-      email: sanitize(form.email),
-      mobileNumber: optional(form.mobileNumber),
-      emailConfirmed: false,
-      mobileNumberConfirmed: false,
+      middleName: optional(form.secondName),
+      lastName: sanitize(form.firstSurname),
+      secondLastName: optional(form.secondSurname),
+      email: optional(form.email),
+      mobile: optional(form.mobileNumber),
+      countryId: sanitize(selectedCountry),
+      departmentId: sanitize(selectedDepartment),
+      cityId: sanitize(form.homeCity),
     };
   };
   // (Removed duplicate fetchUsers and related useEffect)
