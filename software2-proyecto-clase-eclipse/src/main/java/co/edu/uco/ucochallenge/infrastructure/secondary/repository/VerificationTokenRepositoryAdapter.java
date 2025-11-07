@@ -41,6 +41,13 @@ public class VerificationTokenRepositoryAdapter implements VerificationTokenRepo
 
     @Override
     @Transactional(readOnly = true)
+    public Optional<VerificationToken> findByContactAndCode(final String contact, final String code) {
+        return jpaRepository.findTopByContactIgnoreCaseAndCodeIgnoreCaseOrderByCreatedAtDesc(contact, code)
+                .map(mapper::toDomain);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Optional<VerificationToken> findById(final UUID id) {
         return jpaRepository.findById(id)
                 .map(mapper::toDomain);

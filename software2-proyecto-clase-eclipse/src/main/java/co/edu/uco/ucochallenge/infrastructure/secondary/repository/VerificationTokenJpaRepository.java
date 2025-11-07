@@ -17,6 +17,8 @@ public interface VerificationTokenJpaRepository extends JpaRepository<Verificati
 
     Optional<VerificationTokenEntity> findTopByContactOrderByCreatedAtDesc(String contact);
 
+    Optional<VerificationTokenEntity> findTopByContactIgnoreCaseAndCodeIgnoreCaseOrderByCreatedAtDesc(String contact, String code);
+
     @Modifying
     @Query("DELETE FROM VerificationTokenEntity v WHERE LOWER(v.contact) = LOWER(:contact)")
     void deleteByContactIgnoreCase(@Param("contact") String contact);

@@ -41,15 +41,6 @@ public class VerifyEmailTokenUseCaseImpl implements VerifyEmailTokenUseCase {
                     MessageCodes.Domain.Verification.TOKEN_INVALID_USER);
         }
 
-        final LocalDateTime referenceDate = ObjectHelper.getDefault(verificationDate, LocalDateTime.now());
-
-        final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId);
-        if (UUIDHelper.getDefault().equals(normalizedTokenId)) {
-            throw DomainException.buildFromCatalog(
-                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
-                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
-        }
-
         final User user = userRepository.findById(userId)
                 .orElseThrow(() -> DomainException.buildFromCatalog(
                         MessageCodes.Domain.User.NOT_FOUND_TECHNICAL,
@@ -61,16 +52,27 @@ public class VerifyEmailTokenUseCaseImpl implements VerifyEmailTokenUseCase {
                     MessageCodes.Domain.User.EMAIL_ALREADY_CONFIRMED_USER);
         }
 
+        final LocalDateTime referenceDate = ObjectHelper.getDefault(verificationDate, LocalDateTime.now());
+        final UUID normalizedTokenId = UUIDHelper.getDefault(tokenId);
         final String contact = TextHelper.getDefaultWithTrim(user.email()).toLowerCase(Locale.ROOT);
-        final VerificationToken verificationToken = tokenRepository.findById(normalizedTokenId)
-                .orElseThrow(() -> DomainException.buildFromCatalog(
-                        MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
-                        MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER));
 
-        if (!contact.equalsIgnoreCase(verificationToken.contact())) {
-            throw DomainException.buildFromCatalog(
-                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
-                    MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
+        final VerificationToken verificationToken;
+        if (!UUIDHelper.getDefault().equals(normalizedTokenId)) {
+            verificationToken = tokenRepository.findById(normalizedTokenId)
+                    .orElseThrow(() -> DomainException.buildFromCatalog(
+                            MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
+                            MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER));
+
+            if (!contact.equalsIgnoreCase(verificationToken.contact())) {
+                throw DomainException.buildFromCatalog(
+                        MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
+                        MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER);
+            }
+        } else {
+            verificationToken = tokenRepository.findByContactAndCode(contact, code)
+                    .orElseThrow(() -> DomainException.buildFromCatalog(
+                            MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_TECHNICAL,
+                            MessageCodes.Domain.Verification.TOKEN_NOT_FOUND_USER));
         }
 
         if (verificationToken.isExpired(referenceDate)) {

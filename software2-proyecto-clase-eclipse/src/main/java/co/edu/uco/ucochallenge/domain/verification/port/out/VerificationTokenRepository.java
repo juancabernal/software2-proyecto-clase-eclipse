@@ -14,6 +14,8 @@ public interface VerificationTokenRepository {
 
     Optional<VerificationToken> findByContact(String contact);
 
+    Optional<VerificationToken> findByContactAndCode(String contact, String code);
+
     void deleteByContact(String contact);
 
     void deleteById(UUID id);
