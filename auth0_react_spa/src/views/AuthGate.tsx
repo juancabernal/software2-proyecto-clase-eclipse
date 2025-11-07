@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { resolveApiBaseUrl } from "../api/client";
 
 let fetchedOnce = false;
 
@@ -9,7 +10,7 @@ export default function AuthGate() {
   const { isAuthenticated, isLoading, getAccessTokenSilently, logout } = useAuth0();
   const navigate = useNavigate();
 
-  const baseURL = import.meta.env.VITE_API_SERVER_URL as string;
+  const baseURL = resolveApiBaseUrl(import.meta.env.VITE_API_SERVER_URL as string | undefined);
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE as string;
 
   const api = useMemo(() => axios.create({ baseURL }), [baseURL]);
@@ -43,7 +44,7 @@ export default function AuthGate() {
           // cacheMode: "off",     // ← si notas que se cachea mal
         });
 
-        const url = "/api/admin/users";
+        const url = "/admin/users";
         setStatusMsg("Validando autorización…");
 
         // 🔸 No esperamos body → pedimos texto plano

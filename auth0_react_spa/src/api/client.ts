@@ -1,6 +1,58 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { User } from "../types/users";
 
+const DEFAULT_API_BASE = "/api";
+
+const trimTrailingSlash = (value: string) => {
+  let result = value;
+  while (result.length > 1 && result.endsWith("/")) {
+    result = result.slice(0, -1);
+  }
+  return result;
+};
+
+const resolveAbsoluteUrl = (baseURL: string) => {
+  try {
+    const fallbackOrigin =
+      typeof window !== "undefined" && (window as any)?.location?.origin
+        ? (window as any).location.origin
+        : "http://localhost";
+    return new URL(baseURL, fallbackOrigin);
+  } catch {
+    return null;
+  }
+};
+
+export const resolveApiBaseUrl = (rawBaseURL?: string) => {
+  const trimmed = (rawBaseURL ?? "").trim();
+  if (!trimmed) {
+    return DEFAULT_API_BASE;
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsed = new URL(trimTrailingSlash(trimmed));
+      if (!parsed.pathname || parsed.pathname === "/") {
+        parsed.pathname = DEFAULT_API_BASE;
+      } else {
+        parsed.pathname = trimTrailingSlash(parsed.pathname);
+      }
+      parsed.search = "";
+      parsed.hash = "";
+      return trimTrailingSlash(parsed.toString());
+    } catch {
+      return DEFAULT_API_BASE;
+    }
+  }
+
+  if (trimmed.startsWith("/")) {
+    const normalized = trimTrailingSlash(trimmed);
+    return normalized.length > 1 ? normalized : DEFAULT_API_BASE;
+  }
+
+  return `/${trimTrailingSlash(trimmed)}`;
+};
+
 export type Page<T> = {
   items: T[];
   page: number;
@@ -89,8 +141,10 @@ const computeTotalPages = (totalItems: number, size: number) => {
   return Math.max(1, Math.ceil(totalItems / size));
 };
 
-export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => {
-  if (import.meta.env.PROD && !/^https:\/\//i.test(baseURL)) {
+export const makeApi = (rawBaseURL: string | undefined, getTokenRaw: () => Promise<string>) => {
+  const baseURL = resolveApiBaseUrl(rawBaseURL);
+
+  if (import.meta.env.PROD && /^http:\/\//i.test(baseURL)) {
     throw new Error("Base URL insegura en producción: se requiere HTTPS.");
   }
 
@@ -103,11 +157,21 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     headers: { Accept: "application/json" },
   });
 
-  api.interceptors.request.use(async (config) => {
-    const reqUrl = new URL(config.url ?? "", baseURL);
-    const base = new URL(baseURL);
+  const baseForComparison = resolveAbsoluteUrl(baseURL);
 
-    if (reqUrl.origin === base.origin) {
+  api.interceptors.request.use(async (config) => {
+    if (!baseForComparison) {
+      return config;
+    }
+
+    let reqUrl: URL | null = null;
+    try {
+      reqUrl = new URL(config.url ?? "", baseForComparison);
+    } catch {
+      reqUrl = null;
+    }
+
+    if (reqUrl && reqUrl.origin === baseForComparison.origin) {
       try {
         const token = await getToken();
         if (token) {
@@ -173,7 +237,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     }
 
     const response = await api.post(
-      `/api/users/${encodeURIComponent(sanitizedId)}/send-code`,
+      `/users/${encodeURIComponent(sanitizedId)}/send-code`,
       undefined,
       {
         params: { channel },
@@ -212,7 +276,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     }
 
     const response = await api.post(
-      `/api/users/${encodeURIComponent(sanitizedId)}/confirm-code`,
+      `/users/${encodeURIComponent(sanitizedId)}/confirm-code`,
       { channel, code: sanitizedCode },
       { validateStatus: () => true }
     );
@@ -239,7 +303,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       const requestedPage = Math.max(Number(params?.page ?? 1) - 1, 0);
       const requestedSize = Number(params?.size ?? 10);
 
-      const res = await api.get("/api/users", {
+      const res = await api.get("/users", {
         params: { page: requestedPage, size: requestedSize },
         validateStatus: () => true,
       });
@@ -288,7 +352,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       );
 
       try {
-        const res = await api.post("/api/users", payload, requestConfig);
+        const res = await api.post("/users", payload, requestConfig);
 
         if (res.status !== 201) {
           const data = res.data ?? {};
@@ -338,7 +402,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     },
 
     async listIdTypes(): Promise<CatalogItem[]> {
-      const res = await api.get("/api/idtypes", { validateStatus: () => true });
+      const res = await api.get("/idtypes", { validateStatus: () => true });
       if (res.status !== 200) {
         throw new Error(`Catálogo idType HTTP ${res.status}`);
       }
@@ -351,7 +415,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     },
 
     async listCountries(): Promise<CatalogItem[]> {
-      const res = await api.get("/api/locations/countries", { validateStatus: () => true });
+      const res = await api.get("/locations/countries", { validateStatus: () => true });
       if (res.status !== 200) {
         throw new Error(`Catálogo países HTTP ${res.status}`);
       }
@@ -368,9 +432,12 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       if (!sanitized) {
         return [];
       }
-      const res = await api.get(`/api/locations/countries/${encodeURIComponent(sanitized)}/departments`, {
-        validateStatus: () => true,
-      });
+      const res = await api.get(
+        `/locations/countries/${encodeURIComponent(sanitized)}/departments`,
+        {
+          validateStatus: () => true,
+        }
+      );
       if (res.status !== 200) {
         throw new Error(`Catálogo departamentos HTTP ${res.status}`);
       }
@@ -387,9 +454,12 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
       if (!sanitized) {
         return [];
       }
-      const res = await api.get(`/api/locations/departments/${encodeURIComponent(sanitized)}/cities`, {
-        validateStatus: () => true,
-      });
+      const res = await api.get(
+        `/locations/departments/${encodeURIComponent(sanitized)}/cities`,
+        {
+          validateStatus: () => true,
+        }
+      );
       if (res.status !== 200) {
         throw new Error(`Catálogo ciudades HTTP ${res.status}`);
       }
@@ -402,7 +472,7 @@ export const makeApi = (baseURL: string, getTokenRaw: () => Promise<string>) => 
     },
 
     async findUserLocally(params: { email?: string; idNumber?: string }): Promise<User | null> {
-      const res = await api.get("/api/users", {
+      const res = await api.get("/users", {
         params: { page: 0, size: 50 },
         validateStatus: () => true,
       });
