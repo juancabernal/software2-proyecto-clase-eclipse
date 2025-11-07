@@ -425,19 +425,21 @@ export default function UserCreatePage() {
     })
 
     const registerPayload = {
-      documentTypeId: selectedIdTypeOption?.id ?? formData.idType,
+      documentTypeId: selectedIdTypeOption?.id ?? undefined,
       documentTypeName:
-        selectedIdTypeOption?.name ?? selectedIdTypeOption?.description ?? undefined,
-      documentNumber: formData.idNumber,
-      firstName: formData.firstName,
-      middleName: formData.secondName || undefined,
-      lastName: formData.firstSurname,
-      secondLastName: formData.secondSurname || undefined,
-      email: formData.email || undefined,
-      mobile: formData.mobileNumber || undefined,
+        selectedIdTypeOption?.name ??
+        selectedIdTypeOption?.description ??
+        (trimmedIdType || undefined),
+      documentNumber: cleaned.idNumber,
+      firstName: cleaned.firstName,
+      middleName: cleaned.secondName || undefined,
+      lastName: cleaned.firstSurname,
+      secondLastName: cleaned.secondSurname || undefined,
+      email: cleaned.email || undefined,
+      mobile: cleaned.mobile || undefined,
       countryId: cleaned.countryId,
       departmentId: cleaned.departmentId,
-      cityId: formData.homeCity,
+      cityId: cleaned.cityId,
     }
 
     setSaving(true)
