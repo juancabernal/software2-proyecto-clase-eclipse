@@ -15,7 +15,9 @@ public class GatewayRoutesConfig {
             .route("ucochallenge-backend", r -> r
                 .path("/api/**")
                 // ⚡ FIX: maneja bien rutas con o sin subsegmentos (/api, /api/, /api/users)
-                .filters(f -> f.rewritePath("/api(?<segment>/?.*)", "/uco-challenge/api/v1${segment}"))
+                .filters(f -> f
+                    .rewritePath("/api(?<segment>/?.*)", "/uco-challenge/api/v1${segment}")
+                )
                 .uri("http://localhost:8081")
             )
             // ✅ Endpoints internos del gateway
