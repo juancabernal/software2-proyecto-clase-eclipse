@@ -79,7 +79,12 @@ export default function UsersAdmin() {
       if (error?.response?.data) {
         const data = error.response.data as any;
         return (
-          data.userMessage || data.technicalMessage || data.message || error?.message || FALLBACK
+          data.userMessage ||
+          data.technicalMessage ||
+          data.message ||
+          data.error ||
+          error?.message ||
+          FALLBACK
         );
       }
     } catch {
@@ -490,25 +495,30 @@ export default function UsersAdmin() {
     };
 
     const idTypeItem = idTypes.find((t) => t.id === form.idType);
-
-    const countryId = sanitize(selectedCountry);
-    const departmentId = sanitize(selectedDepartment);
+    const idTypeId = sanitize(idTypeItem?.id || form.idType);
     const cityId = sanitize(form.homeCity);
 
-    // ✅ Corregido: usar los nombres exactos que espera el backend
     return {
-      idTypeId: sanitize(idTypeItem?.id || form.idType),
-      idTypeName: optional(idTypeItem?.name),
+      idType: idTypeId
+        ? {
+            id: idTypeId,
+            name: optional(idTypeItem?.name),
+          }
+        : undefined,
       idNumber: sanitize(form.idNumber),
       firstName: sanitize(form.firstName),
-      middleName: optional(form.secondName),         // ✅ antes era secondName
-      lastName: sanitize(form.firstSurname),         // ✅ antes era firstSurname
-      secondLastName: optional(form.secondSurname),  // ✅ antes era secondSurname
+      secondName: optional(form.secondName),
+      firstSurname: sanitize(form.firstSurname),
+      secondSurname: optional(form.secondSurname),
+      homeCity: cityId
+        ? {
+            id: cityId,
+          }
+        : undefined,
       email: sanitize(form.email),
-      mobile: optional(form.mobileNumber),
-      countryId,
-      departmentId,
-      cityId,
+      mobileNumber: optional(form.mobileNumber),
+      emailConfirmed: false,
+      mobileNumberConfirmed: false,
     };
   };
   // (Removed duplicate fetchUsers and related useEffect)
