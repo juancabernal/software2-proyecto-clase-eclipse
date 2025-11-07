@@ -11,7 +11,7 @@ public class Parameter {
 		this.value = value;
 	}
 
-	// Getter y Setter de key
+	// Getter y Setter de key.
 	public String getKey() {
 		return key;
 	}
