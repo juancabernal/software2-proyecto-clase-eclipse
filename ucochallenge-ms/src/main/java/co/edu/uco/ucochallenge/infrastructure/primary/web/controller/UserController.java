@@ -2,7 +2,6 @@ package co.edu.uco.ucochallenge.infrastructure.primary.web.controller;
 
 import java.util.Map;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +13,7 @@ import co.edu.uco.ucochallenge.application.user.UserService;
 import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.entity.UserEntity;
 
 @RestController
-@RequestMapping({"/api/users", "/uco-challenge/api/v1/users"})
+@RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
@@ -30,9 +29,6 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", ex.getMessage()));
-        } catch (DataIntegrityViolationException ex) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "No fue posible registrar el usuario"));
         }
     }
 }

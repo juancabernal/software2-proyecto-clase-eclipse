@@ -10,6 +10,4 @@ import co.edu.uco.ucochallenge.infrastructure.secondary.adapters.repository.enti
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
     Optional<UserEntity> findByEmail(String email);
-
-    boolean existsByEmailIgnoreCase(String email);
 }
